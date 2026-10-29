@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "74950710f43b4893b871b825f13f21a4",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 168,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "full pipe monitor installed"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793262504.0278063,
+  "_ntfy_id": "qbs6EziGbQZt",
+  "_ntfy_time": 1793262504
+}

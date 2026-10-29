@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "204894ce62144082b4359d8cfdf46cd8",
+  "tool": "inspect_instance",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 15,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"path\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_COOLANT_PIPING_RING_01.COOLANT_PIPING_RING__nickel_pipe_03\",\"name\":\"COOLANT_PIPING_RING__nickel_pipe_03\",\"className\":\"MeshPart\",\"uniqueId\":\"6fea5129-5d91-a29d-0af3-da0400001340\",\"children\":{\"immediateChildren\":[],\"totalDescendants\":0,\"childrenCount\":0},\"properties\":{\"CFrame.Rotation\":\"1, 0, 0, 0, 1, 0, 0, 0, 1\",\"TextureID\":\"\",\"Anchored\":true,\"RightSurface\":\"Enum.SurfaceType.Smooth\",\"TextureContent\":\"Content{SourceType=None}\",\"RenderFidelity\":\"Enum.RenderFidelity.Automatic\",\"CFrame.Position\":\"0, 25.338199615478516, -6.410525321960449\",\"AssemblyAngularVelocity\":\"0, 0, 0\",\"Capabilities\":\"\",\"BottomSurface\":\"Enum.SurfaceType.Smooth\",\"CanCollide\":false,\"CollisionGroup\":\"Default\",\"MeshId\":\"\",\"EnableFluidForces\":true,\"AssemblyLinearVelocity\":\"0, 0, 0\",\"Transparency\":0,\"DoubleSided\":false,\"MeshContent\":\"Content{SourceType=None}\",\"MaterialVariant\":\"\",\"FluidFidelity\":\"Enum.FluidFidelity.Automatic\",\"CanQuery\":false,\"Color\":\"0.501960813999176, 0.5333333611488342, 0.5803921818733215\",\"Massless\":false,\"CollisionFidelity\":\"Enum.CollisionFidelity.Default\",\"Locked\":false,\"Material\":\"Enum.Material.Metal\",\"Archivable\":true,\"Size\":\"43.099998474121094, 40.18360137939453, 47.529808044433594\",\"FrontSurface\":\"Enum.SurfaceType.Smooth\",\"BackSurface\":\"Enum.SurfaceType.Smooth\",\"Sandboxed\":false,\"TopSurface\":\"Enum.SurfaceType.Smooth\",\"Rotation\":\"0, 0, 0\",\"PivotOffset.Rotation\":\"1, 0, 0, 0, 1, 0, 0, 0, 1\",\"CanTouch\":false,\"RootPriority\":0,\"CollisionPrecision\":0,\"Reflectance\":0.09000000357627869,\"BrickColor\":\"Sand blue metallic\",\"AudioCanCollide\":true,\"PivotOffset.Position\":\"0, 0, 0\",\"UniqueId\":\"6fea5129-5d91-a29d-0af3-da0400001340\",\"CastShadow\":true,\"LeftSurface\":\"Enum.SurfaceType.Smooth\"}}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793256683.7976325,
+  "_ntfy_id": "NHtztmzBaiHn",
+  "_ntfy_time": 1793256685
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "01c661a3788744aaa758765b3376a644",
+  "tool": "script_read",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 21,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "     1→--!nonstrict\n     2→-- REAL 3D VOLUMETRIC FLOW COMPANION (ZERO 2D PARTICLES / BEAMS)\n     3→-- All 2D ParticleEmitters and flat 2D Beams have been permanently retired.\n     4→-- Stage 02 pressurized 3D fluid plumes, Stage 02-05 3D chamber hulls,\n     5→-- Stage 04-05 3D coaxial energy conduits, and the living 3D fusion star\n     6→-- run via real-time 3D EditableMesh geometry synchronized to world state.\n     7→local Workspace = game:GetService(\"Workspace\")\n     8→local world = Workspace:WaitForChild(\"CORE_PROTOCOL_V2_WORLD\", 60)\n     9→if not world then return end\n    10→world:SetAttribute(\"ReactorPilotZero2DEffects\", true)\n    11→world:SetAttribute(\"ReactorPilotParticleBudget\", 0)\n    12→world:SetAttribute(\"ReactorPilotStockSmokeEmitters\", 0)\n    13→print(\"[PILOT 3D FLOW] Zero 2D ParticleEmitter/Beam policy active; 3D EditableMesh engine authoritative.\")\n    14→"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793256709.2631533,
+  "_ntfy_id": "UvxhYfXDZf0u",
+  "_ntfy_time": 1793256710
+}

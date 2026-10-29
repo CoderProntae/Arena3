@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "488b3d6a788749978cc5189fb421e18d",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 247,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "[{\"text\":\"ATEŞLEME BEKLENİYOR\",\"selected\":4,\"temp\":\"26 °C\",\"mode\":\"COLD\",\"percent\":\"REAKTÖR KALKANI  100.0%\",\"size\":1},{\"text\":\"REAKTÖR ÇALIŞIYOR\",\"selected\":1,\"temp\":\"675 °C\",\"mode\":\"ONLINE\",\"percent\":\"REAKTÖR KALKANI  95.4%\",\"size\":0.9539999961853027},{\"text\":\"UYARI\",\"selected\":2,\"temp\":\"1600 °C\",\"mode\":\"WARNING\",\"percent\":\"REAKTÖR KALKANI  60.0%\",\"size\":0.6000000238418579},{\"text\":\"REAKTÖR ERİMESİ\",\"selected\":3,\"temp\":\"2500 °C\",\"mode\":\"MELTDOWN\",\"percent\":\"REAKTÖR KALKANI  12.5%\",\"size\":0.125},{\"text\":\"ATEŞLEME BEKLENİYOR\",\"selected\":4,\"temp\":\"26 °C\",\"mode\":\"COLD\",\"percent\":\"REAKTÖR KALKANI  100.0%\",\"size\":1}]"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793267378.015695,
+  "_ntfy_id": "HMlzIvWNv97Q",
+  "_ntfy_time": 1793267378
+}

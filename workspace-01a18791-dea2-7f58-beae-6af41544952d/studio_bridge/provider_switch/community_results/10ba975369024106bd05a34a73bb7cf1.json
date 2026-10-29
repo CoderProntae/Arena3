@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "10ba975369024106bd05a34a73bb7cf1",
+  "tool": "get_studio_state",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 4,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "- Current Studio Mode: Edit\n- Available DataModels: Edit\n- Focused DataModel in the viewport: Edit"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793256565.3883655,
+  "_ntfy_id": "TmdRYrkkhbBc",
+  "_ntfy_time": 1793256566
+}

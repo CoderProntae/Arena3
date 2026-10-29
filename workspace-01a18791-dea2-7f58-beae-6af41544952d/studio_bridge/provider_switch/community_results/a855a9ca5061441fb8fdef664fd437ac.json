@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "a855a9ca5061441fb8fdef664fd437ac",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 39,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "GLASS_LAYER_02 CREATED"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793257248.244017,
+  "_ntfy_id": "HQuboEmfHD4o",
+  "_ntfy_time": 1793257249
+}

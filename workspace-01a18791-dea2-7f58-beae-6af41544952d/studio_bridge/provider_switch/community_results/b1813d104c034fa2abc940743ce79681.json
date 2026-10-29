@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "b1813d104c034fa2abc940743ce79681",
+  "tool": "get_console_output",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 496,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "CamTrack Theme: Light\n0_492197\nLoaded Cajuns Animation Spoofer v2\n[FAZ2] Multi-tone Slate-Iron Chamber, 4 Radial Sliding Hatches & 10-Blade CNC Rear Turbine active!\n[FAZ3-REV4] Zero-ZFight + Zero-Skybox Forebay Hall + Hollow-Bore Piping Ring (M11) + 6 Shared-Batch Service Bays (M12) active! (75 static 3D MeshParts)"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793212902.2484272,
+  "_ntfy_id": "JWWRtEtAKcWA",
+  "_ntfy_time": 1793212902
+}

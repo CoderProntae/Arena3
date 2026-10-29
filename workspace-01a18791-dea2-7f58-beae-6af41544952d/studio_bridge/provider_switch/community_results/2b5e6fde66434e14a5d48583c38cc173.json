@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "2b5e6fde66434e14a5d48583c38cc173",
+  "tool": "inspect_instance",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 16,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"path\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_REAR_BULKHEAD_REV05_TURBINE_PORT\",\"name\":\"REACTOR_REAR_BULKHEAD_REV05_TURBINE_PORT\",\"className\":\"Model\",\"attributes\":{\"Faz2Generated\":true},\"uniqueId\":\"6fea5129-5d91-a29d-0af3-da04000012af\",\"children\":{\"immediateChildren\":[{\"path\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_REAR_BULKHEAD_REV05_TURBINE_PORT.REV05__iron_c2\",\"className\":\"MeshPart\"},{\"path\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_REAR_BULKHEAD_REV05_TURBINE_PORT.REV05__weld\",\"className\":\"MeshPart\"},{\"path\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_REAR_BULKHEAD_REV05_TURBINE_PORT.REV05__iron_c1\",\"className\":\"MeshPart\"},{\"path\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_REAR_BULKHEAD_REV05_TURBINE_PORT.REV05__rib\",\"className\":\"MeshPart\"},{\"path\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_REAR_BULKHEAD_REV05_TURBINE_PORT.REV05__cut\",\"className\":\"MeshPart\"},{\"path\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_REAR_BULKHEAD_REV05_TURBINE_PORT.REV05__iron_c3\",\"className\":\"MeshPart\"},{\"path\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_REAR_BULKHEAD_REV05_TURBINE_PORT.REV05__caution\",\"className\":\"MeshPart\"},{\"path\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_REAR_BULKHEAD_REV05_TURBINE_PORT.REV05__iron_c4\",\"className\":\"MeshPart\"},{\"path\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_REAR_BULKHEAD_REV05_TURBINE_PORT.REV05__lining\",\"className\":\"MeshPart\"}],\"totalDescendants\":9,\"childrenCount\":9},\"properties\":{\"WorldPivot.Rotation\":\"1, 0, 0, 0, 1, 0, 0, 0, 1\",\"Capabilities\":\"\",\"WorldPivot.Position\":\"0, 26.5, -14.25200080871582\",\"Sandboxed\":false,\"LevelOfDetail\":\"Enum.ModelLevelOfDetail.Automatic\",\"UniqueId\":\"6fea5129-5d91-a29d-0af3-da04000012af\",\"Archivable\":true,\"ModelStreamingMode\":\"Enum.ModelStreamingMode.Default\"}}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793256685.0488443,
+  "_ntfy_id": "gBipqdW94gQJ",
+  "_ntfy_time": 1793256686
+}

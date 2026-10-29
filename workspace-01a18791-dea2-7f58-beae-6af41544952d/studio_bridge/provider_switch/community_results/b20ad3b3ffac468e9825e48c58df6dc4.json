@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "b20ad3b3ffac468e9825e48c58df6dc4",
+  "tool": "get_console_output",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 555,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "[CORE PROTOCOL REMAKE] Geometry rays: 23/23 clear (six heads at TWO camera heights, core + nine samples). Brightness/appearance still need Studio screenshot comparison.\n[CORE] Physical server ready. CHECKPOINT 02: six real mechanical fuel sources; no photons or automatic ONLINE. Meltdown gameplay retained.\n[MESH] Six approved GLBs; real 3D handoff active; 2D core beams/particles disabled.\n[PILOT 3D] Six physical GLBs + authoritative 02-05 state ready. Zero 2D ParticleEmitter/Beam.\n[PILOT 3D FLOW] Zero 2D ParticleEmitter/Beam policy active; 3D EditableMesh engine authoritative.\n[MESH] R5= COLD ; six real heads; relay mask= 0\nCamTrack Theme: Light\nAnimation Spoofer cannot run while game is running\n[CORE PROTOCOL REMAKE R3] Film camera and true third person; physical reactor is server owned.\nCamTrack Theme: Light\nAnimation Spoofer cannot run while game is running\n0_1509343\n0_1559002\n[3D REFERENCE VFX V15] Simultaneous 6-Laser Lockstep + Equal-Length Center Convergence + V14D Core online.\n[FAZ2] Multi-tone Slate-Iron Chamber, 4 Radial Sliding Hatches & 10-Blade CNC Rear Turbine active!\n[FAZ3-REV4] Zero-ZFight + Zero-Skybox Forebay Hall + Hollow-Bore Piping Ring (M11) + 6 Shared-Batch Service Bays (M12) active! (75 static 3D MeshParts)"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793215338.331167,
+  "_ntfy_id": "WPKFT3kXJ4eo",
+  "_ntfy_time": 1793215338
+}

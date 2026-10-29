@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "1b338461962a463aaba6ad1a9da720e4",
+  "tool": "inspect_instance",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 43,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"path\":\"Workspace.__GLASS_PREVIEW_TEMP.GLASS_LAYER_01\",\"name\":\"GLASS_LAYER_01\",\"className\":\"MeshPart\",\"uniqueId\":\"00000000-0000-0000-0000-000000000000\",\"children\":{\"immediateChildren\":[],\"totalDescendants\":0,\"childrenCount\":0},\"properties\":{\"CFrame.Rotation\":\"1, 0, 0, 0, 1, 0, 0, 0, 1\",\"TextureID\":\"\",\"Anchored\":true,\"RightSurface\":\"Enum.SurfaceType.Smooth\",\"TextureContent\":\"Content{SourceType=None}\",\"RenderFidelity\":\"Enum.RenderFidelity.Automatic\",\"CFrame.Position\":\"-5.264351844787598, 25.47499656677246, 46.625\",\"AssemblyAngularVelocity\":\"0, 0, 0\",\"Capabilities\":\"\",\"BottomSurface\":\"Enum.SurfaceType.Smooth\",\"CanCollide\":false,\"CollisionGroup\":\"Default\",\"MeshId\":\"\",\"EnableFluidForces\":true,\"AssemblyLinearVelocity\":\"0, 0, 0\",\"Transparency\":0.11999999731779099,\"DoubleSided\":false,\"MeshContent\":\"Content{SourceType=Opaque}\",\"MaterialVariant\":\"\",\"FluidFidelity\":\"Enum.FluidFidelity.Automatic\",\"CanQuery\":false,\"Color\":\"0.7529411911964417, 0.8392156958580017, 0.8784313797950745\",\"Massless\":false,\"CollisionFidelity\":\"Enum.CollisionFidelity.Default\",\"Locked\":false,\"Material\":\"Enum.Material.SmoothPlastic\",\"Archivable\":true,\"Size\":\"5.958000183105469, 5.444200038909912, 0.017999999225139618\",\"FrontSurface\":\"Enum.SurfaceType.Smooth\",\"BackSurface\":\"Enum.SurfaceType.Smooth\",\"Sandboxed\":false,\"TopSurface\":\"Enum.SurfaceType.Smooth\",\"Rotation\":\"0, 0, 0\",\"PivotOffset.Rotation\":\"1, 0, 0, 0, 1, 0, 0, 0, 1\",\"CanTouch\":false,\"RootPriority\":0,\"CollisionPrecision\":0,\"Reflectance\":0,\"BrickColor\":\"Fog\",\"AudioCanCollide\":true,\"PivotOffset.Position\":\"0, 0, 0\",\"UniqueId\":\"00000000-0000-0000-0000-000000000000\",\"CastShadow\":false,\"LeftSurface\":\"Enum.SurfaceType.Smooth\"}}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793257342.1013207,
+  "_ntfy_id": "2G7VLwxEcSvB",
+  "_ntfy_time": 1793257343
+}

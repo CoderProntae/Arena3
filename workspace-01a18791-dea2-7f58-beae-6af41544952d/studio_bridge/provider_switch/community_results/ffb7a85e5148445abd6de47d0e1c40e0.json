@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "ffb7a85e5148445abd6de47d0e1c40e0",
+  "tool": "multi_edit",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 84,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Modified REACTOR_MESH_CONTROLLER (Script) with 1 edits applied"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793259484.9301558,
+  "_ntfy_id": "0Wwjr0szL8sS",
+  "_ntfy_time": 1793259485
+}

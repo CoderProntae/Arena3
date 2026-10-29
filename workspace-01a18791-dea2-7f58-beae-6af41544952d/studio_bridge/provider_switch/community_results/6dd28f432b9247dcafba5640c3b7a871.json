@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "6dd28f432b9247dcafba5640c3b7a871",
+  "tool": "multi_edit",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 92,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Modified FAZ42_PipeDamage_Controller (Script) with 1 edits applied"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793259610.9068253,
+  "_ntfy_id": "GZZStFH1MuWo",
+  "_ntfy_time": 1793259611
+}

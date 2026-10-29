@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "8611eac9128c4e3494dad2fe3893ee56",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 554,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"damageDistinctNames\":6,\"bannedLeftovers\":[],\"damageFolderPresent\":true,\"worldBaseParts\":1352,\"glassLive\":[{\"name\":\"PANORAMIC_LAMINATED_GLASS_1\",\"parent\":\"02_PANORAMIC_CONTROL_ROOM\",\"T\":0.9800000190734863,\"size\":\"48.5, 22.5, 0.20000000298023224\",\"pos\":\"-2.75, 24.625, 46.625\"},{\"name\":\"PANORAMIC_LAMINATED_GLASS_2\",\"parent\":\"02_PANORAMIC_CONTROL_ROOM\",\"T\":0.9800000190734863,\"size\":\"5.5, 22.5, 0.20000000298023224\",\"pos\":\"24.25, 24.625, 46.625\"},{\"name\":\"SLIM_OFFSET_GLASS_MULLION\",\"parent\":\"02_PANORAMIC_CONTROL_ROOM\",\"T\":0,\"size\":\"0.41999998688697815, 22.5, 0.6499999761581421\",\"pos\":\"-11.25, 24.625, 46.724998474121094\"},{\"name\":\"SLIM_SYMMETRIC_GLASS_MULLION_R\",\"parent\":\"02_PANORAMIC_CONTROL_ROOM\",\"T\":0,\"size\":\"0.41999998688697815, 22.5, 0.6499999761581421\",\"pos\":\"11.25, 24.625, 46.724998474121094\"}],\"pilotStatus\":\"READY_REAL_3D_NO_2D_EFFECTS\",\"mode\":\"COLD\",\"removedEmittersStillPresent\":[],\"pilotReady\":true}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793215326.6629765,
+  "_ntfy_id": "cdvH4tW3FMy5",
+  "_ntfy_time": 1793215326
+}

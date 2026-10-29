@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "6a78fb89f387490b9c28e2acc054dd31",
+  "tool": "start_stop_play",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 100,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Game Stopped"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793259707.1558588,
+  "_ntfy_id": "wAimxFI0QSoA",
+  "_ntfy_time": 1793259707
+}

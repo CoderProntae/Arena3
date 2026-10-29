@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "cfcfb41d69bc45e09ac785452cb0853e",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 141,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"attrs\":{\"T385\":\"{\\\"lastImpact\\\":385,\\\"shards\\\":0,\\\"stage\\\":3,\\\"age\\\":385.2541878912598,\\\"final\\\":false}\",\"RESET\":\"{\\\"shards\\\":0,\\\"stage\\\":0,\\\"panes\\\":[{\\\"collide\\\":true,\\\"touch\\\":true,\\\"alpha\\\":0.9800000190734863},{\\\"collide\\\":true,\\\"touch\\\":true,\\\"alpha\\\":0.9800000190734863}]}\",\"T230\":\"{\\\"lastImpact\\\":230,\\\"shards\\\":0,\\\"stage\\\":2,\\\"age\\\":230.283346734941,\\\"final\\\":false}\",\"T143\":\"{\\\"lastImpact\\\":143,\\\"shards\\\":0,\\\"stage\\\":1,\\\"age\\\":143.30417549610139,\\\"final\\\":false}\",\"Done\":true,\"T327\":\"{\\\"lastImpact\\\":327,\\\"shards\\\":0,\\\"stage\\\":3,\\\"age\\\":327.34585131471979,\\\"final\\\":false}\",\"T434\":\"{\\\"lastImpact\\\":434,\\\"shards\\\":110,\\\"stage\\\":3,\\\"age\\\":434.34585724398496,\\\"final\\\":true}\"},\"mode\":\"COLD\",\"age\":0}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793261783.392684,
+  "_ntfy_id": "XhVV2M5FG76b",
+  "_ntfy_time": 1793261783
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "e062acad7221428584db6c202629db4d",
+  "tool": "inspect_instance",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 559,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"path\":\"ServerScriptService\",\"name\":\"ServerScriptService\",\"className\":\"ServerScriptService\",\"uniqueId\":\"1008cfa8-4a6f-49a8-0aef-81c8000003c1\",\"children\":{\"immediateChildren\":[{\"path\":\"ServerScriptService.REACTOR_MESH_CONTROLLER\",\"className\":\"Script\"},{\"path\":\"ServerScriptService.ReactorPilot_CustomFlow\",\"className\":\"Script\"},{\"path\":\"ServerScriptService.Faz2_ChamberAndTurbine\",\"className\":\"Script\"},{\"path\":\"ServerScriptService.Faz3_PipingAndServiceBays\",\"className\":\"Script\"},{\"path\":\"ServerScriptService.ReactorPilot_SixHeads\",\"className\":\"Script\"},{\"path\":\"ServerScriptService.CORE_PROTOCOL_Server\",\"className\":\"Script\"}],\"totalDescendants\":6,\"childrenCount\":6},\"properties\":[]}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793217935.9927838,
+  "_ntfy_id": "8gTSZD3RL3yx",
+  "_ntfy_time": 1793217936
+}

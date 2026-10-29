@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "ac8f9e92e2f94f39b2ade3f104b074d2",
+  "tool": "multi_edit",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 188,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Modified FAZ4_DamageAssets (Script) with 1 edits applied"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793263571.2807598,
+  "_ntfy_id": "QUI9Qwicv0i0",
+  "_ntfy_time": 1793263571
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "6c82418c8aba46bf9fc451124d757868",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 408,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "EDIT_CAM_FOREBAY_OK"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793204242.8958457,
+  "_ntfy_id": "pwXxAbpO5t0z",
+  "_ntfy_time": 1793204242
+}

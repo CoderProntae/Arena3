@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "f3c484413c4245d1881ed024aad903ce",
+  "tool": "start_stop_play",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 113,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Game Started"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793259934.029799,
+  "_ntfy_id": "DlyhOSm6Z75M",
+  "_ntfy_time": 1793259934
+}

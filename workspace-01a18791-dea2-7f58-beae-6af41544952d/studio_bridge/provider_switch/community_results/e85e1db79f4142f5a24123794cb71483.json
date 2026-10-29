@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "e85e1db79f4142f5a24123794cb71483",
+  "tool": "search_game_tree",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 22,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Note: Output limited to 8 nodes (results truncated)\n\n[{\"parentName\":\"STATIC\",\"fullPath\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_CORE_MANYETIK_01\",\"name\":\"REACTOR_CORE_MANYETIK_01\",\"className\":\"Model\"},{\"parentName\":\"REACTOR_CORE_MANYETIK_01\",\"fullPath\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_CORE_MANYETIK_01.ORBIT_A__ORBIT_COPPER_Node\",\"name\":\"ORBIT_A__ORBIT_COPPER_Node\",\"className\":\"Model\"},{\"parentName\":\"REACTOR_CORE_MANYETIK_01\",\"fullPath\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_CORE_MANYETIK_01.SPARKS__SPARK_Node\",\"name\":\"SPARKS__SPARK_Node\",\"className\":\"Model\"},{\"parentName\":\"REACTOR_CORE_MANYETIK_01\",\"fullPath\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_CORE_MANYETIK_01.ARCS__ORBIT_HOT_Node\",\"name\":\"ARCS__ORBIT_HOT_Node\",\"className\":\"Model\"},{\"parentName\":\"REACTOR_CORE_MANYETIK_01\",\"fullPath\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_CORE_MANYETIK_01.BOTTOM__BLUE_RAY_Node\",\"name\":\"BOTTOM__BLUE_RAY_Node\",\"className\":\"Model\"},{\"parentName\":\"REACTOR_CORE_MANYETIK_01\",\"fullPath\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_CORE_MANYETIK_01.ORBIT_C__ORBIT_HOT_Node\",\"name\":\"ORBIT_C__ORBIT_HOT_Node\",\"className\":\"Model\"},{\"parentName\":\"REACTOR_CORE_MANYETIK_01\",\"fullPath\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_CORE_MANYETIK_01.ORBIT_C__ORBIT_COPPER_Node\",\"name\":\"ORBIT_C__ORBIT_COPPER_Node\",\"className\":\"Model\"},{\"parentName\":\"REACTOR_CORE_MANYETIK_01\",\"fullPath\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_CORE_MANYETIK_01.ORBIT_B__ORBIT_COPPER_Node\",\"name\":\"ORBIT_B__ORBIT_COPPER_Node\",\"className\":\"Model\"}]"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793256845.3089037,
+  "_ntfy_id": "A0qRF2U004Sl",
+  "_ntfy_time": 1793256846
+}

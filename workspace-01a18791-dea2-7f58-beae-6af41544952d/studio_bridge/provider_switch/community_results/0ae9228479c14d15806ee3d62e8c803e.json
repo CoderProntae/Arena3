@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "0ae9228479c14d15806ee3d62e8c803e",
+  "tool": "start_stop_play",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 541,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Game Started"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793214251.3144639,
+  "_ntfy_id": "4jGGyKT1ig49",
+  "_ntfy_time": 1793214251
+}

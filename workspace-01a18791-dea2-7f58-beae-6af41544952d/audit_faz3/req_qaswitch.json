@@ -1,0 +1,1 @@
+{"studio_id": "@SID@", "datamodel_type": "Edit", "code": "\nassert(game.Name==\"AEGIS_Reactor.rbxlx\" and game:GetService(\"RunService\"):IsEdit())\nlocal SS=game:GetService(\"ServerStorage\")\nif not SS:FindFirstChild(\"__STUDIO_QA_SWITCH\") then\n local bf=Instance.new(\"BindableFunction\")\n bf.Name=\"__STUDIO_QA_SWITCH\"\n bf.Parent=SS\nend\nreturn \"QA switch hazir\"\n"}

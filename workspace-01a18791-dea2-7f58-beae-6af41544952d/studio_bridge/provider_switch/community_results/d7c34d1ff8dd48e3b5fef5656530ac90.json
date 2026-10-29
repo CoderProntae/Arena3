@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "d7c34d1ff8dd48e3b5fef5656530ac90",
+  "tool": "search_game_tree",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 18,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "datamodel_type is required"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "time": 1793256708.196287,
+  "_ntfy_id": "OXQeRAzTMGko",
+  "_ntfy_time": 1793256709
+}

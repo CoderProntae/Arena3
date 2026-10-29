@@ -1,0 +1,69 @@
+{
+  "video": "Desktop 2026.10.26 - 13.45.13.01.mp4",
+  "source_url": "https://github.com/CoderProntae/.mp4/blob/main/Desktop%202026.10.26%20-%2013.45.13.01.mp4",
+  "sha256": "5df8e7317a9e158bff9db4e0e974ae4401630d948f3dedf117e63eccd0cebec4",
+  "decoded_size": [
+    1280,
+    1024
+  ],
+  "original_frames_total": 10635,
+  "original_frames_examined": 4707,
+  "examined_video_seconds": [
+    105.0,
+    185.0
+  ],
+  "frame_upscaling_or_interpolation": false,
+  "selected_roi_px": {
+    "chamber": [
+      310,
+      310,
+      975,
+      665
+    ],
+    "core": [
+      495,
+      370,
+      785,
+      620
+    ],
+    "panel": [
+      425,
+      50,
+      850,
+      185
+    ],
+    "lower_flow": [
+      310,
+      530,
+      975,
+      665
+    ]
+  },
+  "onsets_video_seconds": {
+    "chamber_dark": 127.367,
+    "large_cyan": 139.3,
+    "bright_white_core": 140.483
+  },
+  "bright_or_dark_region_peaks": {
+    "dark": [
+      137.08333,
+      0.90947
+    ],
+    "cyan": [
+      139.76667,
+      0.86707
+    ],
+    "white": [
+      162.98333,
+      0.46855
+    ]
+  },
+  "lower_region_median_motion_pixels_per_six_source_frames": {
+    "before_fuel_110_117": 0.06216,
+    "white_vapor_118_126": 0.21433,
+    "dark_130_138": 0.49133,
+    "cyan_140_146": 1.04012,
+    "blue_violet_cloud_150_165": 0.22736
+  },
+  "limitations": "Codec artifacts, camera movement and locally specified regions; not R9 Play/render measurement."
+}

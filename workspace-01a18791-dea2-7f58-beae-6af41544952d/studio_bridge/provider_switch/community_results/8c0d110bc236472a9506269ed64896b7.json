@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "8c0d110bc236472a9506269ed64896b7",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 181,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"rays\":{\"LASER_3D_CORE_UPPER\":0.019999999552965165,\"LASER_3D_CORE_RIGHT\":0.019999999552965165,\"LASER_3D_CORE_LOWER\":0.019999999552965165,\"LASER_3D_CORE_LOWER_RIGHT\":0.019999999552965165,\"LASER_3D_CORE_LOWER_LEFT\":0.019999999552965165,\"LASER_3D_CORE_LEFT\":0.019999999552965165},\"mode\":\"ONLINE\",\"count\":6,\"mask\":0}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793263421.015405,
+  "_ntfy_id": "t7DHJF3Jdtx7",
+  "_ntfy_time": 1793263421
+}

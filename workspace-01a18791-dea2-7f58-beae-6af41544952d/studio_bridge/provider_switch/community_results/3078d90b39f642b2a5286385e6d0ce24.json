@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "3078d90b39f642b2a5286385e6d0ce24",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 223,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"changed\":138,\"floor\":[{\"at\":[0,30,13],\"y\":6.029999732971191,\"hit\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.DENETIM_MUHUR_ZEMIN_01\"},{\"at\":[-1,30,13],\"y\":6.049999237060547,\"hit\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_CROWN_AND_DECK_01.CROWN_DECK__gunmetal\"},{\"at\":[1,30,13],\"y\":6.049999237060547,\"hit\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_CROWN_AND_DECK_01.CROWN_DECK__gunmetal\"},{\"at\":[-10,30,0],\"y\":4.989997863769531,\"hit\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_CROWN_AND_DECK_01.CROWN_DECK__iron\"},{\"at\":[10,30,0],\"y\":4.989997863769531,\"hit\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_CROWN_AND_DECK_01.CROWN_DECK__iron\"},{\"at\":[0,30,0],\"y\":26.690000534057618,\"hit\":\"Workspace.CORE_PROTOCOL_V2_WORLD.07_SPATIAL_SOUNDS.AUDIO_CORE\"},{\"at\":[0,30,18],\"y\":4.741020202636719,\"hit\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_SIDE_DIAG_OPEN_AND_FRONT_SEAL_03.OCTAGON_SEAL__gunmetal\"},{\"at\":[0,30,-6],\"y\":6.049999237060547,\"hit\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_CROWN_AND_DECK_01.CROWN_DECK__gunmetal\"}],\"back\":[{\"at\":[0,28.3,-19],\"pos\":\"0, 28.299999237060547, -22.771581649780273\",\"hit\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_REAR_TURBINE_PLENUM_01.PLENUM__shroud\"},{\"at\":[2,28.3,-19],\"pos\":\"1.9999998807907104, 28.299999237060547, -26.145343780517578\",\"hit\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_REAR_TURBINE_PLENUM_01.PLENUM__frame\"},{\"at\":[-2,28.3,-19],\"pos\":\"-1.9999998807907104, 28.299999237060547, -26.145343780517578\",\"hit\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_REAR_TURBINE_PLENUM_01.PLENUM__frame\"},{\"at\":[0,30,-19],\"pos\":\"0, 30, -33.61000061035156\",\"hit\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_REAR_TURBINE_PLENUM_01.PLENUM__edge\"}]}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793265110.908008,
+  "_ntfy_id": "JGgtcwXHF51r",
+  "_ntfy_time": 1793265111
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "42e41cfa23da497888c226c295afd070",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 170,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"attrs\":{\"T345\":\"{\\\"visible\\\":32,\\\"visualMask\\\":165,\\\"mask\\\":165,\\\"age\\\":345.5083485916257,\\\"active\\\":{\\\"REAR_RIGHT\\\":true,\\\"UPPER_RIGHT\\\":true,\\\"REAR_LEFT\\\":true,\\\"UPPER_LEFT\\\":true}}\",\"RESET\":\"{\\\"visible\\\":0,\\\"visualMask\\\":0,\\\"mask\\\":0,\\\"mode\\\":\\\"COLD\\\",\\\"active\\\":{\\\"REAR_RIGHT\\\":false,\\\"UPPER_RIGHT\\\":false,\\\"REAR_LEFT\\\":false,\\\"UPPER_LEFT\\\":false}}\",\"T186\":\"{\\\"visible\\\":16,\\\"visualMask\\\":36,\\\"mask\\\":36,\\\"age\\\":186.4333421550691,\\\"active\\\":{\\\"REAR_RIGHT\\\":false,\\\"UPPER_RIGHT\\\":true,\\\"REAR_LEFT\\\":false,\\\"UPPER_LEFT\\\":true}}\",\"T230\":\"{\\\"visible\\\":24,\\\"visualMask\\\":164,\\\"mask\\\":164,\\\"age\\\":230.4833445213735,\\\"active\\\":{\\\"REAR_RIGHT\\\":false,\\\"UPPER_RIGHT\\\":true,\\\"REAR_LEFT\\\":true,\\\"UPPER_LEFT\\\":true}}\",\"Done\":true,\"T87\":\"{\\\"visible\\\":8,\\\"visualMask\\\":4,\\\"mask\\\":4,\\\"age\\\":87.47917103394866,\\\"active\\\":{\\\"REAR_RIGHT\\\":false,\\\"UPPER_RIGHT\\\":true,\\\"REAR_LEFT\\\":false,\\\"UPPER_LEFT\\\":false}}\"},\"mode\":\"COLD\",\"age\":0}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793263002.252021,
+  "_ntfy_id": "L7eNQWJvBF2X",
+  "_ntfy_time": 1793263002
+}

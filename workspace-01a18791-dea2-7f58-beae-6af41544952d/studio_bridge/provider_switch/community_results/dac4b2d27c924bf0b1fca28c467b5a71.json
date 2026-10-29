@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "dac4b2d27c924bf0b1fca28c467b5a71",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 123,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "[{\"position\":\"-2.75, 24.625, 46.625\",\"count\":80,\"name\":\"PANORAMIC_LAMINATED_GLASS_1\",\"size\":\"48.5, 22.5, 0.20000000298023224\"},{\"position\":\"24.25, 24.625, 46.625\",\"count\":30,\"name\":\"PANORAMIC_LAMINATED_GLASS_2\",\"size\":\"5.5, 22.5, 0.20000000298023224\"},{\"live\":220,\"moving\":220}]"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793260995.1019552,
+  "_ntfy_id": "E6osH82h5K0u",
+  "_ntfy_time": 1793260995
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "28759a5d0f6e48d2b84044b9610c8e41",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 195,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"attrs\":{\"T143\":\"{\\\"legacy2D\\\":0,\\\"glassStage\\\":1,\\\"brokenMask\\\":2,\\\"ventMask\\\":4,\\\"age\\\":143.57084071356804,\\\"heads\\\":{\\\"UPPER\\\":{\\\"broken\\\":false,\\\"delta\\\":4.547473508864641e-13,\\\"severity\\\":0},\\\"LOWER\\\":{\\\"broken\\\":false,\\\"delta\\\":0,\\\"severity\\\":0},\\\"LOWER_RIGHT\\\":{\\\"broken\\\":false,\\\"delta\\\":0,\\\"severity\\\":0},\\\"RIGHT\\\":{\\\"broken\\\":false,\\\"delta\\\":0,\\\"severity\\\":0},\\\"LOWER_LEFT\\\":{\\\"broken\\\":false,\\\"delta\\\":0,\\\"severity\\\":0},\\\"LEFT\\\":{\\\"broken\\\":true,\\\"delta\\\":0.1407342553138733,\\\"severity\\\":0.17992753747364749}},\\\"pipeMask\\\":4,\\\"shards\\\":0,\\\"arcs3D\\\":0,\\\"glassFinal\\\":false,\\\"clouds\\\":8}\",\"T186\":\"{\\\"legacy2D\\\":0,\\\"glassStage\\\":1,\\\"brokenMask\\\":6,\\\"ventMask\\\":36,\\\"age\\\":186.51667620707304,\\\"heads\\\":{\\\"UPPER\\\":{\\\"broken\\\":false,\\\"delta\\\":4.547473508864641e-13,\\\"severity\\\":0},\\\"LOWER\\\":{\\\"broken\\\":false,\\\"delta\\\":0,\\\"severity\\\":0},\\\"LOWER_RIGHT\\\":{\\\"broken\\\":false,\\\"delta\\\":0,\\\"severity\\\":0},\\\"RIGHT\\\":{\\\"broken\\\":true,\\\"delta\\\":0.13693103194236756,\\\"severity\\\":0.17506410324229644},\\\"LOWER_LEFT\\\":{\\\"broken\\\":false,\\\"delta\\\":0,\\\"severity\\\":0},\\\"LEFT\\\":{\\\"broken\\\":true,\\\"delta\\\":0.7821763157844544,\\\"severity\\\":1}},\\\"pipeMask\\\":36,\\\"shards\\\":0,\\\"arcs3D\\\":1,\\\"glassFinal\\\":false,\\\"clouds\\\":16}\"},\"mode\":\"MELTDOWN\",\"age\":211.8625108031556}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793263872.9402304,
+  "_ntfy_id": "w0JiInNW8Lxr",
+  "_ntfy_time": 1793263873
+}

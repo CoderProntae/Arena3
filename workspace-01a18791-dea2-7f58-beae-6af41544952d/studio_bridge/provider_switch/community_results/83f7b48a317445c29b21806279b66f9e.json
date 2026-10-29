@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "83f7b48a317445c29b21806279b66f9e",
+  "tool": "multi_edit",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 486,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Created Faz3_PipingAndServiceBays (Script) with 1 edits applied"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793212754.6096673,
+  "_ntfy_id": "YlhbTq98B14z",
+  "_ntfy_time": 1793212754
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "4f8ed5d409324bccb66361bf53ad04ac",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 148,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "[{\"visibleClouds\":0,\"mask\":0},{\"visibleClouds\":8,\"mask\":32},{\"visibleClouds\":8,\"mask\":4},{\"visibleClouds\":8,\"mask\":128},{\"visibleClouds\":8,\"mask\":1},{\"visibleClouds\":32,\"mask\":165},{\"visibleClouds\":0,\"mask\":0}]"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793262084.510876,
+  "_ntfy_id": "E813Lcbox8Ey",
+  "_ntfy_time": 1793262084
+}

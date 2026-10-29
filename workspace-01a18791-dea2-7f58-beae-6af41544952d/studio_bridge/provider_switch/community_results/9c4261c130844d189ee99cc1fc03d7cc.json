@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "9c4261c130844d189ee99cc1fc03d7cc",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 177,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "nil"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793263276.4983163,
+  "_ntfy_id": "okoCfQrCLtfi",
+  "_ntfy_time": 1793263276
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "4a37998ccdb849dcaaa0238c8e35474e",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 26,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "FAZ4_EDIT_RUN_DONE; konsol kontrol gerekli"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793256933.498392,
+  "_ntfy_id": "t6u1ibrpa1HK",
+  "_ntfy_time": 1793256934
+}

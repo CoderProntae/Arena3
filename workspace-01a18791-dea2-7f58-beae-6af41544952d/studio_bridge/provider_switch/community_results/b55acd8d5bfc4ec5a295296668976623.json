@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "b55acd8d5bfc4ec5a295296668976623",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 23,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "[{\"other\":0,\"total\":41,\"name\":\"REACTOR_CORE_MANYETIK_01\",\"root\":\"STATIC\",\"empty\":0,\"asset\":41},{\"other\":0,\"total\":78,\"name\":\"REACTOR_REAR_SERVICE_GRILLES_01\",\"root\":\"STATIC\",\"empty\":0,\"asset\":78},{\"other\":0,\"total\":16,\"name\":\"REACTOR_REAR_BULKHEAD_IRON_REV04\",\"root\":\"STATIC\",\"empty\":0,\"asset\":16},{\"other\":0,\"total\":40,\"name\":\"REACTOR_SIDE_WALLS_OCTAGONAL_IRON_REV02\",\"root\":\"STATIC\",\"empty\":0,\"asset\":40},{\"other\":0,\"total\":9,\"name\":\"REACTOR_REAR_BULKHEAD_REV05_TURBINE_PORT\",\"root\":\"STATIC\",\"empty\":9,\"asset\":0},{\"other\":0,\"total\":11,\"name\":\"REACTOR_REAR_TURBINE_PLENUM_01\",\"root\":\"STATIC\",\"empty\":11,\"asset\":0},{\"other\":0,\"total\":11,\"name\":\"REACTOR_CROWN_AND_DECK_01\",\"root\":\"STATIC\",\"empty\":11,\"asset\":0},{\"other\":0,\"total\":4,\"name\":\"REACTOR_SIDE_DIAG_OPEN_AND_FRONT_SEAL_03\",\"root\":\"STATIC\",\"empty\":4,\"asset\":0},{\"other\":0,\"total\":42,\"name\":\"REACTOR_COOLANT_PIPING_RING_01\",\"root\":\"STATIC\",\"empty\":42,\"asset\":0},{\"other\":0,\"total\":26,\"name\":\"PISTON_REAR_SERVICE_BAYS_01\",\"root\":\"STATIC\",\"empty\":26,\"asset\":0},{\"other\":0,\"total\":7,\"name\":\"REACTOR_FOREBAY_CONTAINMENT_HALL_01\",\"root\":\"STATIC\",\"empty\":7,\"asset\":0},{\"other\":0,\"total\":32,\"name\":\"DAMAGE_PIPE_RUPTURE_KIT_01\",\"root\":\"STATIC\",\"empty\":32,\"asset\":0},{\"other\":0,\"total\":33,\"name\":\"REACTOR_EMITTER_REV03_LEFT\",\"root\":\"MOVING\",\"empty\":0,\"asset\":33},{\"other\":0,\"total\":33,\"name\":\"REACTOR_EMITTER_REV03_RIGHT\",\"root\":\"MOVING\",\"empty\":0,\"asset\":33},{\"other\":0,\"total\":23,\"name\":\"REACTOR_WALL_HATCH_THROUGH_01_LEFT\",\"root\":\"MOVING\",\"empty\":0,\"asset\":23},{\"other\":0,\"total\":23,\"name\":\"REACTOR_WALL_HATCH_THROUGH_01_RIGHT\",\"root\":\"MOVING\",\"empty\":0,\"asset\":23},{\"other\":0,\"total\":20,\"name\":\"REACTOR_PISTON_GUIDE_01_LEFT\",\"root\":\"MOVING\",\"empty\":0,\"asset\":20},{\"other\":0,\"total\":20,\"name\":\"REACTOR_PISTON_GUIDE_01_RIGHT\",\"root\":\"MOVING\",\"empty\":0,\"asset\":20},{\"other\":0,\"total\":33,\"name\":\"REACTOR_EMITTER_REV03_UPPER\",\"root\":\"MOVING\",\"empty\":0,\"asset\":33},{\"other\":0,\"total\":20,\"name\":\"REACTOR_PISTON_GUIDE_01_UPPER\",\"root\":\"MOVING\",\"empty\":0,\"asset\":20},{\"other\":0,\"total\":33,\"name\":\"REACTOR_EMITTER_REV03_LOWER_LEFT\",\"root\":\"MOVING\",\"empty\":0,\"asset\":33},{\"other\":0,\"total\":20,\"name\":\"REACTOR_PISTON_GUIDE_01_LOWER_LEFT\",\"root\":\"MOVING\",\"empty\":0,\"asset\":20},{\"other\":0,\"total\":33,\"name\":\"REACTOR_EMITTER_REV03_LOWER_RIGHT\",\"root\":\"MOVING\",\"empty\":0,\"asset\":33},{\"other\":0,\"total\":20,\"name\":\"REACTOR_PISTON_GUIDE_01_LOWER_RIGHT\",\"root\":\"MOVING\",\"empty\":0,\"asset\":20},{\"other\":0,\"total\":33,\"name\":\"REACTOR_EMITTER_REV03_LOWER\",\"root\":\"MOVING\",\"empty\":0,\"asset\":33},{\"other\":0,\"total\":20,\"name\":\"REACTOR_PISTON_GUIDE_01_LOWER\",\"root\":\"MOVING\",\"empty\":0,\"asset\":20},{\"other\":0,\"total\":4,\"name\":\"REACTOR_REAR_TURBINE_ROTOR\",\"root\":\"MOVING\",\"empty\":4,\"asset\":0},{\"other\":0,\"total\":6,\"name\":\"REACTOR_RADIAL_HATCH_UPPER\",\"root\":\"MOVING\",\"empty\":6,\"asset\":0},{\"other\":0,\"total\":6,\"name\":\"REACTOR_RADIAL_HATCH_LOWER\",\"root\":\"MOVING\",\"empty\":6,\"asset\":0},{\"other\":0,\"total\":6,\"name\":\"REACTOR_RADIAL_HATCH_LOWER_LEFT\",\"root\":\"MOVING\",\"empty\":6,\"asset\":0},{\"other\":0,\"total\":6,\"name\":\"REACTOR_RADIAL_HATCH_LOWER_RIGHT\",\"root\":\"MOVING\",\"empty\":6,\"asset\":0}]"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793256868.1576953,
+  "_ntfy_id": "Hw5FtKOzJ2uv",
+  "_ntfy_time": 1793256869
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "1a2229d686f947b095a995257c64dcd4",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 413,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Server datamodel is not available in Edit mode"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "time": 1793204317.8728228,
+  "_ntfy_id": "RLEeMu41a1vw",
+  "_ntfy_time": 1793204317
+}

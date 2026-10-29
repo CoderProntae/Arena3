@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "1f3f8241df10490c8b024f649bf9d71d",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 227,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"runtime\":false,\"running\":false,\"source\":\"not_found\",\"empty\":0,\"mesh\":709}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793265216.545475,
+  "_ntfy_id": "x5xLkwlPRhxO",
+  "_ntfy_time": 1793265216
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "f6264a3cc60e4486845ce0d179fd5b36",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 518,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "FULL poz tutuldu, ev kaydi=42"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793213709.658813,
+  "_ntfy_id": "HCnJXN9D7cqZ",
+  "_ntfy_time": 1793213709
+}

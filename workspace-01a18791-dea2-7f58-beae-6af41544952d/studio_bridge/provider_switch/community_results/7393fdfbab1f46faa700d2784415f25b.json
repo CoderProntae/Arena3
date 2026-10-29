@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "7393fdfbab1f46faa700d2784415f25b",
+  "tool": "script_read",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 144,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Missing required argument: target_file"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "time": 1793261877.0085378,
+  "_ntfy_id": "d5x2XnbKApy0",
+  "_ntfy_time": 1793261877
+}

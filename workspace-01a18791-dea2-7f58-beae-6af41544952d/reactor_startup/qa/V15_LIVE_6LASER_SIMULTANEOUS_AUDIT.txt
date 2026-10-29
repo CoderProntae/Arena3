@@ -1,0 +1,34 @@
+MODE=ONLINE | AVG_FPS=30.01 | TWOD_ACTIVE=0 | TOTAL_3D_INSTANCES=954
+MASK_TRANSITIONS=12.058s:mask=0 -> 35.558s:mask=63
+GLOBAL_TELEM: framesChecked=931 | maxSpanSpreadEver=0.000000 | liveMaskHist=0->63 | liveFocusErr=0.000000
+--- FIRST 22 SIMULTANEOUS LASER SHOT FRAMES (t = 35.50s -> IMPACT -> CYAN CORE BIRTH) ---
+  age=35.558|cnt=6|L=[0.5987,0.5987,0.5987,0.5987,0.5987,0.5987]|spread=0.000000|sunD=0.000|cyan=0.000
+  age=35.558|cnt=6|L=[1.5831,1.5831,1.5831,1.5831,1.5831,1.5831]|spread=0.000000|sunD=0.000|cyan=0.000
+  age=35.558|cnt=6|L=[2.4694,2.4694,2.4694,2.4694,2.4694,2.4694]|spread=0.000000|sunD=0.000|cyan=0.000
+  age=35.558|cnt=6|L=[3.3205,3.3205,3.3205,3.3205,3.3205,3.3205]|spread=0.000000|sunD=0.000|cyan=0.000
+  age=35.663|cnt=6|L=[4.2032,4.2032,4.2032,4.2032,4.2032,4.2032]|spread=0.000000|sunD=0.000|cyan=0.000
+  age=35.663|cnt=6|L=[5.0361,5.0361,5.0361,5.0361,5.0361,5.0361]|spread=0.000000|sunD=0.000|cyan=0.000
+  age=35.663|cnt=6|L=[5.9903,5.9903,5.9903,5.9903,5.9903,5.9903]|spread=0.000000|sunD=0.000|cyan=0.000
+  age=35.663|cnt=6|L=[6.7917,6.7917,6.7917,6.7917,6.7917,6.7917]|spread=0.000000|sunD=0.000|cyan=0.000
+  age=35.663|cnt=6|L=[6.9659,6.9659,6.9659,6.9659,6.9659,6.9659]|spread=0.000000|sunD=1.685|cyan=0.000
+  age=35.663|cnt=6|L=[6.9680,6.9680,6.9680,6.9680,6.9680,6.9680]|spread=0.000000|sunD=1.678|cyan=0.000
+  age=35.771|cnt=6|L=[6.9705,6.9705,6.9705,6.9705,6.9705,6.9705]|spread=0.000000|sunD=1.671|cyan=0.000
+  age=35.771|cnt=6|L=[6.9728,6.9728,6.9728,6.9728,6.9728,6.9728]|spread=0.000000|sunD=1.664|cyan=0.000
+  age=35.771|cnt=6|L=[6.9752,6.9752,6.9752,6.9752,6.9752,6.9752]|spread=0.000000|sunD=1.657|cyan=0.006
+  age=35.771|cnt=6|L=[6.9694,6.9694,6.9694,6.9694,6.9694,6.9694]|spread=0.000000|sunD=1.672|cyan=0.006
+  age=35.871|cnt=6|L=[6.9723,6.9723,6.9723,6.9723,6.9723,6.9723]|spread=0.000000|sunD=1.664|cyan=0.026
+  age=35.871|cnt=6|L=[6.9476,6.9476,6.9476,6.9476,6.9476,6.9476]|spread=0.000000|sunD=1.726|cyan=0.026
+  age=35.871|cnt=6|L=[6.9518,6.9518,6.9518,6.9518,6.9518,6.9518]|spread=0.000000|sunD=1.716|cyan=0.026
+  age=35.971|cnt=6|L=[6.9561,6.9561,6.9561,6.9561,6.9561,6.9561]|spread=0.000000|sunD=1.706|cyan=0.026
+  age=35.971|cnt=6|L=[6.9612,6.9612,6.9612,6.9612,6.9612,6.9612]|spread=0.000000|sunD=1.694|cyan=0.026
+  age=35.971|cnt=6|L=[6.9662,6.9662,6.9662,6.9662,6.9662,6.9662]|spread=0.000000|sunD=1.683|cyan=0.057
+  age=35.971|cnt=6|L=[6.9304,6.9304,6.9304,6.9304,6.9304,6.9304]|spread=0.000000|sunD=1.774|cyan=0.057
+  age=36.083|cnt=6|L=[6.9376,6.9376,6.9376,6.9376,6.9376,6.9376]|spread=0.000000|sunD=1.759|cyan=0.057
+--- ONLINE 6-BARREL EXACT 3D CONVERGENCE & SYMMETRY AUDIT ---
+CORE_SUN: Size=(4.7262, 4.7262, 4.7262) Pos=(0.0000, 26.5000, 2.7000) Trans=0.00
+BARREL_1_UPPER      : sockDist=7.6400 | startDist=7.6400 | beamLen=5.8423 | innerTipToFocus=1.7977 | coreDiam=0.3822 | flareW=1.2279 | pos=(0.000, 31.219, 2.700)
+BARREL_2_LEFT       : sockDist=7.6400 | startDist=7.6400 | beamLen=5.8423 | innerTipToFocus=1.7977 | coreDiam=0.3822 | flareW=1.2279 | pos=(-4.719, 26.500, 2.700)
+BARREL_3_RIGHT      : sockDist=7.6400 | startDist=7.6400 | beamLen=5.8423 | innerTipToFocus=1.7977 | coreDiam=0.3822 | flareW=1.2279 | pos=(4.719, 26.500, 2.700)
+BARREL_4_LOWER_LEFT : sockDist=7.6400 | startDist=7.6400 | beamLen=5.8423 | innerTipToFocus=1.7977 | coreDiam=0.3822 | flareW=1.2279 | pos=(-3.398, 23.225, 2.700)
+BARREL_5_LOWER_RIGHT: sockDist=7.6400 | startDist=7.6400 | beamLen=5.8423 | innerTipToFocus=1.7977 | coreDiam=0.3822 | flareW=1.2279 | pos=(3.398, 23.225, 2.700)
+BARREL_6_LOWER      : sockDist=7.6400 | startDist=7.6400 | beamLen=5.8423 | innerTipToFocus=1.7977 | coreDiam=0.3822 | flareW=1.2279 | pos=(0.000, 21.781, 2.700)

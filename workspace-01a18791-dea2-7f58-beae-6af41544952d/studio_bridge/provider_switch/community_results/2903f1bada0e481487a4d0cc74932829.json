@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "2903f1bada0e481487a4d0cc74932829",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 65,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "[{\"stage\":0,\"age\":0},{\"stage\":0,\"age\":142},{\"final\":false,\"stage\":1,\"age\":143.1,\"hit\":143},{\"final\":false,\"stage\":1,\"age\":229,\"hit\":143},{\"final\":false,\"stage\":2,\"age\":230.1,\"hit\":230},{\"final\":false,\"stage\":2,\"age\":326,\"hit\":230},{\"final\":false,\"stage\":3,\"age\":327.1,\"hit\":327},{\"final\":false,\"stage\":3,\"age\":384,\"hit\":327},{\"final\":false,\"stage\":3,\"age\":385.1,\"hit\":385},{\"final\":false,\"stage\":3,\"age\":433,\"hit\":385},{\"final\":true,\"stage\":3,\"age\":434.1,\"hit\":434},{\"final\":true,\"stage\":0,\"age\":0,\"hit\":434},{\"stage\":0,\"age\":0}]"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793258671.6092052,
+  "_ntfy_id": "vvw1Cbs3EaCE",
+  "_ntfy_time": 1793258672
+}

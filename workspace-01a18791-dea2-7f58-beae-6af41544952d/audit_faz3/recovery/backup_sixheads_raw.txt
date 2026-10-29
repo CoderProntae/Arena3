@@ -1,0 +1,359 @@
+     1→--!nonstrict
+     2→-- KONTROL 01-05 SERVER MECHANICAL & STATE PILOT (ZERO 2D PARTICLES / BEAMS)
+     3→-- Drives the six real approved GLB emitter heads, telescoping pistons, and
+     4→-- sliding wall hatches rigidly, and publishes authoritative synchronized
+     5→-- state scalars (Fuel, Darkness, RelayMask, CyanVolume, WhiteVolume) for the
+     6→-- 60 FPS Real-Time 3D EditableMesh Volumetric & Fluid Engine.
+     7→-- Holds cleanly at Kontrol 05 (WHITE_PLASMA_HOLD_FOR_USER_APPROVAL); never
+     8→-- enters ONLINE automatically. Non-startup gameplay remains untouched.
+     9→local Workspace = game:GetService("Workspace")
+    10→local RunService = game:GetService("RunService")
+    11→local Lighting = game:GetService("Lighting")
+    12→
+    13→local assembly = Workspace:WaitForChild("REACTOR_MESH_ASSEMBLY", 60)
+    14→local world = Workspace:WaitForChild("CORE_PROTOCOL_V2_WORLD", 60)
+    15→if not assembly or not world then
+    16→	warn("[PILOT 3D] Missing approved reactor assembly or gameplay world")
+    17→	return
+    18→end
+    19→if assembly:GetAttribute("EmitterModuleCount") ~= 6 then
+    20→	warn("[PILOT 3D] Six approved emitters required; refusing startup")
+    21→	return
+    22→end
+    23→local moving = assembly:WaitForChild("MOVING", 10)
+    24→if not moving then
+    25→	warn("[PILOT 3D] Missing MOVING GLB assembly")
+    26→	return
+    27→end
+    28→
+    29→local sites = {
+    30→	{tag = "UPPER", axis = Vector3.new(0, 1, 0), start = 0.7},
+    31→	{tag = "LEFT", axis = Vector3.new(-1, 0, 0), start = 1.65, hatch = 1},
+    32→	{tag = "RIGHT", axis = Vector3.new(1, 0, 0), start = 2.2, hatch = -1},
+    33→	{tag = "LOWER_LEFT", axis = Vector3.new(-0.72, -0.694, 0).Unit, start = 3.1},
+    34→	{tag = "LOWER_RIGHT", axis = Vector3.new(0.72, -0.694, 0).Unit, start = 4.0},
+    35→	{tag = "LOWER", axis = Vector3.new(0, -1, 0), start = 4.7},
+    36→}
+    37→
+    38→local function model(parent, name)
+    39→	local item = parent:FindFirstChild(name)
+    40→	assert(item and item:IsA("Model"), "Approved physical GLB missing: " .. name)
+    41→	return {item = item, at = item:GetPivot()}
+    42→end
+    43→
+    44→local function glide(t)
+    45→	t = math.clamp(t, 0, 1)
+    46→	return t * t * (3 - 2 * t)
+    47→end
+    48→
+    49→local function bit(mask, i)
+    50→	return math.floor(mask / 2 ^ (i - 1)) % 2 == 1
+    51→end
+    52→
+    53→local rigs = {}
+    54→for _, site in ipairs(sites) do
+    55→	local head = model(moving, "REACTOR_EMITTER_REV03_" .. site.tag)
+    56→	local motor = model(moving, "REACTOR_PISTON_GUIDE_01_" .. site.tag)
+    57→	local children = {}
+    58→	for _, piece in ipairs({"STAGE1", "STAGE2", "STAGE3", "PUSHER"}) do
+    59→		children[piece] = model(motor.item, piece)
+    60→	end
+    61→	local doors = nil
+    62→	if site.hatch then
+    63→		local hatch = model(moving, "REACTOR_WALL_HATCH_THROUGH_01_" .. site.tag)
+    64→		doors = {a = model(hatch.item, "LEAF_LEFT"), b = model(hatch.item, "LEAF_RIGHT")}
+    65→	end
+    66→	rigs[#rigs + 1] = {site = site, head = head, stages = children, doors = doors}
+    67→end
+    68→assert(#rigs == 6)
+    69→
+    70→local totalRate = 0
+    71→for _, r in ipairs(rigs) do
+    72→	local tip = r.head.item:FindFirstChild("NOZZLE__white", true)
+    73→	assert(tip and tip:IsA("MeshPart"), "Approved nozzle tip missing: " .. r.site.tag)
+    74→	local oldSocket = tip:FindFirstChild("PILOT_FUEL_SOCKET_" .. r.site.tag)
+    75→	if oldSocket then oldSocket:Destroy() end
+    76→	local socket = Instance.new("Attachment")
+    77→	socket.Name = "PILOT_FUEL_SOCKET_" .. r.site.tag
+    78→	local vent = tip.Position - r.site.axis * 0.09
+    79→	socket.CFrame = tip.CFrame:ToObjectSpace(CFrame.lookAt(vent, vent - r.site.axis))
+    80→	socket.Parent = tip
+    81→
+    82→	local oldLight = tip:FindFirstChild("PILOT_NOZZLE_REFLECTED_VAPOR_LIGHT_" .. r.site.tag)
+    83→	if oldLight then oldLight:Destroy() end
+    84→	local light = Instance.new("PointLight")
+    85→	light.Name = "PILOT_NOZZLE_REFLECTED_VAPOR_LIGHT_" .. r.site.tag
+    86→	light.Color = Color3.fromRGB(222, 232, 242)
+    87→	light.Range = 8
+    88→	light.Brightness = 0
+    89→	light.Shadows = false
+    90→	light.Enabled = false
+    91→	light.Parent = tip
+    92→
+    93→	local optic = r.head.item:FindFirstChild("OPTIC__cyan", true)
+    94→	r.optic = (optic and optic:IsA("MeshPart")) and optic or nil
+    95→	r.opticBaseColor = r.optic and r.optic.Color or Color3.fromRGB(61, 178, 255)
+    96→	r.opticBaseMat = r.optic and r.optic.Material or Enum.Material.Neon
+    97→	r.socket = socket
+    98→	r.light = light
+    99→	r.flowRate = ({
+   100→		UPPER = 1.6,
+   101→		LEFT = 4.2,
+   102→		RIGHT = 4.2,
+   103→		LOWER_LEFT = 6.2,
+   104→		LOWER_RIGHT = 6.2,
+   105→		LOWER = 2.8,
+   106→	})[r.site.tag]
+   107→	totalRate += r.flowRate
+   108→end
+   109→
+   110→local anchor = assembly:WaitForChild("MESH_EFFECTS_INVISIBLE_ANCHOR", 20)
+   111→local focus = anchor and anchor:FindFirstChild("CORE_FOCUS")
+   112→local fixed = assembly:FindFirstChild("STATIC")
+   113→local approvedCore = fixed and fixed:FindFirstChild("REACTOR_CORE_MANYETIK_01")
+   114→
+   115→local orbitRings = {}
+   116→local hiddenCoreBalls = {}
+   117→if approvedCore then
+   118→	for _, m in ipairs(approvedCore:GetDescendants()) do
+   119→		if m:IsA("MeshPart") then
+   120→			if m.Name:find("^ORBIT_") then
+   121→				orbitRings[#orbitRings + 1] = {
+   122→					part = m,
+   123→					baseColor = m.Color,
+   124→					baseMaterial = m.Material,
+   125→				}
+   126→			elseif m.Name:find("^CENTER__") then
+   127→				hiddenCoreBalls[#hiddenCoreBalls + 1] = {
+   128→					part = m,
+   129→					baseColor = m.Color,
+   130→					baseMaterial = m.Material,
+   131→				}
+   132→			end
+   133→		end
+   134→	end
+   135→end
+   136→
+   137→if focus and focus:IsA("Attachment") then
+   138→	local wp = focus.WorldPosition
+   139→	focus.WorldCFrame = CFrame.new(wp.X, wp.Y, 2.70)
+   140→elseif focus and focus:IsA("BasePart") then
+   141→	local wp = focus.Position
+   142→	focus.CFrame = CFrame.new(wp.X, wp.Y, 2.70)
+   143→end
+   144→local coreChamberLight = nil
+   145→if focus then
+   146→	local prev = focus:FindFirstChild("PILOT_3D_CHAMBER_CORE_LIGHT")
+   147→	if prev then prev:Destroy() end
+   148→	coreChamberLight = Instance.new("PointLight")
+   149→	coreChamberLight.Name = "PILOT_3D_CHAMBER_CORE_LIGHT"
+   150→	coreChamberLight.Brightness = 0
+   151→	coreChamberLight.Range = 46
+   152→	coreChamberLight.Shadows = false
+   153→	coreChamberLight.Color = Color3.fromRGB(48, 218, 252)
+   154→	coreChamberLight.Parent = focus
+   155→end
+   156→
+   157→local function resetAllVisualState()
+   158→	for _, r in ipairs(rigs) do
+   159→		r.light.Enabled = false
+   160→		r.light.Brightness = 0
+   161→	end
+   162→	if coreChamberLight then
+   163→		coreChamberLight.Brightness = 0
+   164→	end
+   165→	for _, orb in ipairs(orbitRings) do
+   166→		orb.part.Transparency = 1
+   167→		orb.part.Color = orb.baseColor
+   168→		orb.part.Material = orb.baseMaterial
+   169→	end
+   170→	for _, ball in ipairs(hiddenCoreBalls) do
+   171→		ball.part.Transparency = 1
+   172→		ball.part.Color = ball.baseColor
+   173→		ball.part.Material = ball.baseMaterial
+   174→	end
+   175→	local atmos = Lighting:FindFirstChild("CORE_PROTOCOL_V2_ATMOS")
+   176→	if atmos and atmos:IsA("Atmosphere") then
+   177→		atmos.Haze = 0.018
+   178→	end
+   179→	world:SetAttribute("ReactorPilotDarkness", 0)
+   180→	world:SetAttribute("ReactorPilotFuel", 0)
+   181→	world:SetAttribute("ReactorPilotFuelNozzles", 0)
+   182→	world:SetAttribute("ReactorPilotCustomSmokeRate", 0)
+   183→	world:SetAttribute("ReactorPilotPhotonSources", 0)
+   184→	world:SetAttribute("ReactorPilotCyanVolume", 0)
+   185→	world:SetAttribute("ReactorPilotWhiteVolume", 0)
+   186→	world:SetAttribute("ReactorPilotStabilized", 0)
+   187→	world:SetAttribute("ReactorPilotCoreMeshActive", 0)
+   188→	world:SetAttribute("ReactorPilotParticleBudget", 0)
+   189→	world:SetAttribute("ReactorPilotStockSmokeEmitters", 0)
+   190→end
+   191→
+   192→local function moveRig(r, age)
+   193→	local s = r.site
+   194→	local gate = glide((age - s.start) / 1.4)
+   195→	local stroke = glide((age - s.start - 1.4) / 6.4)
+   196→	local travel = -s.axis * (19.8 * stroke)
+   197→	local push = CFrame.new(travel)
+   198→	r.stages.STAGE1.item:PivotTo(CFrame.new(-s.axis * (6.6 * stroke)) * r.stages.STAGE1.at)
+   199→	r.stages.STAGE2.item:PivotTo(CFrame.new(-s.axis * (13.2 * stroke)) * r.stages.STAGE2.at)
+   200→	r.stages.STAGE3.item:PivotTo(push * r.stages.STAGE3.at)
+   201→	r.stages.PUSHER.item:PivotTo(push * r.stages.PUSHER.at)
+   202→	r.head.item:PivotTo(push * r.head.at)
+   203→	if r.doors then
+   204→		local slide = s.hatch * 5.85 * gate
+   205→		r.doors.a.item:PivotTo(CFrame.new(0, 0, slide) * r.doors.a.at)
+   206→		r.doors.b.item:PivotTo(CFrame.new(0, 0, -slide) * r.doors.b.at)
+   207→	end
+   208→	assembly:SetAttribute("ReactorPilotGate_" .. s.tag, math.clamp((age - s.start) / 1.4, 0, 1))
+   209→	assembly:SetAttribute("ReactorPilotStroke_" .. s.tag, math.clamp((age - s.start - 1.4) / 6.4, 0, 1))
+   210→	return gate, stroke
+   211→end
+   212→
+   213→world:SetAttribute("ReactorPilotReady", true)
+   214→world:SetAttribute("ReactorPilotOwner", false)
+   215→world:SetAttribute("ReactorPilotStage", "COLD")
+   216→world:SetAttribute("ReactorPilotMoving", 0)
+   217→world:SetAttribute("ReactorPilotHeadsAtTip", 0)
+   218→world:SetAttribute("ReactorPilot3DGeometryMode", "REAL_3D_EDITABLE_MESH_VOLUMETRICS")
+   219→world:SetAttribute("ReactorPilotNewVisibleParts", 0)
+   220→world:SetAttribute("ReactorPilotStatus", "READY_REAL_3D_NO_2D_EFFECTS")
+   221→resetAllVisualState()
+   222→
+   223→local owned = false
+   224→local latchedFullRelays = false
+   225→local clock = 0
+   226→RunService.Heartbeat:Connect(function(dt)
+   227→	clock += math.min(dt, 0.2)
+   228→	if clock < 0.05 then return end
+   229→	clock = 0
+   230→
+   231→	local active = world:GetAttribute("ReactorMode") == "STARTUP"
+   232→	if not active then
+   233→		latchedFullRelays = false
+   234→		if owned then
+   235→			resetAllVisualState()
+   236→			owned = false
+   237→			world:SetAttribute("ReactorPilotOwner", false)
+   238→			world:SetAttribute("ReactorPilotMoving", 0)
+   239→			world:SetAttribute("ReactorPilotStatus", "RETURNED_TO_GAMEPLAY_CONTROLLER")
+   240→		end
+   241→		world:SetAttribute("ReactorPilotStage", world:GetAttribute("ReactorMode") or "COLD")
+   242→		return
+   243→	end
+   244→	if not owned then
+   245→		owned = true
+   246→		world:SetAttribute("ReactorPilotOwner", true)
+   247→	end
+   248→
+   249→	local ok, problem = pcall(function()
+   250→		local age = world:GetAttribute("ReactorStartupAge") or 0
+   251→		local movingCount, atTip = 0, 0
+   252→		for _, r in ipairs(rigs) do
+   253→			local gate, stroke = moveRig(r, age)
+   254→			if (gate > 0.005 and gate < 0.995) or (stroke > 0.005 and stroke < 0.995) then
+   255→				movingCount += 1
+   256→			end
+   257→			if stroke > 0.995 then atTip += 1 end
+   258→		end
+   259→		world:SetAttribute("ReactorPilotMoving", movingCount)
+   260→		world:SetAttribute("ReactorPilotHeadsAtTip", atTip)
+   261→
+   262→		local darkRamp = atTip == 6 and glide((age - 21.0) / 4.0) or 0
+   263→		local fuel = atTip == 6 and glide((age - 13.0) / 2.6) * (1 - darkRamp) or 0
+   264→		local darkHold = darkRamp > 0.995
+   265→		local rawMask = world:GetAttribute("ReactorPilotRelayMask") or 0
+   266→		if darkHold and rawMask == 63 then
+   267→			latchedFullRelays = true
+   268→		end
+   269→		local mask = latchedFullRelays and 63 or (darkHold and rawMask or 0)
+   270→		local fullRelays = latchedFullRelays or (mask == 63)
+   271→		local cyan = fullRelays and glide((age - 37.4) / 2.2) or 0
+   272→		local white = fullRelays and glide((age - 48.0) / 5.0) or 0
+   273→		local stabilize = (fullRelays and white > 0.995) and glide((age - 55.5) / 6.0) or 0
+   274→		local darkness = darkRamp * (1 - stabilize)
+   275→
+   276→		local liveFuel, rateSum, livePhotons = 0, 0, 0
+   277→		for i, r in ipairs(rigs) do
+   278→			local fAmt = fuel * r.flowRate
+   279→			local relayOn = bit(mask, i)
+   280→			if fAmt > 0.15 then
+   281→				liveFuel += 1
+   282→				rateSum += fAmt
+   283→			end
+   284→			if relayOn then livePhotons += 1 end
+   285→
+   286→			r.light.Enabled = fAmt > 0.15 or darkRamp > 0.002
+   287→			local nozzleCol = Color3.fromRGB(224, 234, 244)
+   288→				:Lerp(Color3.fromRGB(204, 238, 252), darkRamp * 0.65)
+   289→				:Lerp(Color3.fromRGB(226, 242, 255), white * 0.65)
+   290→			r.light.Color = nozzleCol
+   291→			r.light.Brightness = 0.28 * fuel + darkRamp * (relayOn and 0.55 or 0.38)
+   292→			r.light.Range = 7 + darkRamp * 1.5
+   293→		end
+   294→
+   295→		-- Keep static center spheres and static un-animated ORBIT meshes hidden so
+   296→		-- our living 3-axis-rotating & boiling 3D EditableMesh spheres own the core!
+   297→		for _, ball in ipairs(hiddenCoreBalls) do
+   298→			ball.part.Transparency = 1
+   299→		end
+   300→		for _, orb in ipairs(orbitRings) do
+   301→			orb.part.Transparency = 1
+   302→		end
+   303→
+   304→		if coreChamberLight then
+   305→			coreChamberLight.Color = Color3.fromRGB(208, 234, 250):Lerp(Color3.fromRGB(216, 230, 252), white)
+   306→			coreChamberLight.Brightness = (cyan * 0.24 * (1 - white) + white * 0.20) * (1 - stabilize)
+   307→			coreChamberLight.Range = 22
+   308→		end
+   309→
+   310→		local atmos = Lighting:FindFirstChild("CORE_PROTOCOL_V2_ATMOS")
+   311→		if atmos and atmos:IsA("Atmosphere") then
+   312→			atmos.Density = 0.012 * (1 - darkness) + 0.028 * fuel
+   313→			atmos.Haze = 0.018 + 0.22 * fuel
+   314→		end
+   315→
+   316→		world:SetAttribute("ReactorPilotFuel", math.floor(fuel * 1000 + 0.5) / 1000)
+   317→		world:SetAttribute("ReactorPilotDarkness", math.floor(darkness * 1000 + 0.5) / 1000)
+   318→		world:SetAttribute("ReactorPilotFuelNozzles", liveFuel)
+   319→		world:SetAttribute("ReactorPilotCustomSmokeRate", math.floor(rateSum + 0.5))
+   320→		world:SetAttribute("ReactorPilotPhotonSources", livePhotons)
+   321→		world:SetAttribute("ReactorPilotCyanVolume", math.floor(cyan * 1000 + 0.5) / 1000)
+   322→		world:SetAttribute("ReactorPilotWhiteVolume", math.floor(white * 1000 + 0.5) / 1000)
+   323→		world:SetAttribute("ReactorPilotStabilized", math.floor(stabilize * 1000 + 0.5) / 1000)
+   324→		world:SetAttribute("ReactorPilotCoreMeshActive", 0)
+   325→
+   326→		world:SetAttribute("ReactorPilotStage",
+   327→			stabilize > 0.995 and "STABILIZED_HANDOFF_TO_ONLINE"
+   328→			or stabilize > 0.01 and "MAGNETIC_FUSION_STABILIZING"
+   329→			or white > 0.995 and "WHITE_PLASMA_IGNITED"
+   330→			or cyan > 0.995 and "CYAN_FUSION_ACTIVE"
+   331→			or mask > 0 and "SIX_REAL_PHYSICAL_RELAYS_SEQUENCING"
+   332→			or darkHold and "DARK_CHAMBER_READY"
+   333→			or liveFuel == 6 and "FUEL_INJECTION_ACTIVE"
+   334→			or atTip == 6 and "DARK_CHAMBER_TRANSITION"
+   335→			or "SIX_REAL_HEADS_DEPLOYING"
+   336→		)
+   337→		world:SetAttribute("ReactorPilotStatus",
+   338→			stabilize > 0.995 and "CHECKPOINT_06_STABILIZED_READY_FOR_ONLINE"
+   339→			or stabilize > 0.01 and "CHECKPOINT_06_STABILIZING_ROOM_AND_STAR"
+   340→			or white > 0.995 and "CHECKPOINT_05_REAL_3D_MAGNETIC_STAR"
+   341→			or cyan > 0.995 and "CHECKPOINT_04_REAL_3D_CONDUITS_CYAN_CORE"
+   342→			or mask > 0 and "CHECKPOINT_04_PHYSICAL_RELAYS_3D"
+   343→			or darkHold and "CHECKPOINT_03_SIX_LIT_GLBS_DARK_VOLUME"
+   344→			or "CHECKPOINT_02_REAL_3D_PLUMES_AND_CHAMBER_MIST"
+   345→		)
+   346→	end)
+   347→
+   348→	if not ok then
+   349→		resetAllVisualState()
+   350→		world:SetAttribute("ReactorPilotOwner", false)
+   351→		world:SetAttribute("ReactorPilotReady", false)
+   352→		world:SetAttribute("ReactorPilotStatus", "ERROR: " .. tostring(problem):sub(1, 110))
+   353→		warn("[PILOT 3D] Mechanical/state loop stopped: " .. tostring(problem))
+   354→		script.Disabled = true
+   355→	end
+   356→end)
+   357→
+   358→print("[PILOT 3D] Six physical GLBs + authoritative 02-05 state ready. Zero 2D ParticleEmitter/Beam.")
+   359→

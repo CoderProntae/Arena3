@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "4a94a139649641b98deaeb48f37448a6",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 215,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"moving\":[{\"mesh\":33,\"class\":\"Model\",\"name\":\"REACTOR_EMITTER_REV03_LEFT\",\"parts\":0},{\"mesh\":33,\"class\":\"Model\",\"name\":\"REACTOR_EMITTER_REV03_RIGHT\",\"parts\":0},{\"mesh\":23,\"class\":\"Model\",\"name\":\"REACTOR_WALL_HATCH_THROUGH_01_LEFT\",\"parts\":0},{\"mesh\":23,\"class\":\"Model\",\"name\":\"REACTOR_WALL_HATCH_THROUGH_01_RIGHT\",\"parts\":0},{\"mesh\":20,\"class\":\"Model\",\"name\":\"REACTOR_PISTON_GUIDE_01_LEFT\",\"parts\":0},{\"mesh\":20,\"class\":\"Model\",\"name\":\"REACTOR_PISTON_GUIDE_01_RIGHT\",\"parts\":0},{\"mesh\":33,\"class\":\"Model\",\"name\":\"REACTOR_EMITTER_REV03_UPPER\",\"parts\":0},{\"mesh\":20,\"class\":\"Model\",\"name\":\"REACTOR_PISTON_GUIDE_01_UPPER\",\"parts\":0},{\"mesh\":33,\"class\":\"Model\",\"name\":\"REACTOR_EMITTER_REV03_LOWER_LEFT\",\"parts\":0},{\"mesh\":20,\"class\":\"Model\",\"name\":\"REACTOR_PISTON_GUIDE_01_LOWER_LEFT\",\"parts\":0},{\"mesh\":33,\"class\":\"Model\",\"name\":\"REACTOR_EMITTER_REV03_LOWER_RIGHT\",\"parts\":0},{\"mesh\":20,\"class\":\"Model\",\"name\":\"REACTOR_PISTON_GUIDE_01_LOWER_RIGHT\",\"parts\":0},{\"mesh\":33,\"class\":\"Model\",\"name\":\"REACTOR_EMITTER_REV03_LOWER\",\"parts\":0},{\"mesh\":20,\"class\":\"Model\",\"name\":\"REACTOR_PISTON_GUIDE_01_LOWER\",\"parts\":0},{\"mesh\":4,\"class\":\"Model\",\"name\":\"REACTOR_REAR_TURBINE_ROTOR\",\"parts\":1},{\"mesh\":6,\"class\":\"Model\",\"name\":\"REACTOR_RADIAL_HATCH_UPPER\",\"parts\":0},{\"mesh\":6,\"class\":\"Model\",\"name\":\"REACTOR_RADIAL_HATCH_LOWER\",\"parts\":0},{\"mesh\":6,\"class\":\"Model\",\"name\":\"REACTOR_RADIAL_HATCH_LOWER_LEFT\",\"parts\":0},{\"mesh\":6,\"class\":\"Model\",\"name\":\"REACTOR_RADIAL_HATCH_LOWER_RIGHT\",\"parts\":0}],\"checks\":[],\"visibleLegacy\":[],\"static\":[{\"mesh\":41,\"class\":\"Model\",\"name\":\"REACTOR_CORE_MANYETIK_01\",\"parts\":0},{\"mesh\":78,\"class\":\"Model\",\"name\":\"REACTOR_REAR_SERVICE_GRILLES_01\",\"parts\":0},{\"mesh\":16,\"class\":\"Model\",\"name\":\"REACTOR_REAR_BULKHEAD_IRON_REV04\",\"parts\":0},{\"mesh\":40,\"class\":\"Model\",\"name\":\"REACTOR_SIDE_WALLS_OCTAGONAL_IRON_REV02\",\"parts\":0},{\"mesh\":0,\"class\":\"Part\",\"name\":\"DENETIM_MUHUR_ZEMIN_01\",\"parts\":0},{\"mesh\":9,\"class\":\"Model\",\"name\":\"REACTOR_REAR_BULKHEAD_REV05_TURBINE_PORT\",\"parts\":0},{\"mesh\":42,\"class\":\"Model\",\"name\":\"REACTOR_COOLANT_PIPING_RING_01\",\"parts\":0},{\"mesh\":11,\"class\":\"Model\",\"name\":\"REACTOR_REAR_TURBINE_PLENUM_01\",\"parts\":1},{\"mesh\":0,\"class\":\"Part\",\"name\":\"PLAQUE_SL-00\",\"parts\":0},{\"mesh\":32,\"class\":\"Model\",\"name\":\"DAMAGE_PIPE_RUPTURE_KIT_01\",\"parts\":8},{\"mesh\":0,\"class\":\"Part\",\"name\":\"PLAQUE_SL-05\",\"parts\":0},{\"mesh\":0,\"class\":\"Part\",\"name\":\"PLAQUE_SL-03\",\"parts\":0},{\"mesh\":0,\"class\":\"Part\",\"name\":\"PLAQUE_SL-04\",\"parts\":0},{\"mesh\":11,\"class\":\"Model\",\"name\":\"REACTOR_CROWN_AND_DECK_01\",\"parts\":6},{\"mesh\":4,\"class\":\"Model\",\"name\":\"REACTOR_SIDE_DIAG_OPEN_AND_FRONT_SEAL_03\",\"parts\":0},{\"mesh\":26,\"class\":\"Model\",\"name\":\"PISTON_REAR_SERVICE_BAYS_01\",\"parts\":24},{\"mesh\":7,\"class\":\"Model\",\"name\":\"REACTOR_FOREBAY_CONTAINMENT_HALL_01\",\"parts\":0}],\"worldGroups\":[{\"mesh\":0,\"class\":\"Folder\",\"name\":\"01_CONTAINMENT\",\"parts\":242},{\"mesh\":0,\"class\":\"Folder\",\"name\":\"02_PANORAMIC_CONTROL_ROOM\",\"parts\":829},{\"mesh\":0,\"class\":\"Folder\",\"name\":\"04_REACTOR_SERVICE_CORRIDORS\",\"parts\":132},{\"mesh\":0,\"class\":\"Folder\",\"name\":\"05_WORKING_MACHINERY\",\"parts\":130},{\"mesh\":0,\"class\":\"Folder\",\"name\":\"06_DAMAGE_THAT_STAYS\",\"parts\":16},{\"mesh\":0,\"class\":\"Folder\",\"name\":\"07_SPATIAL_SOUNDS\",\"parts\":3}],\"empty\":[]}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793265008.4918976,
+  "_ntfy_id": "Ur7xDzLSegrd",
+  "_ntfy_time": 1793265008
+}

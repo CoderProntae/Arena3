@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "70b3aadb09524d0eb5e54a8bf98f2b0b",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 417,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"faz3_has_guard\":true,\"world_left_in_edit\":0,\"faz3_source_patched\":true,\"removed_count\":1,\"is_running\":false,\"removed_worlds\":\"CORE_PROTOCOL_V2_WORLD:Model\",\"faz3_source_size\":62118}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793205226.1008902,
+  "_ntfy_id": "l5Xnc6CB8jJx",
+  "_ntfy_time": 1793205226
+}

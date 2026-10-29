@@ -1,0 +1,1 @@
+{"studio_id": "@SID@", "datamodel_type": "Edit", "code": "\nlocal a=game:GetService(\"Workspace\"):WaitForChild(\"REACTOR_MESH_ASSEMBLY\")\nlocal t={}\nfor k,v in a:GetAttributes() do t[#t+1]=k..\"=\"..tostring(v) end\ntable.sort(t)\nreturn game:GetService(\"HttpService\"):JSONEncode(t)\n"}

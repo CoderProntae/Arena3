@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "e7df327795444750b416df46c362ef54",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 180,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"liveRelay\":63,\"broken\":0,\"mode\":\"ONLINE\",\"stage\":\"ONLINE\",\"ready\":63}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793263409.3834457,
+  "_ntfy_id": "Hc9sisJMd1wT",
+  "_ntfy_time": 1793263409
+}

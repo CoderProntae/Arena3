@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "7b120a98719a427da3fec2c736aeb9fe",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 52,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "all layers, dimmed"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793257500.6678267,
+  "_ntfy_id": "UiPO8GWajNpY",
+  "_ntfy_time": 1793257501
+}

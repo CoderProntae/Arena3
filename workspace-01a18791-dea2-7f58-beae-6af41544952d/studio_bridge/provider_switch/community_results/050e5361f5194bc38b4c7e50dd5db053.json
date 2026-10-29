@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "050e5361f5194bc38b4c7e50dd5db053",
+  "tool": "multi_edit",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 101,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Modified CORE_PROTOCOL_Server (Script) with 2 edits applied"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793259718.7329462,
+  "_ntfy_id": "lH2KOv6qjHnC",
+  "_ntfy_time": 1793259719
+}

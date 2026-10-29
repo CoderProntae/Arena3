@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "492d951fec2a4273bc3df0be5e9e335a",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 77,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "PIPE_TEST_READY"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793259306.369542,
+  "_ntfy_id": "XGSC1Y2r5DB0",
+  "_ntfy_time": 1793259306
+}

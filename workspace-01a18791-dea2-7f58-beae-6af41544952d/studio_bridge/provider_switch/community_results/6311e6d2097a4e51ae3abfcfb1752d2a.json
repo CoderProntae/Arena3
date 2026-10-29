@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "6311e6d2097a4e51ae3abfcfb1752d2a",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 544,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"floorHoles\":[],\"ceilHoles\":[],\"floorTested\":567}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793214290.2493494,
+  "_ntfy_id": "CsaOfsaadnKT",
+  "_ntfy_time": 1793214290
+}

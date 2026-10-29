@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "8d93c5d2e98f47fa924eeaf92308bef4",
+  "tool": "search_game_tree",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 5,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "[{\"parentName\":\"AEGIS_Reactor.rbxlx\",\"fullPath\":\"ServerScriptService\",\"name\":\"ServerScriptService\",\"className\":\"ServerScriptService\"},{\"parentName\":\"ServerScriptService\",\"fullPath\":\"ServerScriptService.REACTOR_MESH_CONTROLLER\",\"name\":\"REACTOR_MESH_CONTROLLER\",\"className\":\"Script\"},{\"parentName\":\"ServerScriptService\",\"fullPath\":\"ServerScriptService.ReactorPilot_CustomFlow\",\"name\":\"ReactorPilot_CustomFlow\",\"className\":\"Script\"},{\"parentName\":\"ServerScriptService\",\"fullPath\":\"ServerScriptService.Faz2_ChamberAndTurbine\",\"name\":\"Faz2_ChamberAndTurbine\",\"className\":\"Script\"},{\"parentName\":\"ServerScriptService\",\"fullPath\":\"ServerScriptService.Faz3_PipingAndServiceBays\",\"name\":\"Faz3_PipingAndServiceBays\",\"className\":\"Script\"},{\"parentName\":\"ServerScriptService\",\"fullPath\":\"ServerScriptService.ReactorPilot_SixHeads\",\"name\":\"ReactorPilot_SixHeads\",\"className\":\"Script\"},{\"parentName\":\"ServerScriptService\",\"fullPath\":\"ServerScriptService.CORE_PROTOCOL_Server\",\"name\":\"CORE_PROTOCOL_Server\",\"className\":\"Script\"},{\"parentName\":\"ServerScriptService\",\"fullPath\":\"ServerScriptService.FAZ4_DamageAssets\",\"name\":\"FAZ4_DamageAssets\",\"className\":\"Script\"}]"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793256588.5511093,
+  "_ntfy_id": "9eTiWOhhhrzV",
+  "_ntfy_time": 1793256589
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "178091b79df9489392fe428e467be4bc",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 176,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Enum.ContentSourceType.None"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793263262.745036,
+  "_ntfy_id": "kLPd2ii3Z7Lk",
+  "_ntfy_time": 1793263263
+}

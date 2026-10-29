@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "b8a8b039e79f480f81a5c9cd27343f1c",
+  "tool": "get_studio_state",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 428,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "- Current Studio Mode: Play\n- Available DataModels: Client, Server\n- Focused DataModel in the viewport: Client"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793210571.4936461,
+  "_ntfy_id": "jV1u2orqz7Ns",
+  "_ntfy_time": 1793210571
+}

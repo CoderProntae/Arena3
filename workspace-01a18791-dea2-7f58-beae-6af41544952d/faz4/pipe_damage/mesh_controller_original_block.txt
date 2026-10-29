@@ -1,0 +1,22 @@
+  if broken and not r.failed then
+   for index,info in r.bendParts do
+    local part=info.part
+    local drift=r.site.out*(index%2==0 and .46 or .75)
+     +Vector3.new(0,-.13*(index%3),index%2==0 and .14 or -.18)
+    part.CFrame=CFrame.new(drift)*part.CFrame
+     *CFrame.Angles(0,0,math.rad(index%2==0 and 13 or -16))
+    part.Material=Enum.Material.Metal
+    part.Color=index%3==0 and Color3.fromRGB(145,55,41)
+     or Color3.fromRGB(72,49,48)
+   end
+   r.failed=true;r.emitter:SetAttribute("GLB_HeadCracked",true)
+   r.shower:Emit(82)
+  elseif not broken and r.failed then
+   for _,info in r.bendParts do
+    local part=info.part
+    part.CFrame=r.emitter:GetPivot()*info.localPose
+    part.Material=info.material;part.Color=info.color
+    part.Transparency=info.alpha
+   end
+   r.failed=false;r.emitter:SetAttribute("GLB_HeadCracked",false)
+  end

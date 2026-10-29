@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "493a7ef2a63848539dd4ceb397157d13",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 194,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"live\":202,\"empty\":0,\"asset\":539,\"failures\":[]}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793263669.263419,
+  "_ntfy_id": "GqWXyp1fjOV2",
+  "_ntfy_time": 1793263669
+}

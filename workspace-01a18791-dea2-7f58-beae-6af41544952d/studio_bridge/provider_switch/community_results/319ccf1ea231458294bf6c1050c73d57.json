@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "319ccf1ea231458294bf6c1050c73d57",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 64,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "M14_TEST_CONTROLLER_LOADED"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793258646.907657,
+  "_ntfy_id": "WV1dOxfljhGV",
+  "_ntfy_time": 1793258647
+}

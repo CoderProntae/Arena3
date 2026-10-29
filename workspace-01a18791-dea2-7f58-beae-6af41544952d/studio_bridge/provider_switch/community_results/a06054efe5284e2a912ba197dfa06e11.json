@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "a06054efe5284e2a912ba197dfa06e11",
+  "tool": "search_game_tree",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 17,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "[{\"parentName\":\"AEGIS_Reactor.rbxlx\",\"fullPath\":\"StarterPlayer\",\"name\":\"StarterPlayer\",\"className\":\"StarterPlayer\"},{\"parentName\":\"StarterPlayer\",\"fullPath\":\"StarterPlayer.StarterPlayerScripts\",\"name\":\"StarterPlayerScripts\",\"className\":\"StarterPlayerScripts\"},{\"parentName\":\"StarterPlayer\",\"fullPath\":\"StarterPlayer.StarterCharacterScripts\",\"name\":\"StarterCharacterScripts\",\"className\":\"StarterCharacterScripts\"},{\"parentName\":\"StarterPlayerScripts\",\"fullPath\":\"StarterPlayer.StarterPlayerScripts.CORE_PROTOCOL_Client\",\"name\":\"CORE_PROTOCOL_Client\",\"className\":\"LocalScript\"},{\"parentName\":\"StarterPlayerScripts\",\"fullPath\":\"StarterPlayer.StarterPlayerScripts.ReactorPilot_CustomVapor\",\"name\":\"ReactorPilot_CustomVapor\",\"className\":\"LocalScript\"}]"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793256685.3478584,
+  "_ntfy_id": "cvhzfon0MtWq",
+  "_ntfy_time": 1793256686
+}

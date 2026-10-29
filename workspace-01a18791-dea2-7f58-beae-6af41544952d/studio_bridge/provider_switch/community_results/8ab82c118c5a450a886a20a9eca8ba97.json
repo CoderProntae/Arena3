@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "8ab82c118c5a450a886a20a9eca8ba97",
+  "tool": "get_console_output",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 493,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "CamTrack Theme: Light\n0_492197\nLoaded Cajuns Animation Spoofer v2\n[FAZ2] Multi-tone Slate-Iron Chamber, 4 Radial Sliding Hatches & 10-Blade CNC Rear Turbine active!"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793212850.8525262,
+  "_ntfy_id": "5uEv2TmUKyqE",
+  "_ntfy_time": 1793212851
+}

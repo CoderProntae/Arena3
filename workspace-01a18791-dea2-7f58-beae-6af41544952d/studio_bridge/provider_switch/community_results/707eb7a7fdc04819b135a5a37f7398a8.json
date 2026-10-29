@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "707eb7a7fdc04819b135a5a37f7398a8",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 131,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"lastImpact\":434,\"panes\":[{\"collide\":false,\"touch\":false,\"name\":\"PANORAMIC_LAMINATED_GLASS_1\",\"alpha\":1},{\"collide\":false,\"touch\":false,\"name\":\"PANORAMIC_LAMINATED_GLASS_2\",\"alpha\":1}],\"mode\":\"MELTDOWN\",\"final\":true,\"triangles\":110}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793261152.1845908,
+  "_ntfy_id": "8qMzenztsW06",
+  "_ntfy_time": 1793261152
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "51857c99fba64e28bd48478166a70bdd",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 184,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "temporary simulation running"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793263506.2131274,
+  "_ntfy_id": "VivSpgbn3Ln3",
+  "_ntfy_time": 1793263506
+}

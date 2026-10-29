@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "fa65a1c68fc8443caa058ea48fca8f81",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 224,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"floorHoles\":[],\"ceilHoles\":[],\"floorTested\":567}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793265135.1865304,
+  "_ntfy_id": "b5QZ4rOObnwE",
+  "_ntfy_time": 1793265135
+}

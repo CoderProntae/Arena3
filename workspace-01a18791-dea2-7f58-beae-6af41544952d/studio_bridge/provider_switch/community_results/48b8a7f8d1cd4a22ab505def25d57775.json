@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "48b8a7f8d1cd4a22ab505def25d57775",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 48,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "[{\"name\":\"GLASS_LAYER_01\",\"trans\":0.11999999731779099,\"size\":\"5.958000183105469, 5.444200038909912, 0.017999999225139618\",\"content\":\"Content{SourceType=Opaque}\",\"pos\":\"-5.264351844787598, 25.47499656677246, 46.625\"},{\"name\":\"GLASS_LAYER_02\",\"trans\":0.11999999731779099,\"size\":\"36.32640075683594, 20.3346004486084, 0.017999999225139618\",\"content\":\"Content{SourceType=Opaque}\",\"pos\":\"1.6620739698410034, 23.887420654296875, 46.625\"},{\"name\":\"GLASS_LAYER_03\",\"trans\":0.11999999731779099,\"size\":\"53.44820022583008, 21.899799346923828, 0.18459999561309814\",\"content\":\"Content{SourceType=Opaque}\",\"pos\":\"-0.001142999972216785, 24.626373291015625, 46.67902755737305\"}]"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793257418.8509765,
+  "_ntfy_id": "UYcNFkOCnR97",
+  "_ntfy_time": 1793257419
+}

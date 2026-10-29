@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "3d52af9cf29d4a37983e580fe49ddabc",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 390,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "sabuiltin_Assistant.rbxm.Assistant.Packages._Index.AssistantUI.AssistantUI.Tools.ExecuteLuauTool:125: sabuiltin_Assistant.rbxm.Assistant.Packages._Index.AssistantUI.AssistantUI.Util.CommandExecution:54: Failed to parse command code"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "time": 1793203235.6601086,
+  "_ntfy_id": "qHRIWEdWq8nv",
+  "_ntfy_time": 1793203235
+}

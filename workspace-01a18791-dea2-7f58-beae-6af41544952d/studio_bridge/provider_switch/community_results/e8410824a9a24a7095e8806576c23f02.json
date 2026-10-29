@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "e8410824a9a24a7095e8806576c23f02",
+  "tool": "list_roblox_studios",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 249,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"studios\":[{\"id\":\"5b530727-756f-4188-9daa-43d801ff3b09\",\"name\":\"AEGIS_Reactor.rbxlx\"}]}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793273530.950488,
+  "_ntfy_id": "lI9Xisb9Wj4b",
+  "_ntfy_time": 1793273531
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "786a426585594f6e82c0bcbfd52d9e34",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 473,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"floorSides\":[\"x=-1.0 -> Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_CROWN_AND_DECK_01.CROWN_DECK__gunmetal @-1, 6.049999237060547, 13\",\"x=-0.4 -> Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_CROWN_AND_DECK_01.CROWN_DECK__gunmetal @-0.4000000059604645, 6.049999237060547, 13\",\"x=0.4 -> Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_CROWN_AND_DECK_01.CROWN_DECK__gunmetal @0.4000000059604645, 6.049999237060547, 13\",\"x=1.0 -> Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_CROWN_AND_DECK_01.CROWN_DECK__gunmetal @1, 6.049999237060547, 13\"],\"boreOpenOffsets\":[],\"rearCapSample\":\"Workspace.REACTOR_MESH_ASSEMBLY.STATIC.REACTOR_REAR_TURBINE_PLENUM_01.PLENUM__nickel @3.0000085830688477, 31, -29.272138595581055\"}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793211807.4575868,
+  "_ntfy_id": "HTpVrtRfh2Gq",
+  "_ntfy_time": 1793211807
+}

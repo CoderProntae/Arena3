@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "1bfc06dc7e3a4a6bb9813335e5ab68a6",
+  "tool": "multi_edit",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 67,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Created M14_GlassLaser_Controller (Script) with 1 edits applied"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793258731.0449395,
+  "_ntfy_id": "nC7iF51I1MOT",
+  "_ntfy_time": 1793258731
+}

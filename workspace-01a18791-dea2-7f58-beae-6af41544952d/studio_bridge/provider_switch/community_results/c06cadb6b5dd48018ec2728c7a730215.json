@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "c06cadb6b5dd48018ec2728c7a730215",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 229,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "[{\"meltdown\":\"false\",\"path\":\"ServerScriptService.CORE_PROTOCOL_Server\",\"startup\":\"false\",\"preview\":\"0\"}]"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793265239.7385604,
+  "_ntfy_id": "YkUr2byFCEtC",
+  "_ntfy_time": 1793265239
+}

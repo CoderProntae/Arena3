@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "bdc51ef1fe504263b6eac4a21ef6fef5",
+  "tool": "multi_edit",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 484,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Created Faz2_ChamberAndTurbine (Script) with 1 edits applied"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793212708.3281188,
+  "_ntfy_id": "UKAAEf7opcz3",
+  "_ntfy_time": 1793212708
+}

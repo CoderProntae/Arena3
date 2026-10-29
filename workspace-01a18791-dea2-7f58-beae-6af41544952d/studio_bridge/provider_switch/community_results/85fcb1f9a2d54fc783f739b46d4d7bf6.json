@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "85fcb1f9a2d54fc783f739b46d4d7bf6",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 225,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"models\":{\"REACTOR_SIDE_DIAG_OPEN_AND_FRONT_SEAL_03\":true,\"REACTOR_CROWN_AND_DECK_01\":true,\"REACTOR_REAR_BULKHEAD_REV05_TURBINE_PORT\":true,\"DAMAGE_PIPE_RUPTURE_KIT_01\":true,\"REACTOR_REAR_TURBINE_PLENUM_01\":true,\"REACTOR_CORE_MANYETIK_01\":true,\"PISTON_REAR_SERVICE_BAYS_01\":true,\"REACTOR_FOREBAY_CONTAINMENT_HALL_01\":true,\"REACTOR_COOLANT_PIPING_RING_01\":true},\"assets\":[],\"oldModels\":{\"REACTOR_REAR_BULKHEAD_IRON_REV04\":{\"visible\":0,\"all\":16},\"REACTOR_REAR_SERVICE_GRILLES_01\":{\"visible\":78,\"all\":78},\"REACTOR_SIDE_WALLS_OCTAGONAL_IRON_REV02\":{\"visible\":34,\"all\":40}},\"generatedFlags\":{\"EmitterModuleCount\":6,\"Origin\":null,\"Faz3HollowPipeRev\":4,\"Faz3PipingAndBaysMounted\":true,\"Faz2ChamberMounted\":true,\"UnitInStuds\":1,\"LiveStroke_UPPER\":0,\"LiveStroke_LOWER\":0,\"LiveStroke_LOWER_RIGHT\":0,\"LiveGate_LOWER_RIGHT\":0,\"MotionStatus\":\"COLD\",\"RearTurbineBlades\":10,\"LiveStroke_LEFT\":0,\"LiveRelayMask\":0,\"ImportedAssetCount\":7,\"LiveCoreEnergy\":0,\"RadialModuleStatus\":\"COLD / four roof-deck service bays pending\",\"LiveGate_LOWER\":0,\"LiveStroke_LOWER_LEFT\":0,\"Faz3ServiceBayCount\":6,\"LiveGate_RIGHT\":0,\"LiveBrokenMask\":0,\"LiveStroke_RIGHT\":0,\"LiveGate_UPPER\":0,\"Faz3RuptureSpoolCount\":4,\"LiveGate_LEFT\":0,\"LiveGate_LOWER_LEFT\":0,\"MeshStartupStage\":\"COLD\"},\"counts\":{\"piston\":6,\"hatch\":6,\"emitter\":6,\"spool\":4,\"empty\":0,\"bay\":6},\"bays\":{\"PISTON_REAR_SERVICE_BAY_LOWER_LEFT\":\"SL-03\",\"PISTON_REAR_SERVICE_BAY_RIGHT\":\"SL-02\",\"PISTON_REAR_SERVICE_BAY_LEFT\":\"SL-01\",\"PISTON_REAR_SERVICE_BAY_LOWER_RIGHT\":\"SL-04\",\"PISTON_REAR_SERVICE_BAY_LOWER\":\"SL-05\",\"PISTON_REAR_SERVICE_BAY_UPPER\":\"SL-00\"}}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793265180.8303804,
+  "_ntfy_id": "IUiAHI5JOhxy",
+  "_ntfy_time": 1793265181
+}

@@ -1,0 +1,16 @@
+[CORE PROTOCOL REMAKE] Geometry rays: 23/23 clear (six heads at TWO camera heights, core + nine samples). Brightness/appearance still need Studio screenshot comparison.
+[CORE] Physical server ready. CHECKPOINT 02: six real mechanical fuel sources; no photons or automatic ONLINE. Meltdown gameplay retained.
+[MESH] Six approved GLBs; real 3D handoff active; 2D core beams/particles disabled.
+[PILOT 3D] Six physical GLBs + authoritative 02-05 state ready. Zero 2D ParticleEmitter/Beam.
+[PILOT 3D FLOW] Zero 2D ParticleEmitter/Beam policy active; 3D EditableMesh engine authoritative.
+[MESH] R5= COLD ; six real heads; relay mask= 0
+CamTrack Theme: Light
+Animation Spoofer cannot run while game is running
+[CORE PROTOCOL REMAKE R3] Film camera and true third person; physical reactor is server owned.
+CamTrack Theme: Light
+Animation Spoofer cannot run while game is running
+0_1509343
+0_1559002
+[3D REFERENCE VFX V15] Simultaneous 6-Laser Lockstep + Equal-Length Center Convergence + V14D Core online.
+[FAZ2] Multi-tone Slate-Iron Chamber, 4 Radial Sliding Hatches & 10-Blade CNC Rear Turbine active!
+[FAZ3-REV4] Zero-ZFight + Zero-Skybox Forebay Hall + Hollow-Bore Piping Ring (M11) + 6 Shared-Batch Service Bays (M12) active! (75 static 3D MeshParts)

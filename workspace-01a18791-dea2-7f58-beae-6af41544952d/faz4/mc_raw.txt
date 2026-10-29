@@ -1,0 +1,424 @@
+     1→-- Gameplay mesh controller: non-startup motion, damage and ONLINE.
+     2→-- CHECKPOINT 01 delegates STARTUP motion to a separate server-only owner.
+     3→-- It never manufactures a backup ray while this first visual gate is open.
+     4→local RunService=game:GetService("RunService")
+     5→local SS=game:GetService("ServerStorage")
+     6→local WS=game:GetService("Workspace")
+     7→local scene=WS:WaitForChild("REACTOR_MESH_ASSEMBLY",30)
+     8→if not scene or not scene:IsA("Model") then
+     9→ warn("[MESH] No reviewed reactor assembly; leave R5 alone")
+    10→ return
+    11→end
+    12→local moving=scene:WaitForChild("MOVING",8)
+    13→local fixed=scene:WaitForChild("STATIC",8)
+    14→if not moving or not fixed then warn("[MESH] Missing GLB groups");return end
+    15→if scene:GetAttribute("EmitterModuleCount")~=6 then
+    16→ warn("[MESH] Six physical heads are required. Refusing orphan rays.")
+    17→ return
+    18→end
+    19→local core=fixed:FindFirstChild("REACTOR_CORE_MANYETIK_01")
+    20→if not core or not core:IsA("Model") then warn("[MESH] Core GLB missing");return end
+    21→local world=WS:WaitForChild("CORE_PROTOCOL_V2_WORLD",60)
+    22→if not world then warn("[MESH] R5 not running; keeping COLD");return end
+    23→-- Retire ONLY the old Part-based projector folder at Play time. R5's room,
+    24→-- physical controls, server simulation, emergency scenario all stay in place.
+    25→local old=world:FindFirstChild("03_STAR_REACTOR")
+    26→if old then old.Parent=SS end
+    27→local O=scene:GetAttribute("Origin") or Vector3.new(0,26.5,0)
+    28→local sites={
+    29→ {tag="UPPER",coreTag="TOP",i=1,out=Vector3.new(0,1,0)},
+    30→ {tag="LEFT",coreTag="LEFT",i=2,out=Vector3.new(-1,0,0),side=1},
+    31→ {tag="RIGHT",coreTag="RIGHT",i=3,out=Vector3.new(1,0,0),side=-1},
+    32→ {tag="LOWER_LEFT",coreTag="LOWER_LEFT",i=4,
+    33→  out=Vector3.new(-.72,-.694,0).Unit},
+    34→ {tag="LOWER_RIGHT",coreTag="LOWER_RIGHT",i=5,
+    35→  out=Vector3.new(.72,-.694,0).Unit},
+    36→ {tag="LOWER",coreTag="BOTTOM",i=6,out=Vector3.new(0,-1,0)},
+    37→}
+    38→local function must(parent,name)
+    39→ local m=parent:FindFirstChild(name)
+    40→ if not m or not m:IsA("Model") then error("[MESH] Required GLB group missing: "..name) end
+    41→ return m
+    42→end
+    43→local rigs={}
+    44→for _,site in sites do
+    45→ local tag=site.tag
+    46→ local emitter=must(moving,"REACTOR_EMITTER_REV03_"..tag)
+    47→ local piston=must(moving,"REACTOR_PISTON_GUIDE_01_"..tag)
+    48→ local optic=emitter:FindFirstChild("OPTIC__cyan",true)
+    49→ if not optic or not optic:IsA("MeshPart") then
+    50→  error("[MESH] Physical photon nozzle missing for "..tag)
+    51→ end
+    52→ local rig={site=site,emitter=emitter,emitterHome=emitter:GetPivot(),
+    53→  optic=optic,piston=piston,stages={},doors={},gate=0,stroke=0,failed=false,
+    54→  feedGlow=0,bendParts={},detailParts={}}
+    55→ -- Keep the approved dark-blue cell and all four antenna geometries in
+    56→ -- COLD. Their MATERIAL/LIGHT state alone changes during prewarming.
+    57→ for _,part in emitter:GetDescendants() do
+    58→  if part:IsA("MeshPart") and (part.Name=="HEAD__amber"
+    59→    or part.Name=="WINDOW__cyan_core" or part.Name=="NOZZLE__white") then
+    60→   rig.detailParts[#rig.detailParts+1]={p=part,name=part.Name,
+    61→    material=part.Material,color=part.Color,alpha=part.Transparency}
+    62→  end
+    63→ end
+    64→ -- These are approved physically separate MeshParts, not an orange fake
+    65→ -- sphere. A ruptured projector twists/buckles its actual nozzle/antenna
+    66→ -- metal. Snapshot local poses so reset restores the intact COLD assembly.
+    67→ for _,part in emitter:GetDescendants() do
+    68→  if part:IsA("MeshPart") and
+    69→    (part.Name:sub(1,8)=="NOZZLE__" or part.Name:sub(1,9)=="ANTENNA__") then
+    70→   rig.bendParts[#rig.bendParts+1]={part=part,
+    71→     localPose=emitter:GetPivot():ToObjectSpace(part.CFrame),
+    72→     color=part.Color,material=part.Material,alpha=part.Transparency}
+    73→  end
+    74→ end
+    75→ if #rig.bendParts<3 then error("[MESH] Insufficient real damage zones for "..tag) end
+    76→ for _,name in {"STAGE1","STAGE2","STAGE3","PUSHER"} do
+    77→  local m=must(piston,name)
+    78→  rig.stages[name]={m=m,home=m:GetPivot()}
+    79→ end
+    80→ if site.side then
+    81→  local hatch=must(moving,"REACTOR_WALL_HATCH_THROUGH_01_"..tag)
+    82→  for _,name in {"LEAF_LEFT","LEAF_RIGHT"} do
+    83→   local m=must(hatch,name)
+    84→   rig.doors[name]={m=m,home=m:GetPivot()}
+    85→  end
+    86→ end
+    87→ rigs[site.i]=rig
+    88→end
+    89→if #rigs~=6 then error("[MESH] No unmodeled laser may exist") end
+    90→local anchor=Instance.new("Part")
+    91→anchor.Name="MESH_EFFECTS_INVISIBLE_ANCHOR"
+    92→anchor.Size=Vector3.new(.12,.12,.12);anchor.CFrame=CFrame.new(O)
+    93→anchor.Transparency=1;anchor.Anchored=true;anchor.CanCollide=false
+    94→anchor.CanTouch=false;anchor.CanQuery=false;anchor.CastShadow=false
+    95→anchor.Parent=scene
+    96→local center=Instance.new("Attachment");center.Name="CORE_FOCUS";center.Parent=anchor
+    97→local coreLamp=Instance.new("PointLight")
+    98→coreLamp.Name="CORE_STATE_LIGHT";coreLamp.Brightness=0;coreLamp.Range=38
+    99→coreLamp.Shadows=true;coreLamp.Color=Color3.fromRGB(152,157,255)
+   100→coreLamp.Parent=anchor
+   101→-- Pale bluish worklights, affixed by Attachments to the existing invisible
+   102→-- VFX anchor (no additional Part geometry; APPROVED brown metal unchanged).
+   103→-- The reference chamber is readable even when the star is truly OFF.
+   104→local worklights={}
+   105→for n,at in {Vector3.new(-15,11,10),Vector3.new(15,11,10),
+   106→ Vector3.new(-13,-9,9),Vector3.new(13,-9,9)} do
+   107→ local a=Instance.new("Attachment");a.Name="CHAMBER_FILL_SOCKET_"..n
+   108→ a.Position=at;a.Parent=anchor
+   109→ local l=Instance.new("PointLight");l.Name="COLD_WORKLIGHT_"..n
+   110→ l.Color=Color3.fromRGB(181,211,243);l.Range=31;l.Brightness=0.85
+   111→ l.Shadows=n<=2;l.Parent=a;worklights[n]=l
+   112→end
+   113→local function particle(name,tex,color,initialSize,endSize)
+   114→ local p=Instance.new("ParticleEmitter")
+   115→ p.Name=name;p.Texture=tex;p.Enabled=false;p.Rate=0
+   116→ p.Color=ColorSequence.new(color);p.LightEmission=.65
+   117→ p.Speed=NumberRange.new(.8,3.5);p.Lifetime=NumberRange.new(.2,.8)
+   118→ p.SpreadAngle=Vector2.new(155,155)
+   119→ p.Size=NumberSequence.new({NumberSequenceKeypoint.new(0,initialSize),
+   120→  NumberSequenceKeypoint.new(.4,endSize),NumberSequenceKeypoint.new(1,0)})
+   121→ p.Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,.28),
+   122→  NumberSequenceKeypoint.new(.73,.57),NumberSequenceKeypoint.new(1,1)})
+   123→ return p
+   124→end
+   125→local sparks=particle("DYNAMIC_ION_PARTICLES",
+   126→ "rbxasset://textures/particles/sparkles_main.dds",
+   127→ Color3.fromRGB(154,131,255),.22,1.35)
+   128→sparks.Parent=center
+   129→local vapor=particle("DYNAMIC_PLASMA_VAPOR",
+   130→ "rbxasset://textures/particles/smoke_main.dds",
+   131→ Color3.fromRGB(78,61,159),2.4,9.8)
+   132→vapor.LightEmission=.24;vapor.Lifetime=NumberRange.new(.8,2.5)
+   133→vapor.Speed=NumberRange.new(.25,1.4);vapor.Parent=center
+   134→local corona=particle("MOVING_VIOLET_MELTDOWN_CORONA",
+   135→ "rbxasset://textures/particles/smoke_main.dds",
+   136→ Color3.fromRGB(177,81,246),4.6,13.8)
+   137→corona.Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,.76),
+   138→ NumberSequenceKeypoint.new(.6,.89),NumberSequenceKeypoint.new(1,1)})
+   139→corona.LightEmission=.63;corona.Speed=NumberRange.new(.2,1.1)
+   140→corona.Lifetime=NumberRange.new(.55,1.25);corona.Parent=center
+   141→local ignitionCloud=particle("CYAN_IGNITION_VOLUME_NOT_GLASS_DECAL",
+   142→ "rbxasset://textures/particles/smoke_main.dds",
+   143→ Color3.fromRGB(38,206,255),1.1,12.6)
+   144→ignitionCloud.LightEmission=.85
+   145→ignitionCloud.Speed=NumberRange.new(1.7,5.1)
+   146→ignitionCloud.Lifetime=NumberRange.new(.7,1.7)
+   147→ignitionCloud.Transparency=NumberSequence.new({
+   148→ NumberSequenceKeypoint.new(0,.35),NumberSequenceKeypoint.new(.5,.62),
+   149→ NumberSequenceKeypoint.new(1,1)})
+   150→ignitionCloud.Parent=center
+   151→local streams={}
+   152→for _,rig in rigs do
+   153→ local optic=rig.optic
+   154→ local tip=Instance.new("Attachment");tip.Name="REAL_NOZZLE_ATTACHMENT"
+   155→ tip.Parent=optic;rig.tip=tip
+   156→ local halo=Instance.new("Beam")
+   157→ halo.Name="BASE_ION_STREAM_"..rig.site.tag
+   158→ halo.Attachment0=center;halo.Attachment1=tip
+   159→ halo.Segments=14;halo.FaceCamera=true;halo.Width0=.49;halo.Width1=.34
+   160→ halo.Color=ColorSequence.new(Color3.fromRGB(64,82,233),
+   161→   Color3.fromRGB(74,185,255));halo.LightEmission=.82
+   162→ halo.Transparency=NumberSequence.new(1);halo.Enabled=false
+   163→ halo.Parent=anchor
+   164→ local hot=Instance.new("Beam")
+   165→ hot.Name="HEATING_PHOTON_FILAMENT_"..rig.site.tag
+   166→ hot.Attachment0=center;hot.Attachment1=tip
+   167→ hot.Segments=14;hot.FaceCamera=true;hot.Width0=.13;hot.Width1=.11
+   168→ hot.Color=ColorSequence.new(Color3.fromRGB(229,237,255))
+   169→ hot.LightEmission=1;hot.Transparency=NumberSequence.new(1)
+   170→ hot.Enabled=false;hot.Parent=anchor
+   171→ streams[rig.site.i]={halo,hot}
+   172→ local lamp=Instance.new("PointLight")
+   173→ lamp.Name="PHYSICAL_OPTIC_GLOW";lamp.Color=Color3.fromRGB(61,178,255)
+   174→ lamp.Range=11;lamp.Brightness=0;lamp.Parent=optic;rig.lamp=lamp
+   175→ local leak=particle("BROKEN_NOZZLE_SMOKE",
+   176→  "rbxasset://textures/particles/smoke_main.dds",
+   177→  Color3.fromRGB(109,111,126),.45,2.2)
+   178→ leak.LightEmission=0;leak.Lifetime=NumberRange.new(.6,1.6)
+   179→ leak.Speed=NumberRange.new(1,3.1);leak.Parent=tip;rig.leak=leak
+   180→ local shower=particle("METAL_ARC_AT_REAL_HEAD",
+   181→  "rbxasset://textures/particles/sparkles_main.dds",
+   182→  Color3.fromRGB(255,134,65),.22,.5)
+   183→ shower.Speed=NumberRange.new(5,14)
+   184→ shower.Lifetime=NumberRange.new(.13,.48)
+   185→ shower.Acceleration=Vector3.new(0,-17,0)
+   186→ shower.Parent=tip;rig.shower=shower
+   187→end
+   188→-- Small two-point Trails trace actual moving plasma, not painted GLB rays.
+   189→local orbits={}
+   190→for i=1,2 do
+   191→ local p=Instance.new("Part")
+   192→ p.Name="INVISIBLE_ORBIT_TRAIL_"..i
+   193→ p.Size=Vector3.new(.12,.12,.12);p.CFrame=CFrame.new(O)
+   194→ p.Anchored=true;p.CanCollide=false;p.CanTouch=false;p.CanQuery=false
+   195→ p.CastShadow=false;p.Transparency=1;p.Parent=scene
+   196→ local a=Instance.new("Attachment");a.Position=Vector3.new(-.35,0,0);a.Parent=p
+   197→ local b=Instance.new("Attachment");b.Position=Vector3.new(.35,0,0);b.Parent=p
+   198→ local t=Instance.new("Trail");t.Name="STATE_GATED_VIOLET_ORBIT_"..i
+   199→ t.Attachment0=a;t.Attachment1=b;t.Lifetime=.38;t.MinLength=.07
+   200→ t.FaceCamera=true;t.LightEmission=.83
+   201→ t.Color=ColorSequence.new(Color3.fromRGB(120,84,252),
+   202→  Color3.fromRGB(221,68,172))
+   203→ t.Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,.3),
+   204→  NumberSequenceKeypoint.new(1,1)})
+   205→ t.Enabled=false;t.Parent=p
+   206→ orbits[i]={p=p,t=t}
+   207→end
+   208→-- The source GLB separated TOP, LEFT, RIGHT, LOWER_LEFT, LOWER_RIGHT,
+   209→-- BOTTOM into independent real triangle meshes. A feed stays invisible unless
+   210→-- its matching approved emitter exists, its R5 relay has fired, and it is
+   211→-- physically extended and NOT broken. No more orphan six-way core rays.
+   212→local zoneId={TOP=1,LEFT=2,RIGHT=3,LOWER_LEFT=4,
+   213→ LOWER_RIGHT=5,BOTTOM=6}
+   214→local coreParts={}
+   215→for _,p in core:GetDescendants() do
+   216→ if p:IsA("MeshPart") then
+   217→  local v=p:GetAttribute("GLB_VisibleTransparency")
+   218→  local zone=p.Name:match("^(.-)__") or ""
+   219→  coreParts[#coreParts+1]={p=p,v=typeof(v)=="number" and v or 0,
+   220→   feed=zoneId[zone],zone=zone,size=p.Size,color=p.Color,
+   221→   material=p.Material}
+   222→  p.Transparency=1;p.Material=Enum.Material.SmoothPlastic
+   223→  p.CanQuery=false;p.CastShadow=false
+   224→ end
+   225→end
+   226→local function ease(x)
+   227→ x=math.clamp(x,0,1)
+   228→ return x*x*(3-2*x)
+   229→end
+   230→local function toward(x,want,amount)
+   231→ if x<want then return math.min(want,x+amount) end
+   232→ return math.max(want,x-amount)
+   233→end
+   234→local function bit(mask,i)
+   235→ return (math.floor(mask/2^(i-1))%2)==1
+   236→end
+   237→local function place(r)
+   238→ local displacement=-r.site.out*19.8*ease(r.stroke)
+   239→ local cf=CFrame.new(displacement)
+   240→ r.stages.STAGE1.m:PivotTo(CFrame.new(-r.site.out*6.6*ease(r.stroke))*r.stages.STAGE1.home)
+   241→ r.stages.STAGE2.m:PivotTo(CFrame.new(-r.site.out*13.2*ease(r.stroke))*r.stages.STAGE2.home)
+   242→ r.stages.STAGE3.m:PivotTo(cf*r.stages.STAGE3.home)
+   243→ r.stages.PUSHER.m:PivotTo(cf*r.stages.PUSHER.home)
+   244→ r.emitter:PivotTo(cf*r.emitterHome) -- rigid approved GLB, never stretched
+   245→ if r.site.side then
+   246→  local g=ease(r.gate);local a=r.site.side*5.85*g
+   247→  r.doors.LEAF_LEFT.m:PivotTo(CFrame.new(0,0,a)*r.doors.LEAF_LEFT.home)
+   248→  r.doors.LEAF_RIGHT.m:PivotTo(CFrame.new(0,0,-a)*r.doors.LEAF_RIGHT.home)
+   249→ end
+   250→end
+   251→local operating={STARTUP=true,ONLINE=true,WARNING=true,MELTDOWN=true,
+   252→ FREEZEDOWN=true,AFTERMATH=true}
+   253→local energy=0;local modeLast=nil;local accumulator=0;local orbitTime=0
+   254→RunService.Heartbeat:Connect(function(raw)
+   255→ accumulator+=math.clamp(raw,0,.2)
+   256→ if accumulator<.08 then return end
+   257→ local dt=accumulator;accumulator=0;orbitTime+=dt
+   258→ local mode=world:GetAttribute("ReactorMode") or "COLD"
+   259→ local source=world:GetAttribute("ReactorMeshSignal")==1
+   260→ local readyMask=world:GetAttribute("ReactorEmitterReadyMask") or 0
+   261→ local brokenMask=world:GetAttribute("ReactorEmitterBrokenMask") or 0
+   262→ local failureAge=world:GetAttribute("ReactorMeltdownAge") or 0
+   263→ local heatBoost=world:GetAttribute("ReactorLaserBoost")==true
+   264→ local gridDrop=world:GetAttribute("ReactorGridDrop")==true
+   265→ if not source then mode="COLD";readyMask=0 end
+   266→ local pilot=mode=="STARTUP"
+   267→ local owner=world:GetAttribute("ReactorPilotOwner")==true
+   268→ local ignition=operating[mode] and not pilot and mode~="AFTERMATH"
+   269→ local stage=pilot and
+   270→  (world:GetAttribute("ReactorPilotStage") or "PILOT_PENDING") or mode
+   271→ if mode~=modeLast then
+   272→  modeLast=mode;scene:SetAttribute("MotionStatus",mode)
+   273→  print("[MESH] R5=",mode,"; six real heads; relay mask=",readyMask)
+   274→ end
+   275→ scene:SetAttribute("MeshStartupStage",stage)
+   276→ local powered=operating[mode]==true
+   277→ -- The new pilot script is the ONLY writer of physical GLB poses in STARTUP.
+   278→ -- This controller keeps all inherited optics dark and stores its exact
+   279→ -- stroke for a smooth reverse or handoff when gameplay changes mode.
+   280→ if pilot then
+   281→  for _,group in streams do
+   282→   for _,ray in group do ray.Enabled=false end
+   283→  end
+   284→  for _,fx in {sparks,vapor,ignitionCloud,corona} do
+   285→   fx.Enabled=false;fx.Rate=0
+   286→  end
+   287→  for _,orb in orbits do orb.t.Enabled=false end
+   288→  coreLamp.Brightness=0
+   289→  energy=math.clamp(world:GetAttribute("ReactorPilotWhiteVolume") or 0,0,1)
+   290→  for _,r in rigs do
+   291→   r.lamp.Brightness=0
+   292→   r.leak.Enabled=false;r.shower.Enabled=false
+   293→   if owner then
+   294→    r.gate=scene:GetAttribute("ReactorPilotGate_"..r.site.tag) or 0
+   295→    r.stroke=scene:GetAttribute("ReactorPilotStroke_"..r.site.tag) or 0
+   296→   end
+   297→   scene:SetAttribute("LiveGate_"..r.site.tag,r.gate)
+   298→   scene:SetAttribute("LiveStroke_"..r.site.tag,r.stroke)
+   299→  end
+   300→  for _,lamp in worklights do
+   301→   lamp.Brightness=.85;lamp.Color=Color3.fromRGB(181,211,243)
+   302→  end
+   303→  scene:SetAttribute("MotionStatus",owner and
+   304→   "CHECKPOINT_01_REAL_SIX_HEADS" or "PILOT_NOT_READY")
+   305→  scene:SetAttribute("LiveRelayMask",readyMask)
+   306→  scene:SetAttribute("LiveBrokenMask",brokenMask)
+   307→  return
+   308→ end
+   309→ for _,l in worklights do
+   310→  l.Brightness=gridDrop and .02 or .82
+   311→  l.Color=Color3.fromRGB(194,210,228)
+   312→ end
+   313→ for _,r in rigs do
+   314→  local id=r.site.i
+   315→  local ready=bit(readyMask,id)
+   316→  local broken=bit(brokenMask,id)
+   317→  -- Outside STARTUP the existing controller alone owns the rigs.
+   318→  local deploy=powered
+   319→  if deploy then
+   320→   r.gate=toward(r.gate,1,dt/1.55)
+   321→   if r.gate>=.999 then r.stroke=toward(r.stroke,1,dt/4) end
+   322→  else
+   323→   if r.stroke>0 then r.stroke=toward(r.stroke,0,dt/4) end
+   324→   if r.stroke<=.003 then r.gate=toward(r.gate,0,dt/1.55) end
+   325→  end
+   326→  place(r)
+   327→  scene:SetAttribute("LiveGate_"..r.site.tag,r.gate)
+   328→  scene:SetAttribute("LiveStroke_"..r.site.tag,r.stroke)
+   329→  local atTip=ready and r.stroke>=.99 and not broken
+   330→  local visual=atTip and ignition and
+   331→   (heatBoost and 1 or .87) or 0
+   332→  if mode=="MELTDOWN" then
+   333→   visual=visual*(.88+.12*math.sin(orbitTime*4+id))
+   334→  end
+   335→  r.feedGlow=math.clamp(visual,0,1)
+   336→  if broken and not r.failed then
+   337→   for index,info in r.bendParts do
+   338→    local part=info.part
+   339→    local drift=r.site.out*(index%2==0 and .46 or .75)
+   340→     +Vector3.new(0,-.13*(index%3),index%2==0 and .14 or -.18)
+   341→    part.CFrame=CFrame.new(drift)*part.CFrame
+   342→     *CFrame.Angles(0,0,math.rad(index%2==0 and 13 or -16))
+   343→    part.Material=Enum.Material.Metal
+   344→    part.Color=index%3==0 and Color3.fromRGB(145,55,41)
+   345→     or Color3.fromRGB(72,49,48)
+   346→   end
+   347→   r.failed=true;r.emitter:SetAttribute("GLB_HeadCracked",true)
+   348→   r.shower:Emit(82)
+   349→  elseif not broken and r.failed then
+   350→   for _,info in r.bendParts do
+   351→    local part=info.part
+   352→    part.CFrame=r.emitter:GetPivot()*info.localPose
+   353→    part.Material=info.material;part.Color=info.color
+   354→    part.Transparency=info.alpha
+   355→   end
+   356→   r.failed=false;r.emitter:SetAttribute("GLB_HeadCracked",false)
+   357→  end
+   358→  if broken then
+   359→   r.optic.Material=Enum.Material.Metal
+   360→   r.optic.Color=Color3.fromRGB(171,63,48)
+   361→   r.lamp.Color=Color3.fromRGB(255,69,39)
+   362→   r.lamp.Brightness=mode=="MELTDOWN" and
+   363→    (.28+.35*math.abs(math.sin(orbitTime*12+id))) or 0
+   364→   r.leak.Enabled=mode=="MELTDOWN" or mode=="AFTERMATH"
+   365→   r.leak.Rate=17+id*2
+   366→   r.shower.Enabled=mode=="MELTDOWN";r.shower.Rate=22+id*2
+   367→  else
+   368→   r.failed=false
+   369→   r.optic.Material=visual>.10 and Enum.Material.Neon
+   370→    or Enum.Material.SmoothPlastic
+   371→   r.optic.Color=visual>.10 and Color3.fromRGB(132,209,255)
+   372→    or Color3.fromRGB(12,76,127)
+   373→   r.lamp.Color=Color3.fromRGB(198,234,255)
+   374→   r.lamp.Range=8
+   375→   r.lamp.Brightness=visual*0.28
+   376→   -- Preserve approved metal/nozzle surfaces; let WINDOW__cyan_core glow with live plasma energy when active!
+   377→   for _,item in r.detailParts do
+   378→    if item.name=="WINDOW__cyan_core" and visual>.10 then
+   379→     item.p.Material=Enum.Material.Neon
+   380→    else
+   381→     item.p.Material=item.material
+   382→     item.p.Color=item.color
+   383→    end
+   384→    item.p.Transparency=item.alpha
+   385→   end
+   386→   r.leak.Enabled=false;r.shower.Enabled=false
+   387→  end
+   388→  -- 2D Beam ribbons remain permanently disabled; real 3D coaxial EditableMesh
+   389→  -- conduits on the client own all 6 nozzle-to-core energy feeds!
+   390→  local pair=streams[id]
+   391→  pair[1].Enabled=false
+   392→  pair[2].Enabled=false
+   393→ end
+   394→ local readyForFusion=ignition and powered
+   395→ energy=toward(energy,readyForFusion and 1 or 0,dt/2.15)
+   396→ local e=ease(energy)
+   397→ scene:SetAttribute("LiveCoreEnergy",e)
+   398→ for _,info in coreParts do
+   399→  local p=info.p
+   400→  -- Keep static GLB ray cones, static center spheres, and static un-rotated orbit shells hidden
+   401→  -- so ONLY the living 60 FPS 3-axis-rotating & boiling 3D EditableMesh star + coaxial lasers render!
+   402→  p.Transparency=1
+   403→ end
+   404→ local k=(mode=="MELTDOWN" and math.clamp(failureAge/435,0,1) or 0)
+   405→ coreLamp.Range=mode=="MELTDOWN" and 46 or 20
+   406→ coreLamp.Brightness=e*(0.16+1.95*k)
+   407→ coreLamp.Color=mode=="MELTDOWN" and failureAge>230
+   408→   and Color3.fromRGB(240,105,172)
+   409→  or Color3.fromRGB(220,235,252)
+   410→ -- Keep stock 2D center ParticleEmitters & Trails disabled (zero 2D core VFX!).
+   411→ sparks.Enabled=false;sparks.Rate=0
+   412→ vapor.Enabled=false;vapor.Rate=0
+   413→ ignitionCloud.Enabled=false;ignitionCloud.Rate=0
+   414→ corona.Enabled=false;corona.Rate=0
+   415→ for _,orb in orbits do orb.t.Enabled=false end
+   416→ if mode=="COLD" then
+   417→  coreLamp.Brightness=0
+   418→ end
+   419→ -- Lightweight observability for click-free Studio QA; 6 separate feeds.
+   420→ scene:SetAttribute("LiveRelayMask",readyMask)
+   421→ scene:SetAttribute("LiveBrokenMask",brokenMask)
+   422→end)
+   423→print("[MESH] Six approved GLBs; real 3D handoff active; 2D core beams/particles disabled.")
+   424→

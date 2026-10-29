@@ -1,0 +1,1822 @@
+     1→--!nonstrict
+     2→-- ============================================================================
+     3→-- REFERENCE-CALIBRATED 60 FPS REAL-TIME 3D VOLUMETRIC & MAGNETIC NEBULA ENGINE
+     4→--   * ZERO 2D ParticleEmitters, ZERO 2D Beams, ZERO 2D BillboardGuis!
+     5→--   * Built from multi-method pixel, HSV-spectrum, radial-falloff, optical-flow,
+     6→--     and human-perceptual comparison against reference_original.mp4:
+     7→--   1) STAGE 02 STRAIGHT AXIAL NOZZLE VAPOR (GRAVITY = 0):
+     8→--      162 3D vapor clusters (= 972 crinkled 3D wisps) + 12 axisymmetric nozzle
+     9→--      cones spawn EXCLUSIVELY inside the 6 physical NOZZLE__white mouths and
+    10→--      travel DEAD STRAIGHT along each head's radial axis (-s.axis) with zero
+    11→--      downward sag and zero mid-air spawning.
+    12→--   2) 360-DEGREE HARDWARE Z-BUFFER CORE OCCLUSION (LEFT / CENTER / RIGHT):
+    13→--      STAR_3D_OPAQUE_SUN_BODY (closed 360° EditableMesh sphere, Material=Neon,
+    14→--      exact Transparency = 0 -> hardware Z-write pass) + dynamic outer-rim beam
+    15→--      clipping makes it mathematically impossible to see beams inside the core
+    16→--      from ANY camera angle (far left, center, far right, above, or below).
+    17→--   3) TRUE RGBA-BAKED SURFACEAPPEARANCE REFERENCE PALETTE & LAYER COUNT:
+    18→--      (Roblox SurfaceAppearance AlphaMode.Transparency ignores MeshPart.Color,
+    19→--      so every reference hue is baked directly into 32-bit RGBA EditableImages!)
+    20→--      - Vivid Turquoise-Cyan Stage-04 expansion volume + cyan nebula clouds
+    21→--      - Massive Stage-05 pure-white sun + 36 orbiting white-ice corona plumes
+    22→--      - 56 stormy multi-tone Royal-Cobalt / Deep-Indigo / Ice-Blue 3D chamber
+    23→--        nebula clusters (= 336 billowing 3D clouds across the chamber!)
+    24→--      - Stage-06 corona breakup & stabilization revealing 6 wide conical flaring
+    25→--        white-cyan plasma beams + 24 fine collar guide rails + 3 cyan rings!
+    26→--   * Strictly uses 7 EditableMeshes (<= 8 client cap) + 6 RGBA EditableImages.
+    27→-- ============================================================================
+    28→local AssetService = game:GetService("AssetService")
+    29→local RunService = game:GetService("RunService")
+    30→local Workspace = game:GetService("Workspace")
+    31→
+    32→Workspace:SetAttribute("VaporStep", "01_BOOT")
+    33→
+    34→local assembly = Workspace:WaitForChild("REACTOR_MESH_ASSEMBLY", 60)
+    35→local world = Workspace:WaitForChild("CORE_PROTOCOL_V2_WORLD", 60)
+    36→if not assembly or not world then return end
+    37→local moving = assembly:WaitForChild("MOVING", 20)
+    38→local anchor = assembly:WaitForChild("MESH_EFFECTS_INVISIBLE_ANCHOR", 20)
+    39→if not moving or not anchor then return end
+    40→
+    41→local focusAtt = anchor:WaitForChild("CORE_FOCUS", 20)
+    42→local O = focusAtt and Vector3.new(focusAtt.WorldPosition.X, focusAtt.WorldPosition.Y, 0) or Vector3.new(0, 26.5, 0)
+    43→-- Exact coplanar focal center of all 6 physical GLB heads (7.730 studs from every NOZZLE__white):
+    44→local FOCUS = Vector3.new(O.X, O.Y, 2.70)
+    45→
+    46→local SITES = {
+    47→	{tag = "UPPER",       axis = Vector3.new(0, 1, 0),              jetScale = 0.88},
+    48→	{tag = "LEFT",        axis = Vector3.new(-1, 0, 0),             jetScale = 1.05},
+    49→	{tag = "RIGHT",       axis = Vector3.new(1, 0, 0),              jetScale = 1.05},
+    50→	{tag = "LOWER_LEFT",  axis = Vector3.new(-0.72, -0.694, 0).Unit, jetScale = 1.00},
+    51→	{tag = "LOWER_RIGHT", axis = Vector3.new(0.72, -0.694, 0).Unit,  jetScale = 1.00},
+    52→	{tag = "LOWER",       axis = Vector3.new(0, -1, 0),             jetScale = 0.90},
+    53→}
+    54→
+    55→local function clamp01(x)
+    56→	return x < 0 and 0 or (x > 1 and 1 or x)
+    57→end
+    58→
+    59→local function smooth(a, b, x)
+    60→	local t = clamp01((x - a) / (b - a))
+    61→	return t * t * (3 - 2 * t)
+    62→end
+    63→
+    64→local function toward(cur, target, maxDelta)
+    65→	if cur < target then
+    66→		return math.min(target, cur + maxDelta)
+    67→	else
+    68→		return math.max(target, cur - maxDelta)
+    69→	end
+    70→end
+    71→
+    72→local function bit(mask, i)
+    73→	return math.floor(mask / (2 ^ (i - 1))) % 2 == 1
+    74→end
+    75→
+    76→local function fbm3(x, y, z)
+    77→	local n1 = math.noise(x, y, z)
+    78→	local n2 = math.noise(x * 2.07 + 13.7, y * 2.07 - 9.2, z * 2.07 + 5.4) * 0.5
+    79→	local n3 = math.noise(x * 4.19 - 7.1, y * 4.19 + 19.3, z * 4.19 - 11.8) * 0.25
+    80→	return (n1 + n2 + n3) / 1.75
+    81→end
+    82→
+    83→local function safeLookAt(fromP, toP)
+    84→	local d = toP - fromP
+    85→	if d.Magnitude < 1e-4 then
+    86→		return CFrame.new(fromP)
+    87→	end
+    88→	local u = d.Unit
+    89→	local up = math.abs(u.Y) > 0.96 and Vector3.new(0, 0, 1) or Vector3.new(0, 1, 0)
+    90→	return CFrame.lookAt(fromP, toP, up)
+    91→end
+    92→
+    93→for _, r in ipairs({world, assembly}) do
+    94→	for _, d in ipairs(r:GetDescendants()) do
+    95→		if d:IsA("ParticleEmitter") or d:IsA("Beam") then
+    96→			d.Enabled = false
+    97→		end
+    98→	end
+    99→end
+   100→
+   101→local oldRoot = assembly:FindFirstChild("REAL_3D_VOLUMETRIC_MODELS")
+   102→if oldRoot then oldRoot:Destroy() end
+   103→local root = Instance.new("Folder")
+   104→root.Name = "REAL_3D_VOLUMETRIC_MODELS"
+   105→root.Parent = assembly
+   106→
+   107→local STRONG_REFS = {}
+   108→local function keep(obj)
+   109→	STRONG_REFS[#STRONG_REFS + 1] = obj
+   110→	return obj
+   111→end
+   112→
+   113→local function style3DPart(p)
+   114→	p.Anchored = true
+   115→	p.CanCollide = false
+   116→	p.CanTouch = false
+   117→	p.CanQuery = false
+   118→	p.CastShadow = false
+   119→	p.Massless = true
+   120→	p.TopSurface = Enum.SurfaceType.Smooth
+   121→	p.BottomSurface = Enum.SurfaceType.Smooth
+   122→	return p
+   123→end
+   124→
+   125→local nozzles = {}
+   126→for idx, s in ipairs(SITES) do
+   127→	local head = moving:WaitForChild("REACTOR_EMITTER_REV03_" .. s.tag, 20)
+   128→	local tip = head and head:FindFirstChild("NOZZLE__white", true)
+   129→	assert(tip and tip:IsA("MeshPart"), "Missing NOZZLE__white on " .. s.tag)
+   130→	local sock = tip:WaitForChild("PILOT_FUEL_SOCKET_" .. s.tag, 20)
+   131→	local optic = head:FindFirstChild("OPTIC__cyan", true)
+   132→	local cellWin = head:FindFirstChild("WINDOW__cyan_core", true)
+   133→	nozzles[idx] = {
+   134→		site = s,
+   135→		head = head,
+   136→		tip = tip,
+   137→		tipOrigColor = tip.Color,
+   138→		tipOrigMat = tip.Material,
+   139→		optic = (optic and optic:IsA("MeshPart")) and optic or tip,
+   140→		opticOrigColor = (optic and optic:IsA("MeshPart")) and optic.Color or tip.Color,
+   141→		opticOrigMat = (optic and optic:IsA("MeshPart")) and optic.Material or tip.Material,
+   142→		cellWin = (cellWin and cellWin:IsA("MeshPart")) and cellWin or nil,
+   143→		cellOrigColor = (cellWin and cellWin:IsA("MeshPart")) and cellWin.Color or Color3.fromRGB(24, 92, 168),
+   144→		cellOrigMat = (cellWin and cellWin:IsA("MeshPart")) and cellWin.Material or Enum.Material.SmoothPlastic,
+   145→		socket = sock,
+   146→	}
+   147→end
+   148→Workspace:SetAttribute("VaporStep", "02_NOZZLES_READY")
+   149→
+   150→-- ============================================================================
+   151→-- 1. FAST-BOOT (<0.4s) TRUE RGBA-BAKED 128x128 VOLUMETRIC PBR TEXTURES
+   152→-- ============================================================================
+   153→local function buildEditableTexture(size, pixelFn)
+   154→	local ei = keep(AssetService:CreateEditableImage({Size = Vector2.new(size, size)}))
+   155→	local buf = buffer.create(size * size * 4)
+   156→	local o = 0
+   157→	for py = 0, size - 1 do
+   158→		local v = (py + 0.5) / size
+   159→		for px = 0, size - 1 do
+   160→			local u = (px + 0.5) / size
+   161→			local r, g, b, a = pixelFn(u, v)
+   162→			buffer.writeu8(buf, o,     math.clamp(math.floor(r * 255 + 0.5), 0, 255))
+   163→			buffer.writeu8(buf, o + 1, math.clamp(math.floor(g * 255 + 0.5), 0, 255))
+   164→			buffer.writeu8(buf, o + 2, math.clamp(math.floor(b * 255 + 0.5), 0, 255))
+   165→			buffer.writeu8(buf, o + 3, math.clamp(math.floor(a * 255 + 0.5), 0, 255))
+   166→			o += 4
+   167→		end
+   168→	end
+   169→	ei:WritePixelsBuffer(Vector2.zero, Vector2.new(size, size), buf)
+   170→	return {content = Content.fromObject(ei), ref = ei}
+   171→end
+   172→
+   173→-- #1: Cool grey-white cryogenic vapor puff (Stage 02 straight nozzle steam)
+   174→local texCryoVapor = buildEditableTexture(128, function(u, v)
+   175→	local dx, dy = (u - 0.5) * 2, (v - 0.5) * 2
+   176→	local r = math.sqrt(dx * dx + dy * dy)
+   177→	local warp = fbm3(u * 4.2 + 2.1, v * 4.2 - 1.5, 0.8) * 0.24
+   178→	local mask = clamp01(1 - smooth(0.10, 0.95, r + warp * 0.55))
+   179→	local edgeZero = clamp01(1 - smooth(0.74, 0.95, r))
+   180→	local billow = clamp01(0.62 + 0.38 * fbm3(u * 7.2 - 3.4, v * 7.2 + 5.1, 2.3))
+   181→	local a = (mask ^ 1.55) * edgeZero * billow * 0.64
+   182→	local shade = 0.78 + 0.16 * billow
+   183→	return shade * 0.94, shade * 0.97, shade, a
+   184→end)
+   185→
+   186→-- #2: Straight longitudinal supersonic vapor jet cone (Stage 02)
+   187→local texVaporJet = buildEditableTexture(128, function(u, v)
+   188→	local ang = u * math.pi * 2
+   189→	local streak = 0.62 + 0.38 * fbm3(math.cos(ang) * 2.6 + 1.5, math.sin(ang) * 2.6 - 0.8, v * 4.2)
+   190→	local entry = smooth(0.0, 0.10, v)
+   191→	local tail = (1 - smooth(0.20, 1.0, v)) ^ 1.60
+   192→	local a = clamp01(entry * tail * streak * 0.56)
+   193→	return 0.86, 0.90, 0.95, a
+   194→end)
+   195→
+   196→-- #3: Conical flaring plasma laser beam (RGBA baked: incandescent white core -> electric cyan-blue sheath!)
+   197→local texConicalBeam = buildEditableTexture(128, function(u, v)
+   198→	local ang = u * math.pi * 2
+   199→	local fil = 0.55 + 0.45 * fbm3(math.cos(ang) * 3.2 + 4.1, math.sin(ang) * 3.2 - 2.3, v * 5.2)
+   200→	local nozzleFade = smooth(0.0, 0.08, v)
+   201→	local coreMerge = 0.50 + 0.50 * smooth(0.25, 0.92, v)
+   202→	local rimSoft = 1 - 0.22 * smooth(0.90, 1.0, v)
+   203→	local a = clamp01(nozzleFade * coreMerge * rimSoft * (0.58 + 0.42 * fil) * 0.88)
+   204→	local wMix = clamp01(v * 0.55 + fil * 0.48)
+   205→	local r = 0.22 + (1.0 - 0.22) * wMix
+   206→	local g = 0.84 + (1.0 - 0.84) * wMix
+   207→	return r, g, 1.0, a
+   208→end)
+   209→
+   210→-- #4: Vivid Turquoise-Cyan Expansion & Magnetic Ring Texture (Reference Stage 04 04_cyan_140.jpg!)
+   211→local texCyanExpansion = buildEditableTexture(128, function(u, v)
+   212→	local dx, dy = (u - 0.5) * 2, (v - 0.5) * 2
+   213→	local r = math.sqrt(dx * dx + dy * dy)
+   214→	local n1 = 0.5 + 0.5 * fbm3(u * 4.2 + 3.1, v * 4.2 - 1.8, 2.4)
+   215→	local radial = clamp01(1 - smooth(0.04, 0.92, r + (n1 - 0.5) * 0.14))
+   216→	local edgeZero = clamp01(1 - smooth(0.74, 0.95, math.max(math.abs(dx), math.abs(dy)))) * clamp01(1 - smooth(0.76, 0.95, r))
+   217→	local a = clamp01((radial ^ 1.35) * edgeZero * (0.68 + 0.32 * n1) * 0.88)
+   218→	local inner = clamp01(1 - r * 0.85)
+   219→	local cr = 0.05 + 0.24 * inner * n1
+   220→	local cg = 0.46 + 0.50 * inner
+   221→	local cb = 0.98 + 0.02 * inner
+   222→	return cr, cg, cb, a
+   223→end)
+   224→
+   225→-- #5: Cloudy White-to-Ice-Blue Solar Corona Texture (feathery plasma billows around the white sun!)
+   226→local texWhiteIceCorona = buildEditableTexture(128, function(u, v)
+   227→	local dx, dy = (u - 0.5) * 2, (v - 0.5) * 2
+   228→	local r = math.sqrt(dx * dx + dy * dy)
+   229→	local cloud1 = 0.5 + 0.5 * fbm3(u * 4.8 + 6.2, v * 4.8 - 3.7, 1.9)
+   230→	local cloud2 = 0.5 + 0.5 * fbm3(u * 9.5 - 2.1, v * 9.5 + 7.4, 4.3)
+   231→	local radial = clamp01(1 - smooth(0.05, 0.91, r - (cloud1 - 0.5) * 0.20))
+   232→	local edgeZero = clamp01(1 - smooth(0.72, 0.94, math.max(math.abs(dx), math.abs(dy)))) * clamp01(1 - smooth(0.74, 0.95, r))
+   233→	local wisp = clamp01(cloud1 * 0.68 + cloud2 * 0.32)
+   234→	local a = clamp01((radial ^ 1.30) * edgeZero * (0.50 + 0.50 * wisp) * 0.92)
+   235→	local whiteCore = clamp01((1 - r * 0.72) * (0.55 + 0.45 * wisp))
+   236→	local cr = 0.52 + 0.48 * whiteCore
+   237→	local cg = 0.80 + 0.20 * whiteCore
+   238→	return cr, cg, 1.0, a
+   239→end)
+   240→
+   241→-- #6: Stormy Multi-Tone Deep Royal-Cobalt & Indigo Chamber Nebula Texture
+   242→local texStormyCobaltNebula = buildEditableTexture(128, function(u, v)
+   243→	local dx, dy = (u - 0.5) * 2, (v - 0.5) * 2
+   244→	local r = math.sqrt(dx * dx + dy * dy)
+   245→	local f1 = 0.5 + 0.5 * fbm3(u * 3.5 + 8.4, v * 3.5 + 1.9, 3.2)
+   246→	local f2 = 0.5 + 0.5 * fbm3(u * 7.6 - 4.8, v * 7.6 + 2.6, 6.1)
+   247→	local mask = clamp01(1 - smooth(0.05, 0.91, r + (f1 - 0.5) * 0.20))
+   248→	local edgeZero = clamp01(1 - smooth(0.72, 0.94, math.max(math.abs(dx), math.abs(dy)))) * clamp01(1 - smooth(0.74, 0.95, r))
+   249→	local neb = clamp01(f1 * 0.64 + f2 * 0.36)
+   250→	local a = clamp01((mask ^ 1.35) * edgeZero * (0.52 + 0.48 * neb) * 0.92)
+   251→	local crest = clamp01((neb - 0.42) * 1.85)
+   252→	local cr = 0.09 + 0.15 * neb + 0.34 * (crest ^ 1.35)
+   253→	local cg = 0.20 + 0.30 * neb + 0.34 * (crest ^ 1.25)
+   254→	local cb = 0.68 + 0.28 * neb + 0.04 * crest
+   255→	return clamp01(cr), clamp01(cg), clamp01(cb), a
+   256→end)
+   257→
+   258→-- Full-white 16x16 EmissiveMask so Stages 04-06 self-illuminate cleanly from within
+   259→-- WITHOUT flooding or distorting surrounding chamber wall / emitter barrel colors!
+   260→local texFullEmissiveMask = buildEditableTexture(16, function()
+   261→	return 1.0, 1.0, 1.0, 1.0
+   262→end)
+   263→texConicalBeam.emissive        = 1.90
+   264→texCyanExpansion.emissive      = 1.75
+   265→texWhiteIceCorona.emissive     = 1.85
+   266→texStormyCobaltNebula.emissive = 2.15
+   267→task.wait()
+   268→
+   269→Workspace:SetAttribute("VaporStep", "03_SIX_RGBA_TEXTURES_READY")
+   270→
+   271→-- ============================================================================
+   272→-- 2. ULTRA-HIGH-POLY, CORNERLESS GPU-NATIVE 3D MESH TEMPLATES (ZERO STALLS!)
+   273→-- ============================================================================
+   274→local function toStaticMeshContent(em)
+   275→	local ok, c = pcall(function()
+   276→		return AssetService:CreateDataModelContentAsync(em)
+   277→	end)
+   278→	if ok and c then
+   279→		return c
+   280→	end
+   281→	return Content.fromObject(em)
+   282→end
+   283→
+   284→-- 6 Polar Radial Ellipsoidal Cloud Domes x 5 rings x 24 circular segments = 1,296 curved triangles!
+   285→-- True 360° circular polar geometry (ZERO 90° square corners!) + fast OIT alpha-sort for locked 60+ FPS!
+   286→local function buildMultiCloudCluster(seed)
+   287→	local em = keep(AssetService:CreateEditableMesh())
+   288→	local subSpecs = {
+   289→		{off = Vector3.new(-0.36,  0.22, -0.28), rx = 0.74, ry = 0.62, rz = 0.30, rot = 0.4, tiltX = -0.13, tiltY =  0.13},
+   290→		{off = Vector3.new( 0.38, -0.18, -0.17), rx = 0.70, ry = 0.62, rz = 0.28, rot = 1.7, tiltX =  0.12, tiltY = -0.14},
+   291→		{off = Vector3.new(-0.14, -0.38, -0.06), rx = 0.74, ry = 0.60, rz = 0.29, rot = 2.9, tiltX =  0.14, tiltY =  0.10},
+   292→		{off = Vector3.new( 0.22,  0.34,  0.06), rx = 0.68, ry = 0.60, rz = 0.27, rot = 4.1, tiltX = -0.12, tiltY = -0.11},
+   293→		{off = Vector3.new(-0.28, -0.06,  0.18), rx = 0.66, ry = 0.56, rz = 0.26, rot = 5.2, tiltX =  0.09, tiltY =  0.13},
+   294→		{off = Vector3.new( 0.14, -0.26,  0.28), rx = 0.68, ry = 0.58, rz = 0.26, rot = 1.1, tiltX = -0.10, tiltY =  0.09},
+   295→	}
+   296→	local rings, segs = 5, 24
+   297→	for wIdx, sp in ipairs(subSpecs) do
+   298→		local cf = CFrame.new(sp.off) * CFrame.Angles(sp.tiltX, sp.tiltY, sp.rot)
+   299→		local cCrinkle = fbm3(seed + wIdx, -seed, wIdx * 1.7) * 0.10
+   300→		local cBase = cf:PointToWorldSpace(Vector3.new(0, 0, sp.rz + cCrinkle))
+   301→		local cNorm = (cf:VectorToWorldSpace(Vector3.new(0, 0, 1))).Unit
+   302→		local cVid = em:AddVertex(cBase)
+   303→		local cNid = em:AddNormal(cNorm)
+   304→		local cUvid = em:AddUV(Vector2.new(0.5, 0.5))
+   305→
+   306→		local vids, nids, uvids = {}, {}, {}
+   307→		for ir = 1, rings do
+   308→			local rFrac = ir / rings
+   309→			vids[ir] = {}; nids[ir] = {}; uvids[ir] = {}
+   310→			local rimAtten = 1 - 0.70 * (rFrac * rFrac)
+   311→			local domeH = math.sqrt(math.max(0, 1 - rFrac * rFrac * 0.86)) * sp.rz
+   312→			for is = 0, segs do
+   313→				local th = (is / segs) * math.pi * 2
+   314→				local vx = rFrac * math.cos(th)
+   315→				local vy = rFrac * math.sin(th)
+   316→				local crinkle = fbm3(vx * 1.85 + seed + wIdx, vy * 1.85 - seed, wIdx * 1.7) * 0.11 * rimAtten
+   317→				local baseP = cf:PointToWorldSpace(Vector3.new(
+   318→					vx * sp.rx * (1 + crinkle * 0.20),
+   319→					vy * sp.ry * (1 - crinkle * 0.16),
+   320→					domeH + crinkle
+   321→				))
+   322→				local wn = (cf:VectorToWorldSpace(Vector3.new(vx * 0.24, vy * 0.24, 0.94))).Unit
+   323→				vids[ir][is] = em:AddVertex(baseP)
+   324→				nids[ir][is] = em:AddNormal(wn)
+   325→				uvids[ir][is] = em:AddUV(Vector2.new(0.5 + vx * 0.475, 0.5 + vy * 0.475))
+   326→			end
+   327→		end
+   328→		for is = 0, segs - 1 do
+   329→			local f = em:AddTriangle(cVid, vids[1][is], vids[1][is + 1])
+   330→			em:SetFaceNormals(f, {cNid, nids[1][is], nids[1][is + 1]})
+   331→			em:SetFaceUVs(f, {cUvid, uvids[1][is], uvids[1][is + 1]})
+   332→		end
+   333→		for ir = 1, rings - 1 do
+   334→			for is = 0, segs - 1 do
+   335→				local f1 = em:AddTriangle(vids[ir][is], vids[ir + 1][is], vids[ir + 1][is + 1])
+   336→				em:SetFaceNormals(f1, {nids[ir][is], nids[ir + 1][is], nids[ir + 1][is + 1]})
+   337→				em:SetFaceUVs(f1, {uvids[ir][is], uvids[ir + 1][is], uvids[ir + 1][is + 1]})
+   338→				local f2 = em:AddTriangle(vids[ir][is], vids[ir + 1][is + 1], vids[ir][is + 1])
+   339→				em:SetFaceNormals(f2, {nids[ir][is], nids[ir + 1][is + 1], nids[ir][is + 1]})
+   340→				em:SetFaceUVs(f2, {uvids[ir][is], uvids[ir + 1][is + 1], uvids[ir][is + 1]})
+   341→			end
+   342→		end
+   343→	end
+   344→	return {em = em, content = toStaticMeshContent(em), tris = #subSpecs * (2 * rings - 1) * segs}
+   345→end
+   346→
+   347→-- Ultra-Fine Cornerless 4-Puff 3D Micro-Constellation Template (4 separated 360° polar micro-domes x 3 rings x 20 segs = 400 tris!)
+   348→-- Turns 672 independent MeshParts into 2,688 tiny flowing micro-clouds that dissolve below 1/255 bit-depth with ZERO perceptible pop!
+   349→local function buildMicroWispCluster(seed)
+   350→	local em = keep(AssetService:CreateEditableMesh())
+   351→	local subSpecs = {
+   352→		{off = Vector3.new(-0.46,  0.34, -0.18), rx = 0.40, ry = 0.35, rz = 0.24, rot = 0.5, tiltX = -0.11, tiltY =  0.12},
+   353→		{off = Vector3.new( 0.48, -0.30, -0.06), rx = 0.38, ry = 0.34, rz = 0.22, rot = 2.1, tiltX =  0.12, tiltY = -0.10},
+   354→		{off = Vector3.new(-0.24, -0.44,  0.08), rx = 0.39, ry = 0.34, rz = 0.23, rot = 3.8, tiltX =  0.10, tiltY =  0.11},
+   355→		{off = Vector3.new( 0.26,  0.42,  0.18), rx = 0.37, ry = 0.33, rz = 0.22, rot = 5.1, tiltX = -0.10, tiltY = -0.11},
+   356→	}
+   357→	local rings, segs = 3, 20
+   358→	for wIdx, sp in ipairs(subSpecs) do
+   359→		local cf = CFrame.new(sp.off) * CFrame.Angles(sp.tiltX, sp.tiltY, sp.rot)
+   360→		local cCrinkle = fbm3(seed + wIdx, -seed, wIdx * 1.9) * 0.08
+   361→		local cBase = cf:PointToWorldSpace(Vector3.new(0, 0, sp.rz + cCrinkle))
+   362→		local cNorm = (cf:VectorToWorldSpace(Vector3.new(0, 0, 1))).Unit
+   363→		local cVid = em:AddVertex(cBase)
+   364→		local cNid = em:AddNormal(cNorm)
+   365→		local cUvid = em:AddUV(Vector2.new(0.5, 0.5))
+   366→
+   367→		local vids, nids, uvids = {}, {}, {}
+   368→		for ir = 1, rings do
+   369→			local rFrac = ir / rings
+   370→			vids[ir] = {}; nids[ir] = {}; uvids[ir] = {}
+   371→			local rimAtten = 1 - 0.72 * (rFrac * rFrac)
+   372→			local domeH = math.sqrt(math.max(0, 1 - rFrac * rFrac * 0.86)) * sp.rz
+   373→			for is = 0, segs do
+   374→				local th = (is / segs) * math.pi * 2
+   375→				local vx = rFrac * math.cos(th)
+   376→				local vy = rFrac * math.sin(th)
+   377→				local crinkle = fbm3(vx * 1.95 + seed + wIdx, vy * 1.95 - seed, wIdx * 2.1) * 0.09 * rimAtten
+   378→				local baseP = cf:PointToWorldSpace(Vector3.new(
+   379→					vx * sp.rx * (1 + crinkle * 0.18),
+   380→					vy * sp.ry * (1 - crinkle * 0.15),
+   381→					domeH + crinkle
+   382→				))
+   383→				local wn = (cf:VectorToWorldSpace(Vector3.new(vx * 0.24, vy * 0.24, 0.94))).Unit
+   384→				vids[ir][is] = em:AddVertex(baseP)
+   385→				nids[ir][is] = em:AddNormal(wn)
+   386→				uvids[ir][is] = em:AddUV(Vector2.new(0.5 + vx * 0.475, 0.5 + vy * 0.475))
+   387→			end
+   388→		end
+   389→		for is = 0, segs - 1 do
+   390→			local f = em:AddTriangle(cVid, vids[1][is], vids[1][is + 1])
+   391→			em:SetFaceNormals(f, {cNid, nids[1][is], nids[1][is + 1]})
+   392→			em:SetFaceUVs(f, {cUvid, uvids[1][is], uvids[1][is + 1]})
+   393→		end
+   394→		for ir = 1, rings - 1 do
+   395→			for is = 0, segs - 1 do
+   396→				local f1 = em:AddTriangle(vids[ir][is], vids[ir + 1][is], vids[ir + 1][is + 1])
+   397→				em:SetFaceNormals(f1, {nids[ir][is], nids[ir + 1][is], nids[ir + 1][is + 1]})
+   398→				em:SetFaceUVs(f1, {uvids[ir][is], uvids[ir + 1][is], uvids[ir + 1][is + 1]})
+   399→				local f2 = em:AddTriangle(vids[ir][is], vids[ir + 1][is + 1], vids[ir][is + 1])
+   400→				em:SetFaceNormals(f2, {nids[ir][is], nids[ir + 1][is + 1], nids[ir][is + 1]})
+   401→				em:SetFaceUVs(f2, {uvids[ir][is], uvids[ir + 1][is + 1], uvids[ir][is + 1]})
+   402→			end
+   403→		end
+   404→	end
+   405→	return {em = em, content = toStaticMeshContent(em), tris = #subSpecs * (2 * rings - 1) * segs}
+   406→end
+   407→
+   408→-- Straight Axisymmetric High-Poly Conical 3D Funnel (24 x 48 = 2,304 triangles, 7.5° smooth circular perimeter!)
+   409→local function buildAxisymmetricConeMesh(seed)
+   410→	local em = keep(AssetService:CreateEditableMesh())
+   411→	local rings, segs = 24, 48
+   412→	local vids, nids, uvids = {}, {}, {}
+   413→	for r = 0, rings do
+   414→		local t = r / rings
+   415→		vids[r] = {}; nids[r] = {}; uvids[r] = {}
+   416→		local baseR = 0.16 + 0.34 * (t ^ 0.92)
+   417→		for s = 0, segs do
+   418→			local u = s / segs
+   419→			local th = u * math.pi * 2
+   420→			local c, sn = math.cos(th), math.sin(th)
+   421→			local flute = math.sin(th * 5 + t * 5.2) * 0.032 * t
+   422→			local rip = fbm3(c * 1.9 + seed, sn * 1.9, t * 2.8) * 0.042 * t
+   423→			local rad = math.max(0.06, baseR + flute + rip)
+   424→			local pos = Vector3.new(c * rad, sn * rad, -t)
+   425→			vids[r][s] = em:AddVertex(pos)
+   426→			nids[r][s] = em:AddNormal(Vector3.new(c * 0.88, sn * 0.88, 0.47).Unit)
+   427→			uvids[r][s] = em:AddUV(Vector2.new(u, t))
+   428→		end
+   429→	end
+   430→	for r = 0, rings - 1 do
+   431→		for s = 0, segs - 1 do
+   432→			local f1 = em:AddTriangle(vids[r][s], vids[r + 1][s], vids[r + 1][s + 1])
+   433→			em:SetFaceNormals(f1, {nids[r][s], nids[r + 1][s], nids[r + 1][s + 1]})
+   434→			em:SetFaceUVs(f1, {uvids[r][s], uvids[r + 1][s], uvids[r + 1][s + 1]})
+   435→			local f2 = em:AddTriangle(vids[r][s], vids[r + 1][s + 1], vids[r][s + 1])
+   436→			em:SetFaceNormals(f2, {nids[r][s], nids[r + 1][s + 1], nids[r][s + 1]})
+   437→			em:SetFaceUVs(f2, {uvids[r][s], uvids[r + 1][s + 1], uvids[r][s + 1]})
+   438→		end
+   439→	end
+   440→	return {em = em, content = toStaticMeshContent(em), tris = rings * segs * 2}
+   441→end
+   442→
+   443→-- High-Poly Helical Cylindrical Laser Plasma Envelope (26 x 48 = 2,496 triangles, 7.5° smooth circular perimeter!)
+   444→local function buildCylindricalLaserMesh()
+   445→	local em = keep(AssetService:CreateEditableMesh())
+   446→	local rings, segs = 26, 48
+   447→	local vids, nids, uvids = {}, {}, {}
+   448→	for r = 0, rings do
+   449→		local t = r / rings
+   450→		vids[r] = {}; nids[r] = {}; uvids[r] = {}
+   451→		local z = 0.5 - t
+   452→		local env = math.sin(t * math.pi)
+   453→		local flare = 0.34 + 0.26 * (t ^ 1.1)
+   454→		for s = 0, segs do
+   455→			local u = s / segs
+   456→			local th = u * math.pi * 2
+   457→			local c, sn = math.cos(th), math.sin(th)
+   458→			local w1 = math.sin(t * 14.0 + th * 2.0) * 0.048 * env
+   459→			local rad = flare * (1 + w1)
+   460→			vids[r][s] = em:AddVertex(Vector3.new(c * rad, sn * rad, z))
+   461→			nids[r][s] = em:AddNormal(Vector3.new(c * 0.92, sn * 0.92, 0.39).Unit)
+   462→			uvids[r][s] = em:AddUV(Vector2.new(u, t))
+   463→		end
+   464→	end
+   465→	for r = 0, rings - 1 do
+   466→		for s = 0, segs - 1 do
+   467→			local f1 = em:AddTriangle(vids[r][s], vids[r + 1][s], vids[r + 1][s + 1])
+   468→			em:SetFaceNormals(f1, {nids[r][s], nids[r + 1][s], nids[r + 1][s + 1]})
+   469→			em:SetFaceUVs(f1, {uvids[r][s], uvids[r + 1][s], uvids[r + 1][s + 1]})
+   470→			local f2 = em:AddTriangle(vids[r][s], vids[r + 1][s + 1], vids[r][s + 1])
+   471→			em:SetFaceNormals(f2, {nids[r][s], nids[r + 1][s + 1], nids[r][s + 1]})
+   472→			em:SetFaceUVs(f2, {uvids[r][s], uvids[r + 1][s + 1], uvids[r][s + 1]})
+   473→		end
+   474→	end
+   475→	return {em = em, content = toStaticMeshContent(em), tris = rings * segs * 2}
+   476→end
+   477→
+   478→-- Ultra-Smooth High-Poly 3D Solar Spheres (44x76 = 6,688 tris & 36x64 = 4,608 tris -> ZERO polygonal facets!)
+   479→local function buildSolar3DSphere(rings, segs, amp, freq, seed)
+   480→	local em = keep(AssetService:CreateEditableMesh())
+   481→	local vids, nids, uvids = {}, {}, {}
+   482→	for r = 0, rings do
+   483→		local v = r / rings
+   484→		local theta = v * math.pi
+   485→		local sinT, cosT = math.sin(theta), math.cos(theta)
+   486→		vids[r] = {}; nids[r] = {}; uvids[r] = {}
+   487→		for s = 0, segs do
+   488→			local u = s / segs
+   489→			local phi = u * math.pi * 2
+   490→			local sx = sinT * math.cos(phi)
+   491→			local sy = cosT
+   492→			local sz = sinT * math.sin(phi)
+   493→			local n1 = fbm3(sx * freq + seed, sy * freq - seed * 0.5, sz * freq + 1.4)
+   494→			local rad = 0.5 * (1 + n1 * amp)
+   495→			local dir = Vector3.new(sx, sy, sz)
+   496→			vids[r][s] = em:AddVertex(dir * rad)
+   497→			nids[r][s] = em:AddNormal(-dir)
+   498→			uvids[r][s] = em:AddUV(Vector2.new(u, v))
+   499→		end
+   500→	end
+   501→	for r = 0, rings - 1 do
+   502→		for s = 0, segs - 1 do
+   503→			local f1 = em:AddTriangle(vids[r][s], vids[r + 1][s + 1], vids[r + 1][s])
+   504→			em:SetFaceNormals(f1, {nids[r][s], nids[r + 1][s + 1], nids[r + 1][s]})
+   505→			em:SetFaceUVs(f1, {uvids[r][s], uvids[r + 1][s + 1], uvids[r + 1][s]})
+   506→			local f2 = em:AddTriangle(vids[r][s], vids[r][s + 1], vids[r + 1][s + 1])
+   507→			em:SetFaceNormals(f2, {nids[r][s], nids[r][s + 1], nids[r + 1][s + 1]})
+   508→			em:SetFaceUVs(f2, {uvids[r][s], uvids[r][s + 1], uvids[r + 1][s + 1]})
+   509→		end
+   510→	end
+   511→	return {em = em, content = toStaticMeshContent(em), tris = rings * segs * 2}
+   512→end
+   513→
+   514→-- High-Poly Toroidal Containment Ring (96 x 18 = 3,456 triangles -> 3.75° razor-smooth circular arc!)
+   515→local function buildMagneticTorusRing(majSegs, minSegs, minR)
+   516→	local em = keep(AssetService:CreateEditableMesh())
+   517→	local vids, nids, uvids = {}, {}, {}
+   518→	for i = 0, majSegs do
+   519→		local u = i / majSegs
+   520→		local phi = u * math.pi * 2
+   521→		local cp, sp = math.cos(phi), math.sin(phi)
+   522→		vids[i] = {}; nids[i] = {}; uvids[i] = {}
+   523→		for j = 0, minSegs do
+   524→			local v = j / minSegs
+   525→			local th = v * math.pi * 2
+   526→			local ct, st = math.cos(th), math.sin(th)
+   527→			local r = 0.5 + minR * ct
+   528→			local pos = Vector3.new(cp * r, sp * r, minR * st)
+   529→			vids[i][j] = em:AddVertex(pos)
+   530→			nids[i][j] = em:AddNormal(Vector3.new(-cp, -sp, 0.35).Unit)
+   531→			uvids[i][j] = em:AddUV(Vector2.new(u, v))
+   532→		end
+   533→	end
+   534→	for i = 0, majSegs - 1 do
+   535→		for j = 0, minSegs - 1 do
+   536→			local f1 = em:AddTriangle(vids[i][j], vids[i + 1][j], vids[i + 1][j + 1])
+   537→			em:SetFaceNormals(f1, {nids[i][j], nids[i + 1][j], nids[i + 1][j + 1]})
+   538→			em:SetFaceUVs(f1, {uvids[i][j], uvids[i + 1][j], uvids[i + 1][j + 1]})
+   539→			local f2 = em:AddTriangle(vids[i][j], vids[i + 1][j + 1], vids[i][j + 1])
+   540→			em:SetFaceNormals(f2, {nids[i][j], nids[i + 1][j + 1], nids[i][j + 1]})
+   541→			em:SetFaceUVs(f2, {uvids[i][j], uvids[i + 1][j + 1], uvids[i][j + 1]})
+   542→		end
+   543→	end
+   544→	return {em = em, content = toStaticMeshContent(em), tris = majSegs * minSegs * 2}
+   545→end
+   546→
+   547→-- EXACTLY 7 Cornerless High-Polygon GPU-Native Mesh templates (<= 8 client limit!):
+   548→local clusterTplA     = buildMultiCloudCluster(1.4)
+   549→local clusterTplB     = buildMicroWispCluster(6.7)
+   550→local coneTpl         = buildAxisymmetricConeMesh(2.2)
+   551→local laserWaveTpl    = buildCylindricalLaserMesh()
+   552→local starSphereInner = buildSolar3DSphere(48, 84, 0.135, 1.95, 3.1)
+   553→local starSphereOuter = buildSolar3DSphere(44, 76, 0.235, 2.25, 8.4)
+   554→local magRingTpl      = buildMagneticTorusRing(108, 20, 0.016)
+   555→task.wait()
+   556→Workspace:SetAttribute("VaporStep", "05_SEVEN_EDITABLE_MESHES_BUILT")
+   557→
+   558→local meshContentByEm = {
+   559→	[clusterTplA.em]     = clusterTplA.content,
+   560→	[clusterTplB.em]     = clusterTplB.content,
+   561→	[coneTpl.em]         = coneTpl.content,
+   562→	[laserWaveTpl.em]    = laserWaveTpl.content,
+   563→	[starSphereInner.em] = starSphereInner.content,
+   564→	[starSphereOuter.em] = starSphereOuter.content,
+   565→	[magRingTpl.em]      = magRingTpl.content,
+   566→}
+   567→Workspace:SetAttribute("TotalHighPolyTemplateTris",
+   568→	clusterTplA.tris + clusterTplB.tris + coneTpl.tris + laserWaveTpl.tris
+   569→	+ starSphereInner.tris + starSphereOuter.tris + magRingTpl.tris)
+   570→
+   571→local protoCache = {}
+   572→local emissiveSurfaces = {}
+   573→local function makeAlphaMeshPart(em, texBundle, name)
+   574→	local byEm = protoCache[em]
+   575→	if not byEm then
+   576→		byEm = {}
+   577→		protoCache[em] = byEm
+   578→	end
+   579→	local proto = byEm[texBundle.ref]
+   580→	local mp
+   581→	if not proto then
+   582→		local mContent = meshContentByEm[em] or Content.fromObject(em)
+   583→		mp = style3DPart(AssetService:CreateMeshPartAsync(mContent))
+   584→		mp.Material = Enum.Material.SmoothPlastic
+   585→		mp.Transparency = 1
+   586→		local saCfg = {ColorMap = texBundle.content}
+   587→		if texBundle.emissive then
+   588→			saCfg.EmissiveMask = texFullEmissiveMask.content
+   589→		end
+   590→		local sa = AssetService:CreateSurfaceAppearanceAsync(saCfg)
+   591→		sa.AlphaMode = Enum.AlphaMode.Transparency
+   592→		if texBundle.emissive then
+   593→			pcall(function()
+   594→				sa.EmissiveStrength = texBundle.emissive
+   595→				sa.EmissiveTint = Color3.fromRGB(255, 255, 255)
+   596→			end)
+   597→		end
+   598→		sa.Parent = mp
+   599→		local saved = mp:Clone()
+   600→		keep(saved)
+   601→		byEm[texBundle.ref] = saved
+   602→	else
+   603→		mp = proto:Clone()
+   604→	end
+   605→	mp.Name = name
+   606→	mp.Parent = root
+   607→	if texBundle.emissive then
+   608→		local saInst = mp:FindFirstChildOfClass("SurfaceAppearance")
+   609→		if saInst then
+   610→			emissiveSurfaces[#emissiveSurfaces + 1] = {sa = saInst, base = texBundle.emissive}
+   611→		end
+   612→	end
+   613→	return {part = mp, baseSize = mp.MeshSize}
+   614→end
+   615→
+   616→-- ============================================================================
+   617→-- 3. STAGE 02: STRAIGHT AXIAL NOZZLE-BORN 3D VAPOR (GRAVITY = 0!)
+   618→-- ============================================================================
+   619→local mistLights = {}
+   620→for i, spec in ipairs({
+   621→	{off = Vector3.new(0, 1.5, 13.5),    range = 38, mult = 1.15},
+   622→	{off = Vector3.new(-13.5, -1.0, 10), range = 32, mult = 1.00},
+   623→	{off = Vector3.new( 13.5, -1.0, 10), range = 32, mult = 1.00},
+   624→}) do
+   625→	local a = style3DPart(Instance.new("Part"))
+   626→	a.Name = "CHAMBER_3D_MIST_ILLUM_" .. i
+   627→	a.Size = Vector3.new(0.2, 0.2, 0.2)
+   628→	a.Transparency = 1
+   629→	a.CFrame = CFrame.new(O + spec.off)
+   630→	a.Parent = root
+   631→	local pl = Instance.new("PointLight")
+   632→	pl.Brightness = 0
+   633→	pl.Range = spec.range
+   634→	pl.Shadows = false
+   635→	pl.Color = Color3.fromRGB(224, 232, 242)
+   636→	pl.Parent = a
+   637→	mistLights[i] = {light = pl, mult = spec.mult}
+   638→end
+   639→
+   640→local nozzleJets = {}
+   641→for idx, nz in ipairs(nozzles) do
+   642→	nozzleJets[idx] = {
+   643→		makeAlphaMeshPart(coneTpl.em, texVaporJet, "NOZZLE_3D_STRAIGHT_JET_INNER_" .. nz.site.tag),
+   644→		makeAlphaMeshPart(coneTpl.em, texVaporJet, "NOZZLE_3D_STRAIGHT_JET_OUTER_" .. nz.site.tag),
+   645→	}
+   646→end
+   647→
+   648→local PUFFS_PER_NOZZLE = 27
+   649→local fluidPuffs = {}
+   650→local rng = Random.new(20261027)
+   651→
+   652→for nIdx = 1, 6 do
+   653→	for k = 1, PUFFS_PER_NOZZLE do
+   654→		local tpl = clusterTplA
+   655→		local meshObj = makeAlphaMeshPart(tpl.em, texCryoVapor,
+   656→			string.format("NOZZLE_STRAIGHT_VAPOR_%d_%02d", nIdx, k))
+   657→		fluidPuffs[#fluidPuffs + 1] = {
+   658→			nozzleIdx = nIdx,
+   659→			slotIdx = k,
+   660→			mesh = meshObj,
+   661→			alive = false,
+   662→			age = 0,
+   663→			maxLife = 1.7,
+   664→			pos = FOCUS,
+   665→			vel = Vector3.zero,
+   666→			roll = rng:NextNumber(0, math.pi * 2),
+   667→			spin = rng:NextNumber(-0.75, 0.75),
+   668→			endSize = 3.6,
+   669→			seed = rng:NextNumber(0, 100),
+   670→		}
+   671→	end
+   672→end
+   673→
+   674→local function spawnStraightPuffAtNozzle(puff, nz, fuelStrength)
+   675→	local s = nz.site
+   676→	local mouth = nz.socket.WorldPosition
+   677→	local inward = -s.axis -- Exact straight laser axis!
+   678→	local refUp = math.abs(inward.Y) > 0.92 and Vector3.new(1, 0, 0) or Vector3.new(0, 1, 0)
+   679→	local sideA = inward:Cross(refUp).Unit
+   680→	local sideB = inward:Cross(sideA).Unit
+   681→	local ang = rng:NextNumber(0, math.pi * 2)
+   682→	local boreR = rng:NextNumber(0.0, 0.24)
+   683→	local radialDir = sideA * math.cos(ang) + sideB * math.sin(ang)
+   684→
+   685→	puff.alive = true
+   686→	puff.age = 0
+   687→	puff.maxLife = rng:NextNumber(1.30, 1.95)
+   688→	puff.pos = mouth + inward * 0.10 + radialDir * boreR
+   689→	local launchSpeed = rng:NextNumber(6.2, 9.4) * (0.72 + 0.28 * fuelStrength) * s.jetScale
+   690→	local symmetricSpread = rng:NextNumber(0.55, 2.05)
+   691→	puff.vel = inward * launchSpeed + radialDir * symmetricSpread
+   692→	puff.endSize = rng:NextNumber(2.8, 4.2) * s.jetScale
+   693→	puff.spin = rng:NextNumber(-0.70, 0.70)
+   694→end
+   695→
+   696→-- ============================================================================
+   697→-- 4. STAGES 04 -> 06/ONLINE: RGBA-BAKED REFERENCE MULTI-LAYER ARCHITECTURE
+   698→-- ============================================================================
+   699→local centerDriverPart = style3DPart(Instance.new("Part"))
+   700→centerDriverPart.Name = "FUSION_3D_CENTER_DRIVER"
+   701→centerDriverPart.Size = Vector3.new(0.2, 0.2, 0.2)
+   702→centerDriverPart.Transparency = 1
+   703→centerDriverPart.CFrame = CFrame.new(FOCUS)
+   704→centerDriverPart.Parent = root
+   705→local centerDriver = Instance.new("PointLight")
+   706→centerDriver.Brightness = 0
+   707→centerDriver.Range = 14
+   708→centerDriver.Shadows = false
+   709→centerDriver.Color = Color3.fromRGB(232, 243, 255)
+   710→centerDriver.Parent = centerDriverPart
+   711→
+   712→-- Keep auxiliary room/front PointLights strictly OFF during normal operation so
+   713→-- emitted reactor light NEVER bleaches or distorts chamber wall / emitter barrel colors!
+   714→local chamberCobaltLights = {}
+   715→for i, spec in ipairs({
+   716→	{off = Vector3.new(-11.5,  3.5,  1.5), range = 18, mult = 0.0},
+   717→	{off = Vector3.new( 11.5,  3.5,  1.5), range = 18, mult = 0.0},
+   718→	{off = Vector3.new(  0.0, -7.5,  1.5), range = 18, mult = 0.0},
+   719→	{off = Vector3.new(  0.0,  8.5,  1.0), range = 18, mult = 0.0},
+   720→}) do
+   721→	local a = style3DPart(Instance.new("Part"))
+   722→	a.Name = "FUSION_3D_COBALT_CHAMBER_LIGHT_" .. i
+   723→	a.Size = Vector3.new(0.2, 0.2, 0.2)
+   724→	a.Transparency = 1
+   725→	a.CFrame = CFrame.new(FOCUS + spec.off)
+   726→	a.Parent = root
+   727→	local pl = Instance.new("PointLight")
+   728→	pl.Brightness = 0
+   729→	pl.Range = spec.range
+   730→	pl.Shadows = false
+   731→	pl.Color = Color3.fromRGB(215, 232, 255)
+   732→	pl.Parent = a
+   733→	chamberCobaltLights[i] = {light = pl, mult = spec.mult}
+   734→end
+   735→
+   736→local nebulaFrontLightPart = style3DPart(Instance.new("Part"))
+   737→nebulaFrontLightPart.Name = "FUSION_3D_NEBULA_FRONT_ILLUM"
+   738→nebulaFrontLightPart.Size = Vector3.new(0.2, 0.2, 0.2)
+   739→nebulaFrontLightPart.Transparency = 1
+   740→nebulaFrontLightPart.CFrame = CFrame.new(FOCUS + Vector3.new(0, 0, 4.5))
+   741→nebulaFrontLightPart.Parent = root
+   742→local nebulaFrontLight = Instance.new("PointLight")
+   743→nebulaFrontLight.Brightness = 0
+   744→nebulaFrontLight.Range = 12
+   745→nebulaFrontLight.Shadows = false
+   746→nebulaFrontLight.Color = Color3.fromRGB(228, 240, 255)
+   747→nebulaFrontLight.Parent = nebulaFrontLightPart
+   748→
+   749→-- 6 Conical Flaring 3D Lasers + 24 Fine Collar Guide Filaments
+   750→local GUIDE_OFFSETS = {
+   751→	Vector2.new( 0.78,  0.28),
+   752→	Vector2.new(-0.78,  0.28),
+   753→	Vector2.new( 0.78, -0.28),
+   754→	Vector2.new(-0.78, -0.28),
+   755→}
+   756→
+   757→local lasers = {}
+   758→for idx, nz in ipairs(nozzles) do
+   759→	local coreBeam = style3DPart(Instance.new("Part"))
+   760→	coreBeam.Name = "LASER_3D_CORE_" .. nz.site.tag
+   761→	coreBeam.Shape = Enum.PartType.Cylinder
+   762→	coreBeam.Material = Enum.Material.Neon
+   763→	coreBeam.Transparency = 1
+   764→	coreBeam.Parent = root
+   765→
+   766→	local outerBeam = style3DPart(Instance.new("Part"))
+   767→	outerBeam.Name = "LASER_3D_NEON_SHEATH_" .. nz.site.tag
+   768→	outerBeam.Shape = Enum.PartType.Cylinder
+   769→	outerBeam.Material = Enum.Material.Neon
+   770→	outerBeam.Transparency = 1
+   771→	outerBeam.Parent = root
+   772→
+   773→	local conicalFlare = makeAlphaMeshPart(coneTpl.em, texConicalBeam,
+   774→		"LASER_3D_CONICAL_FLARE_" .. nz.site.tag)
+   775→
+   776→	local waveSheath = makeAlphaMeshPart(laserWaveTpl.em, texConicalBeam,
+   777→		"LASER_3D_WAVE_ENVELOPE_" .. nz.site.tag)
+   778→
+   779→	local muzzleLens = style3DPart(Instance.new("Part"))
+   780→	muzzleLens.Name = "LASER_3D_MUZZLE_LENS_" .. nz.site.tag
+   781→	muzzleLens.Shape = Enum.PartType.Ball
+   782→	muzzleLens.Material = Enum.Material.Neon
+   783→	muzzleLens.Transparency = 1
+   784→	muzzleLens.Parent = root
+   785→
+   786→	-- Physical Nozzle Integration: 3D Polar Plasma Collar Shroud + Spinning 3D Magnetic Nozzle Ring
+   787→	-- + 8 Ultra-Fine Staggered 3D Micro-Wavelets streaming smoothly from Nozzle -> Core!
+   788→	local collarShroud = makeAlphaMeshPart(clusterTplA.em, texCyanExpansion,
+   789→		"NOZZLE_3D_COLLAR_SHROUD_" .. nz.site.tag)
+   790→	local collarRing = makeAlphaMeshPart(magRingTpl.em, texCyanExpansion,
+   791→		"NOZZLE_3D_MAG_COLLAR_" .. nz.site.tag)
+   792→	local pulses = {}
+   793→	for pIdx = 1, 8 do
+   794→		pulses[pIdx] = makeAlphaMeshPart(clusterTplB.em, texWhiteIceCorona,
+   795→			string.format("CONDUIT_3D_SURGE_PULSE_%s_%d", nz.site.tag, pIdx))
+   796→	end
+   797→
+   798→	local guides = {}
+   799→	for g = 1, 4 do
+   800→		local rail = style3DPart(Instance.new("Part"))
+   801→		rail.Name = string.format("LASER_3D_GUIDE_RAIL_%s_%d", nz.site.tag, g)
+   802→		rail.Shape = Enum.PartType.Cylinder
+   803→		rail.Material = Enum.Material.Neon
+   804→		rail.Transparency = 1
+   805→		rail.Parent = root
+   806→		guides[g] = rail
+   807→	end
+   808→
+   809→	lasers[idx] = {
+   810→		nozzle = nz,
+   811→		coreBeam = coreBeam,
+   812→		outerBeam = outerBeam,
+   813→		conicalFlare = conicalFlare,
+   814→		waveSheath = waveSheath,
+   815→		muzzleLens = muzzleLens,
+   816→		collarShroud = collarShroud,
+   817→		collarRing = collarRing,
+   818→		pulses = pulses,
+   819→		guides = guides,
+   820→		ext = 0,
+   821→		impacted = false,
+   822→	}
+   823→end
+   824→
+   825→-- 100%-OPAQUE (Transparency = 0) HARDWARE Z-OCCLUDING 3D SOLAR CORE SPHERE
+   826→local opaqueSunBody = style3DPart(AssetService:CreateMeshPartAsync(starSphereInner.content))
+   827→opaqueSunBody.Name = "STAR_3D_OPAQUE_SUN_BODY"
+   828→opaqueSunBody.Material = Enum.Material.Neon
+   829→opaqueSunBody.Transparency = 1
+   830→opaqueSunBody.Parent = root
+   831→local opaqueSunBase = opaqueSunBody.MeshSize
+   832→
+   833→local softNeonAura = style3DPart(AssetService:CreateMeshPartAsync(starSphereOuter.content))
+   834→softNeonAura.Name = "STAR_3D_SOFT_NEON_AURA"
+   835→softNeonAura.Material = Enum.Material.Neon
+   836→softNeonAura.Transparency = 1
+   837→softNeonAura.Parent = root
+   838→local softNeonBase = softNeonAura.MeshSize
+   839→
+   840→-- 6 Organic Multi-Lobed 3D Boiling Cloud & Solar Prominence Shells (breaks up hard geometric sphere edge!):
+   841→local starShells = {
+   842→	{
+   843→		mesh = makeAlphaMeshPart(clusterTplA.em, texWhiteIceCorona, "STAR_3D_BOILING_PHOTOSPHERE_A"),
+   844→		rotVel = Vector3.new(0.28, -0.34, 0.72),
+   845→		baseTilt = CFrame.Angles(0.18, -0.22, 0.40),
+   846→		kind = "CLOUD_BILLOW_A",
+   847→	},
+   848→	{
+   849→		mesh = makeAlphaMeshPart(clusterTplA.em, texWhiteIceCorona, "STAR_3D_BOILING_PHOTOSPHERE_B"),
+   850→		rotVel = Vector3.new(-0.32, 0.26, -0.64),
+   851→		baseTilt = CFrame.Angles(-0.24, 0.28, 1.95),
+   852→		kind = "CLOUD_BILLOW_B",
+   853→	},
+   854→	{
+   855→		mesh = makeAlphaMeshPart(clusterTplA.em, texWhiteIceCorona, "STAR_3D_BOILING_PHOTOSPHERE_C"),
+   856→		rotVel = Vector3.new(0.22, 0.36, 0.52),
+   857→		baseTilt = CFrame.Angles(0.32, 0.55, 3.60),
+   858→		kind = "CLOUD_BILLOW_C",
+   859→	},
+   860→	{
+   861→		mesh = makeAlphaMeshPart(starSphereOuter.em, texWhiteIceCorona, "STAR_3D_SOLAR_PROMINENCE_CORE"),
+   862→		rotVel = Vector3.new(-0.92, 0.76, -0.84),
+   863→		baseTilt = CFrame.identity,
+   864→		kind = "PROMINENCE",
+   865→	},
+   866→	{
+   867→		mesh = makeAlphaMeshPart(starSphereOuter.em, texCyanExpansion, "STAR_3D_CYAN_EXPANSION_INNER"),
+   868→		rotVel = Vector3.new(0.58, -0.92, 0.70),
+   869→		baseTilt = CFrame.identity,
+   870→		kind = "CYAN_INNER",
+   871→	},
+   872→	{
+   873→		mesh = makeAlphaMeshPart(clusterTplA.em, texCyanExpansion, "STAR_3D_CYAN_EXPANSION_OUTER"),
+   874→		rotVel = Vector3.new(-0.24, 0.30, -0.46),
+   875→		baseTilt = CFrame.Angles(-0.16, -0.26, 2.40),
+   876→		kind = "CYAN_OUTER",
+   877→	},
+   878→}
+   879→
+   880→-- C^2-Smooth Sub-8-Bit Zero-Derivative Lifecycle Bell (sin(pi * u)^3.5):
+   881→-- Value, 1st derivative, AND 2nd derivative are ALL 0.0000 at birth (u=0) and death (u=1),
+   882→-- keeping outer 28% of every wisp's lifecycle below 1/255 bit quantization so vanishing/spawning is 100% imperceptible!
+   883→local function imperceptibleBell(u)
+   884→	local s = math.sin(u * math.pi)
+   885→	if s <= 0 then return 0 end
+   886→	local s2 = s * s
+   887→	return s2 * s * math.sqrt(s)
+   888→end
+   889→
+   890→local goldenAngle = math.pi * (3 - math.sqrt(5))
+   891→
+   892→-- 144 Billowing & Imperceptibly Dissolving 3D Solar Corona Plasma Billows (576 micro-billows masking sphere rim!)
+   893→local CORONA_PLUME_COUNT = 144
+   894→local coronaPlumes = {}
+   895→for i = 1, CORONA_PLUME_COUNT do
+   896→	local y = 1 - ((i - 0.5) / CORONA_PLUME_COUNT) * 2
+   897→	local rXY = math.sqrt(math.max(0, 1 - y * y))
+   898→	local theta = goldenAngle * i
+   899→	local dir = Vector3.new(math.cos(theta) * rXY, y, math.sin(theta) * rXY)
+   900→	local tex = (i % 6 == 0) and texCyanExpansion or texWhiteIceCorona
+   901→	local mObj = makeAlphaMeshPart(clusterTplB.em, tex, string.format("STAR_3D_CORONA_PLUME_%03d", i))
+   902→	local rotAxis = Vector3.new(
+   903→		math.sin(i * 1.73),
+   904→		math.cos(i * 2.19),
+   905→		math.sin(i * 0.97 + 1.2)
+   906→	).Unit
+   907→	local uInit = (i * 0.61803398875) % 1
+   908→	coronaPlumes[i] = {
+   909→		mesh = mObj,
+   910→		baseDir = dir,
+   911→		rotAxis = rotAxis,
+   912→		orbitSpeed = 0.42 + (i % 7) * 0.085,
+   913→		eruptRate = 0.20 + (i % 9) * 0.034,
+   914→		u0 = uInit,
+   915→		prevU = uInit,
+   916→		angJitter = 0,
+   917→		radFactor = 0.72 + (i % 6) * 0.095,
+   918→		sizeFactor = 0.44 + (i % 5) * 0.056,
+   919→		roll0 = (i * 1.37) % (math.pi * 2),
+   920→		rollVel = ((i % 2 == 0) and 1 or -1) * (0.65 + (i % 5) * 0.14),
+   921→		phase = i * 0.83,
+   922→	}
+   923→end
+   924→task.wait()
+   925→
+   926→-- 10 Soft Continuous Core-to-Mid Base Cushions + 192 Tiny Flowing & Dissolving 3D Micro-Nebula Constellations (768 micro-clouds!)
+   927→local CORE_CUSHION_COUNT = 10
+   928→local coreCushions = {}
+   929→for i = 1, CORE_CUSHION_COUNT do
+   930→	local rf = (i - 0.5) / CORE_CUSHION_COUNT
+   931→	local ang = i * goldenAngle * 1.5
+   932→	local rx = 1.6 + 5.8 * math.sqrt(rf)
+   933→	local ry = 1.5 + 4.1 * math.sqrt(rf)
+   934→	local bz = -3.4 + 2.8 * ((i * 0.61803) % 1)
+   935→	local isIce = (i <= 4)
+   936→	local isCyan = (not isIce) and (i % 2 == 0)
+   937→	local tex = isIce and texWhiteIceCorona or (isCyan and texCyanExpansion or texStormyCobaltNebula)
+   938→	coreCushions[i] = {
+   939→		mesh = makeAlphaMeshPart(clusterTplA.em, tex, string.format("CORE_3D_STEADY_CUSHION_%02d", i)),
+   940→		isIce = isIce,
+   941→		isCyan = isCyan,
+   942→		baseOffset = Vector3.new(math.cos(ang) * rx, math.sin(ang) * ry, bz),
+   943→		distNorm = clamp01(rf),
+   944→		baseSize = 6.2 + rf * 2.2,
+   945→		roll0 = (i * 1.91) % (math.pi * 2),
+   946→		phase = i * 1.13,
+   947→	}
+   948→end
+   949→
+   950→local NEBULA_COUNT = 192
+   951→local chamberNebula = {}
+   952→for i = 1, NEBULA_COUNT do
+   953→	local ringFrac = ((i - 0.5) / NEBULA_COUNT)
+   954→	local ang = i * goldenAngle * 1.5
+   955→	local rx = 1.8 + 7.8 * math.sqrt(ringFrac)
+   956→	local ry = 1.6 + 5.4 * math.sqrt(ringFrac)
+   957→	local bz = -4.8 + 4.2 * (((i * 0.754877666) % 1))
+   958→	local szBase = 3.5 + ringFrac * 1.30 + (i % 5) * 0.30
+   959→	local bx = math.cos(ang) * rx
+   960→	local by = math.sin(ang) * ry
+   961→	local isInnerIce = (ringFrac < 0.36) and (i % 3 == 0)
+   962→	local isCyanAccent = (not isInnerIce) and (i % 2 == 0)
+   963→	local tex = isInnerIce and texWhiteIceCorona or (isCyanAccent and texCyanExpansion or texStormyCobaltNebula)
+   964→	local mObj = makeAlphaMeshPart(clusterTplB.em, tex, string.format("CHAMBER_3D_PLASMA_NEBULA_%03d", i))
+   965→	local uInit = (i * 0.61803398875) % 1
+   966→	chamberNebula[i] = {
+   967→		mesh = mObj,
+   968→		isInnerIce = isInnerIce,
+   969→		isCyanAccent = isCyanAccent,
+   970→		baseOffset = Vector3.new(bx, by, bz),
+   971→		jitter = Vector3.zero,
+   972→		distNorm = clamp01(ringFrac),
+   973→		baseSize = szBase,
+   974→		swirlSpeed = ((i % 2 == 0) and 1 or -1) * (0.24 + (i % 6) * 0.048),
+   975→		advectRate = 0.13 + (i % 9) * 0.024,
+   976→		u0 = uInit,
+   977→		prevU = uInit,
+   978→		roll0 = (i * 2.11) % (math.pi * 2),
+   979→		phase = i * 0.71,
+   980→	}
+   981→end
+   982→task.wait()
+   983→
+   984→-- 12 Soft Continuous Wide-Chamber Cushions + 224 Tiny Drifting & Dissolving 3D Atmospheric Micro-Mist Constellations (896 micro-clouds!)
+   985→local CHAMBER_CUSHION_COUNT = 12
+   986→local chamberCushions = {}
+   987→for i = 1, CHAMBER_CUSHION_COUNT do
+   988→	local uIdx = (i - 0.5) / CHAMBER_CUSHION_COUNT
+   989→	local ang = i * goldenAngle * 2.0
+   990→	local radBand = 0.40 + 0.58 * math.sqrt(uIdx)
+   991→	local ox = math.cos(ang) * (16.2 * radBand)
+   992→	local oy = math.sin(ang) * (11.4 * radBand)
+   993→	local oz = -6.0 + 8.5 * ((i * 0.754877) % 1)
+   994→	local tex = (i % 3 == 0) and texCyanExpansion or texStormyCobaltNebula
+   995→	chamberCushions[i] = {
+   996→		mesh = makeAlphaMeshPart(clusterTplA.em, tex, string.format("CHAMBER_3D_STEADY_CUSHION_%02d", i)),
+   997→		origin = Vector3.new(ox, oy, oz),
+   998→		baseSize = 10.2 + (i % 4) * 1.5,
+   999→		roll0 = (i * 1.47) % (math.pi * 2),
+  1000→		phase = i * 0.97,
+  1001→	}
+  1002→end
+  1003→
+  1004→local AMBIENT_MIST_COUNT = 224
+  1005→local ambientMist = {}
+  1006→for i = 1, AMBIENT_MIST_COUNT do
+  1007→	local uIdx = (i - 0.5) / AMBIENT_MIST_COUNT
+  1008→	local ang = i * goldenAngle * 2.0
+  1009→	local radBand = 0.30 + 0.70 * math.sqrt(uIdx)
+  1010→	local ox = math.cos(ang) * (18.2 * radBand)
+  1011→	local oy = math.sin(ang) * (12.8 * radBand)
+  1012→	local oz = -7.0 + 10.8 * (((i * 0.56984029) % 1))
+  1013→	local isIce = (i % 4 == 0)
+  1014→	local isCyan = (i % 4 == 2)
+  1015→	local tex = isIce and texWhiteIceCorona or (isCyan and texCyanExpansion or texStormyCobaltNebula)
+  1016→	local mObj = makeAlphaMeshPart(clusterTplB.em, tex, string.format("CHAMBER_3D_AMBIENT_MIST_%03d", i))
+  1017→	local uInit = (i * 0.61803398875) % 1
+  1018→	ambientMist[i] = {
+  1019→		mesh = mObj,
+  1020→		origin = Vector3.new(ox, oy, oz),
+  1021→		jitter = Vector3.zero,
+  1022→		driftVel = Vector3.new(
+  1023→			((i % 2 == 0) and 1 or -1) * (0.65 + (i % 5) * 0.22),
+  1024→			0.85 + (i % 4) * 0.28,
+  1025→			math.sin(i * 1.9) * 0.45
+  1026→		),
+  1027→		cycleRate = 0.095 + (i % 9) * 0.019,
+  1028→		u0 = uInit,
+  1029→		prevU = uInit,
+  1030→		baseSize = 4.6 + (i % 6) * 0.42,
+  1031→		roll0 = (i * 1.63) % (math.pi * 2),
+  1032→		rollVel = ((i % 2 == 0) and 1 or -1) * (0.18 + (i % 4) * 0.05),
+  1033→		isIce = isIce,
+  1034→		phase = i * 0.93,
+  1035→	}
+  1036→end
+  1037→task.wait()
+  1038→
+  1039→-- 64 Soft Feathered Volumetric 3D Magnetic Ion Micro-Wisps (edgeZero RGBA gradient -> zero sharp dots!)
+  1040→local AMBIENT_WISP_COUNT = 64
+  1041→local ambientWisps = {}
+  1042→for i = 1, AMBIENT_WISP_COUNT do
+  1043→	local wObj = makeAlphaMeshPart(clusterTplB.em, texCyanExpansion, string.format("CHAMBER_3D_MAGNETIC_WISP_%03d", i))
+  1044→	local tiltCF = CFrame.Angles(
+  1045→		math.sin(i * 1.31) * 1.08,
+  1046→		math.cos(i * 0.89) * 1.08,
+  1047→		math.sin(i * 2.17) * 0.88
+  1048→	)
+  1049→	local uLife0 = (i * 0.61803398875) % 1
+  1050→	ambientWisps[i] = {
+  1051→		part = wObj.part,
+  1052→		tilt = tiltCF,
+  1053→		radius = 4.8 + (i % 8) * 1.35,
+  1054→		radJitter = 0,
+  1055→		speed = ((i % 2 == 0) and 1 or -1) * (0.52 + (i % 6) * 0.12),
+  1056→		u0 = (i * goldenAngle) % (math.pi * 2),
+  1057→		lifeRate = 0.14 + (i % 7) * 0.028,
+  1058→		lifeU0 = uLife0,
+  1059→		prevLifeU = uLife0,
+  1060→		len = 1.35 + (i % 4) * 0.28,
+  1061→		thick = 0.85 + (i % 3) * 0.16,
+  1062→		phase = i * 1.17,
+  1063→	}
+  1064→end
+  1065→
+  1066→-- 3 Sleek Counter-Rotating 3D Toroidal Cyan Magnetic Containment Rings (snug spherical orbit!)
+  1067→local magRings = {}
+  1068→for i, spec in ipairs({
+  1069→	{tilt = CFrame.Angles(math.rad(68), math.rad(22), 0),   vel = Vector3.new(0.68, 1.18, -0.52), scale = 1.24},
+  1070→	{tilt = CFrame.Angles(math.rad(-54), math.rad(-34), 0), vel = Vector3.new(-0.92, 0.72, 1.02), scale = 1.36},
+  1071→	{tilt = CFrame.Angles(math.rad(18), math.rad(72), 0),   vel = Vector3.new(0.56, -1.08, 0.80), scale = 1.48},
+  1072→}) do
+  1073→	magRings[i] = {
+  1074→		mesh = makeAlphaMeshPart(magRingTpl.em, texCyanExpansion, "STAR_3D_MAGNETIC_CONTAINMENT_RING_" .. i),
+  1075→		tilt = spec.tilt,
+  1076→		vel = spec.vel,
+  1077→		scale = spec.scale,
+  1078→	}
+  1079→end
+  1080→
+  1081→-- ============================================================================
+  1082→-- 5. 60 FPS REAL-TIME MICRO-CONTINUUM SIMULATION LOOP (C++ BulkMoveTo!)
+  1083→-- ============================================================================
+  1084→local simClock = 0
+  1085→local deformAccum = 0
+  1086→local deformParity = 0
+  1087→local smoothPostEnergy = 0
+  1088→local holdStabilize = 0
+  1089→local wasStartupReady = false
+  1090→local impactPulse = 0
+  1091→local bulkParts = table.create(780)
+  1092→local bulkCFs = table.create(780)
+  1093→
+  1094→local function hideAll3D()
+  1095→	for _, ml in ipairs(mistLights) do ml.light.Brightness = 0 end
+  1096→	centerDriver.Brightness = 0
+  1097→	nebulaFrontLight.Brightness = 0
+  1098→	for _, cl in ipairs(chamberCobaltLights) do cl.light.Brightness = 0 end
+  1099→	opaqueSunBody.Transparency = 1
+  1100→	softNeonAura.Transparency = 1
+  1101→	for _, pair in ipairs(nozzleJets) do
+  1102→		pair[1].part.Transparency = 1
+  1103→		pair[2].part.Transparency = 1
+  1104→	end
+  1105→	for _, pf in ipairs(fluidPuffs) do
+  1106→		pf.alive = false
+  1107→		pf.mesh.part.Transparency = 1
+  1108→	end
+  1109→	for _, ls in ipairs(lasers) do
+  1110→		ls.ext = 0
+  1111→		ls.impacted = false
+  1112→		ls.coreBeam.Transparency = 1
+  1113→		ls.outerBeam.Transparency = 1
+  1114→		ls.conicalFlare.part.Transparency = 1
+  1115→		ls.waveSheath.part.Transparency = 1
+  1116→		ls.muzzleLens.Transparency = 1
+  1117→		ls.collarShroud.part.Transparency = 1
+  1118→		ls.collarRing.part.Transparency = 1
+  1119→		for _, pObj in ipairs(ls.pulses) do pObj.part.Transparency = 1 end
+  1120→		for _, g in ipairs(ls.guides) do g.Transparency = 1 end
+  1121→		local nz = ls.nozzle
+  1122→		if nz.cellWin then
+  1123→			nz.cellWin.Color = nz.cellOrigColor
+  1124→			nz.cellWin.Material = nz.cellOrigMat
+  1125→		end
+  1126→	end
+  1127→	for _, sh in ipairs(starShells) do sh.mesh.part.Transparency = 1 end
+  1128→	for _, cp in ipairs(coronaPlumes) do cp.mesh.part.Transparency = 1 end
+  1129→	for _, cc in ipairs(coreCushions) do cc.mesh.part.Transparency = 1 end
+  1130→	for _, nb in ipairs(chamberNebula) do nb.mesh.part.Transparency = 1 end
+  1131→	for _, chc in ipairs(chamberCushions) do chc.mesh.part.Transparency = 1 end
+  1132→	for _, am in ipairs(ambientMist) do am.mesh.part.Transparency = 1 end
+  1133→	for _, aw in ipairs(ambientWisps) do aw.part.Transparency = 1 end
+  1134→	for _, mr in ipairs(magRings) do mr.mesh.part.Transparency = 1 end
+  1135→end
+  1136→
+  1137→hideAll3D()
+  1138→Workspace:SetAttribute("VaporStep", "08_LIVE_60FPS_3D_ONLINE")
+  1139→
+  1140→RunService.RenderStepped:Connect(function(dt)
+  1141→	local step = math.min(dt, 0.05)
+  1142→	simClock += step
+  1143→	deformAccum += step
+  1144→	impactPulse = math.max(0, impactPulse - step * 2.6)
+  1145→
+  1146→	local mode = world:GetAttribute("ReactorMode") or "COLD"
+  1147→	local isStartup = (mode == "STARTUP")
+  1148→	local isActiveOp = (mode == "ONLINE" or mode == "WARNING" or mode == "MELTDOWN" or mode == "FREEZEDOWN")
+  1149→
+  1150→	local fuel, mask, brokenMask, cyan, white, stabilize
+  1151→	local laserBoost = (world:GetAttribute("ReactorLaserBoost") == true)
+  1152→	local meltAge = world:GetAttribute("ReactorMeltdownAge") or 0
+  1153→	local meltFrac = (mode == "MELTDOWN") and clamp01(meltAge / 18.0) or 0
+  1154→
+  1155→	if isStartup then
+  1156→		fuel = world:GetAttribute("ReactorPilotFuel") or 0
+  1157→		mask = world:GetAttribute("ReactorPilotRelayMask") or 0
+  1158→		brokenMask = 0
+  1159→		cyan = world:GetAttribute("ReactorPilotCyanVolume") or 0
+  1160→		white = world:GetAttribute("ReactorPilotWhiteVolume") or 0
+  1161→		stabilize = world:GetAttribute("ReactorPilotStabilized") or 0
+  1162→		-- Pre-charge post-startup energy & stabilization continuously during STARTUP so that
+  1163→		-- the moment STARTUP transitions to ONLINE there is ZERO reset, ZERO blink, and ZERO fast-replay!
+  1164→		smoothPostEnergy = clamp01(math.max(cyan * 0.42, white))
+  1165→		holdStabilize = stabilize
+  1166→		wasStartupReady = (white > 0.85)
+  1167→	elseif isActiveOp then
+  1168→		fuel = 0
+  1169→		brokenMask = assembly:GetAttribute("LiveBrokenMask") or (world:GetAttribute("ReactorEmitterBrokenMask") or 0)
+  1170→		local m1 = assembly:GetAttribute("LiveRelayMask") or 0
+  1171→		local m2 = world:GetAttribute("ReactorEmitterReadyMask") or 0
+  1172→		mask = (m1 > 0) and m1 or m2
+  1173→		if mask == 0 and brokenMask == 0 then
+  1174→			mask = 63
+  1175→		end
+  1176→		if wasStartupReady then
+  1177→			smoothPostEnergy = 1
+  1178→		else
+  1179→			smoothPostEnergy = toward(smoothPostEnergy, 1, step / 1.35)
+  1180→		end
+  1181→		cyan = smoothPostEnergy
+  1182→		white = smoothPostEnergy
+  1183→		local targetStab = (mode == "ONLINE") and smoothPostEnergy or (smoothPostEnergy * 0.45)
+  1184→		holdStabilize = toward(holdStabilize, targetStab, step / 1.25)
+  1185→		stabilize = holdStabilize
+  1186→	else
+  1187→		wasStartupReady = false
+  1188→		fuel = 0
+  1189→		mask = assembly:GetAttribute("LiveRelayMask") or (world:GetAttribute("ReactorEmitterReadyMask") or 0)
+  1190→		brokenMask = assembly:GetAttribute("LiveBrokenMask") or (world:GetAttribute("ReactorEmitterBrokenMask") or 0)
+  1191→		smoothPostEnergy = toward(smoothPostEnergy, 0, step / 1.35)
+  1192→		cyan = smoothPostEnergy
+  1193→		white = smoothPostEnergy
+  1194→		holdStabilize = smoothPostEnergy
+  1195→		stabilize = smoothPostEnergy
+  1196→	end
+  1197→
+  1198→	-- ------------------------------------------------------------------------
+  1199→	-- A) STAGE 02: STRAIGHT AXIAL NOZZLE-BORN 3D VAPOR (GRAVITY = 0!)
+  1200→	-- ------------------------------------------------------------------------
+  1201→	local purgeFade = isStartup and clamp01(1 - (world:GetAttribute("ReactorPilotDarkness") or 0) * 1.12) or 0
+  1202→
+  1203→	if fuel <= 0.004 then
+  1204→		for _, pair in ipairs(nozzleJets) do
+  1205→			pair[1].part.Transparency = 1
+  1206→			pair[2].part.Transparency = 1
+  1207→		end
+  1208→	else
+  1209→		for idx, nz in ipairs(nozzles) do
+  1210→			local s = nz.site
+  1211→			local p = nz.socket.WorldPosition
+  1212→			local jetCF = safeLookAt(p, p - s.axis) * CFrame.Angles(0, 0, simClock * 1.0 + idx)
+  1213→			local pulse = 1 + 0.05 * math.sin(simClock * 5.2 + idx * 1.1)
+  1214→			local wScale = (0.85 + 0.35 * fuel) * s.jetScale * pulse
+  1215→			local lScale = (2.8 + 1.2 * fuel) * s.jetScale
+  1216→
+  1217→			local inJet = nozzleJets[idx][1]
+  1218→			inJet.part.Size = Vector3.new(inJet.baseSize.X * wScale * 0.80, inJet.baseSize.Y * wScale * 0.80, lScale)
+  1219→			inJet.part.CFrame = jetCF
+  1220→			inJet.part.Transparency = 1 - 0.38 * fuel
+  1221→
+  1222→			local outJet = nozzleJets[idx][2]
+  1223→			outJet.part.Size = Vector3.new(outJet.baseSize.X * wScale * 1.25, outJet.baseSize.Y * wScale * 1.25, lScale * 1.12)
+  1224→			outJet.part.CFrame = jetCF * CFrame.Angles(0, 0, 1.57)
+  1225→			outJet.part.Transparency = 1 - 0.25 * fuel
+  1226→		end
+  1227→	end
+  1228→
+  1229→	local anySteamAlive = (fuel > 0.004)
+  1230→	for _, pf in ipairs(fluidPuffs) do
+  1231→		local mp = pf.mesh.part
+  1232→		if not pf.alive then
+  1233→			if fuel > 0.03 and purgeFade > 0.08 then
+  1234→				if rng:NextNumber() < step * (0.8 + 2.4 * fuel) then
+  1235→					spawnStraightPuffAtNozzle(pf, nozzles[pf.nozzleIdx], fuel)
+  1236→					anySteamAlive = true
+  1237→				end
+  1238→			else
+  1239→				mp.Transparency = 1
+  1240→			end
+  1241→		end
+  1242→
+  1243→		if pf.alive then
+  1244→			pf.age += step
+  1245→			local u = pf.age / pf.maxLife
+  1246→			if u >= 1 or purgeFade <= 0.005 then
+  1247→				if fuel > 0.03 and purgeFade > 0.08 then
+  1248→					spawnStraightPuffAtNozzle(pf, nozzles[pf.nozzleIdx], fuel)
+  1249→					u = 0
+  1250→				else
+  1251→					pf.alive = false
+  1252→					mp.Transparency = 1
+  1253→				end
+  1254→			end
+  1255→
+  1256→			if pf.alive then
+  1257→				anySteamAlive = true
+  1258→				local drag = math.exp(-1.55 * step)
+  1259→				pf.vel = pf.vel * drag
+  1260→
+  1261→				-- Zero-mean symmetric 3D turbulence (ZERO downward gravity!)
+  1262→				local turbX = math.noise(pf.pos.X * 0.22 + pf.seed, pf.pos.Y * 0.22, simClock * 0.75) * 3.0
+  1263→				local turbY = math.noise(pf.pos.Y * 0.22 - pf.seed, simClock * 0.75, pf.pos.Z * 0.22) * 3.0
+  1264→				local turbZ = math.noise(pf.pos.Z * 0.22, pf.pos.X * 0.22 + pf.seed, simClock * 0.60) * 2.2
+  1265→				pf.vel += Vector3.new(turbX, turbY, turbZ) * step
+  1266→
+  1267→				local toCenter = pf.pos - FOCUS
+  1268→				if toCenter.Magnitude < 2.6 then
+  1269→					pf.vel *= math.exp(-2.8 * step)
+  1270→				end
+  1271→
+  1272→				pf.pos += pf.vel * step
+  1273→				pf.roll += pf.spin * step * (0.45 + 0.55 * (1 - u))
+  1274→
+  1275→				local grow = 0.85 + (pf.endSize - 0.85) * (u ^ 0.72)
+  1276→				mp.Size = Vector3.new(grow, grow, 1.9)
+  1277→				mp.CFrame = CFrame.new(pf.pos) * CFrame.Angles(0, 0, pf.roll)
+  1278→
+  1279→				local alphaEnv = smooth(0.0, 0.08, u) * ((1 - smooth(0.24, 1.0, u)) ^ 1.45)
+  1280→				local vis = math.clamp(alphaEnv * (0.26 + 0.34 * math.max(fuel, 0.40)) * purgeFade, 0, 0.50)
+  1281→				mp.Transparency = 1 - vis
+  1282→			end
+  1283→		end
+  1284→	end
+  1285→
+  1286→	for _, ml in ipairs(mistLights) do
+  1287→		ml.light.Brightness = fuel * ml.mult
+  1288→	end
+  1289→
+  1290→	-- ------------------------------------------------------------------------
+  1291→	-- B) COMPUTE 100%-OPAQUE 3D SOLAR CORE DIAMETER FIRST FOR EXACT BEAM CLIPPING
+  1292→	-- ------------------------------------------------------------------------
+  1293→	local boostScale = laserBoost and 1.15 or 1.0
+  1294→	local prelimImpacted = 0
+  1295→	for idx, ls in ipairs(lasers) do
+  1296→		local tag = ls.nozzle.site.tag
+  1297→		local pStroke = assembly:GetAttribute("ReactorPilotStroke_" .. tag) or 0
+  1298→		local lStroke = assembly:GetAttribute("LiveStroke_" .. tag) or 0
+  1299→		local liveStroke = isStartup and pStroke or (isActiveOp and math.max(pStroke, lStroke) or lStroke)
+  1300→		local relayActive = bit(mask, idx) and (not bit(brokenMask, idx)) and (liveStroke > 0.96)
+  1301→		if relayActive then
+  1302→			ls.ext = math.min(1, ls.ext + step / 0.22)
+  1303→			if ls.ext >= 0.98 then
+  1304→				if not ls.impacted then
+  1305→					ls.impacted = true
+  1306→					impactPulse = math.min(1.0, impactPulse + 0.50)
+  1307→				end
+  1308→				prelimImpacted += 1
+  1309→			end
+  1310→		else
+  1311→			ls.ext = math.max(0, ls.ext - step / 0.14)
+  1312→			ls.impacted = false
+  1313→		end
+  1314→	end
+  1315→
+  1316→	local beamFeedFrac = prelimImpacted / 6
+  1317→	local starEnergy
+  1318→	if isStartup then
+  1319→		starEnergy = (prelimImpacted > 0) and clamp01(beamFeedFrac * 0.42 + math.max(cyan, white) * 0.58) or 0
+  1320→	else
+  1321→		starEnergy = smoothPostEnergy * (prelimImpacted > 0 and math.max(0.35, beamFeedFrac) or smoothPostEnergy)
+  1322→	end
+  1323→
+  1324→	local fullStage = clamp01(math.max(cyan, white))
+  1325→	local chamberDark = isStartup and clamp01(world:GetAttribute("ReactorPilotDarkness") or 0) or 0
+  1326→	-- Living organic magnetic heartbeat:
+  1327→	local liveBreath = 0.036 * math.sin(simClock * 2.8) + 0.020 * math.sin(simClock * 6.1 + 1.1)
+  1328→	local pulseKick = 1 + impactPulse * 0.14 + liveBreath + meltFrac * 0.16 * math.sin(simClock * 6.8)
+  1329→	local starScale = pulseKick * (laserBoost and 1.07 or 1.0) * (1 + 0.36 * meltFrac)
+  1330→
+  1331→	-- Organic Reference-Sculpted Solar Core Diameter (compact Z-occluder tucked inside billowing 3D cloud corona!):
+  1332→	local opaqueDiam = 0
+  1333→	if starEnergy > 0.004 then
+  1334→		local cyanD = 1.5 + (4.7 - 1.5) * fullStage
+  1335→		local whitePeakD = cyanD + (7.6 - 4.7) * white
+  1336→		local settledD = whitePeakD - (7.6 - 4.85) * (white * stabilize)
+  1337→		opaqueDiam = settledD * (0.48 + 0.52 * beamFeedFrac) * starScale
+  1338→	end
+  1339→	local opaqueRadius = opaqueDiam * 0.5
+  1340→
+  1341→	table.clear(bulkParts)
+  1342→	table.clear(bulkCFs)
+  1343→	local bulkN = 0
+  1344→
+  1345→	-- ------------------------------------------------------------------------
+  1346→	-- C) REACTOR-INTEGRATED 6 PHYSICAL BARRELS + COLLAR SHROUDS + 48 MICRO-WAVELETS
+  1347→	-- ------------------------------------------------------------------------
+  1348→	for idx, ls in ipairs(lasers) do
+  1349→		local nz = ls.nozzle
+  1350→		local isBroken = bit(brokenMask, idx)
+  1351→		local prewarm = (not isBroken) and clamp01(chamberDark * 0.72 + ls.ext) or 0
+  1352→		local firePhase = (simClock * 0.92 + idx * 0.166667) % 1
+  1353→		if nz.cellWin and not isBroken then
+  1354→			if prewarm > 0.02 then
+  1355→				local smoothWave = 0.5 + 0.5 * math.sin(simClock * 3.4 + idx * 1.05)
+  1356→				nz.cellWin.Material = Enum.Material.Neon
+  1357→				nz.cellWin.Color = Color3.fromRGB(24, 132, 214)
+  1358→					:Lerp(Color3.fromRGB(38, 206, 255), clamp01(prewarm))
+  1359→					:Lerp(Color3.fromRGB(108, 240, 255), clamp01(smoothWave * 0.36 + white * 0.14))
+  1360→					:Lerp(Color3.fromRGB(255, 110, 185), meltFrac * 0.75)
+  1361→			else
+  1362→				nz.cellWin.Material = nz.cellOrigMat
+  1363→				nz.cellWin.Color = nz.cellOrigColor
+  1364→			end
+  1365→		end
+  1366→
+  1367→		if ls.ext <= 0.005 then
+  1368→			ls.coreBeam.Transparency = 1
+  1369→			ls.outerBeam.Transparency = 1
+  1370→			ls.conicalFlare.part.Transparency = 1
+  1371→			ls.waveSheath.part.Transparency = 1
+  1372→			ls.muzzleLens.Transparency = 1
+  1373→			ls.collarShroud.part.Transparency = 1
+  1374→			ls.collarRing.part.Transparency = 1
+  1375→			for _, pObj in ipairs(ls.pulses) do pObj.part.Transparency = 1 end
+  1376→			for _, g in ipairs(ls.guides) do g.Transparency = 1 end
+  1377→		else
+  1378→			local sockP = nz.socket.WorldPosition
+  1379→			local startP = Vector3.new(sockP.X, sockP.Y, FOCUS.Z)
+  1380→			local toFocus = FOCUS - startP
+  1381→			local fullDist = toFocus.Magnitude
+  1382→			local dir = toFocus.Unit
+  1383→
+  1384→			-- Clip inside outer 22% of opaqueSunBody (never reaches center, 0% visible from left/right!)
+  1385→			local clipFromFocus = math.max(0.15, opaqueRadius * 0.78)
+  1386→			local targetSpan = math.max(0.25, fullDist - clipFromFocus)
+  1387→			local curSpan = targetSpan * ls.ext
+  1388→			local endP = startP + dir * curSpan
+  1389→			local midP = (startP + endP) * 0.5
+  1390→			local beamCF = safeLookAt(midP, endP)
+  1391→			local startLookCF = safeLookAt(startP, FOCUS)
+  1392→
+  1393→			local pumpWave = 0.05 * math.sin(simClock * 5.8 - idx * 1.05) + 0.025 * math.sin(simClock * 11.4 + idx * 1.7)
+  1394→			local hf = (1 + pumpWave) * boostScale
+  1395→
+  1396→			-- 1) Reference-luminous white-ice central plasma beam
+  1397→			local coreD = (0.18 + 0.16 * white + 0.05 * fullStage) * hf
+  1398→			ls.coreBeam.Size = Vector3.new(curSpan, coreD, coreD)
+  1399→			bulkN += 1; bulkParts[bulkN] = ls.coreBeam; bulkCFs[bulkN] = beamCF * CFrame.Angles(0, math.pi * 0.5, 0)
+  1400→			ls.coreBeam.Color = Color3.fromRGB(215, 251, 255)
+  1401→				:Lerp(Color3.fromRGB(252, 254, 255), clamp01(fullStage * 0.5 + white * 0.5))
+  1402→				:Lerp(Color3.fromRGB(255, 205, 232), meltFrac * 0.7)
+  1403→			ls.coreBeam.Transparency = 0.02
+  1404→
+  1405→			-- 2) Warmly blended coaxial white-cyan sheath (matches reference beam glow without star spikes!)
+  1406→			local outerD = (0.40 + 0.30 * white + 0.10 * fullStage) * hf
+  1407→			ls.outerBeam.Size = Vector3.new(curSpan, outerD, outerD)
+  1408→			bulkN += 1; bulkParts[bulkN] = ls.outerBeam; bulkCFs[bulkN] = beamCF * CFrame.Angles(0, math.pi * 0.5, 0)
+  1409→			ls.outerBeam.Color = Color3.fromRGB(48, 224, 255)
+  1410→				:Lerp(Color3.fromRGB(165, 236, 255), white)
+  1411→				:Lerp(Color3.fromRGB(245, 75, 175), meltFrac * 0.85)
+  1412→			ls.outerBeam.Transparency = 0.50 - 0.08 * white
+  1413→
+  1414→			-- 3) Organic Beam-to-Cloud Plasma Merge Envelope (centered at beamCF, moderate width -> melts into boiling core!)
+  1415→			local cfObj = ls.conicalFlare
+  1416→			local flareW = (0.76 + 0.32 * fullStage + 0.24 * white * (1 - 0.28 * stabilize)) * hf
+  1417→			cfObj.part.Size = Vector3.new(flareW, flareW, curSpan)
+  1418→			bulkN += 1; bulkParts[bulkN] = cfObj.part; bulkCFs[bulkN] = beamCF * CFrame.Angles(0, 0, -simClock * 2.8 + idx * 1.05)
+  1419→			cfObj.part.Transparency = 0.46 - 0.06 * white
+  1420→
+  1421→			-- 4) Coaxial 3D Helical Plasma Wave Sheath
+  1422→			local wPart = ls.waveSheath.part
+  1423→			local waveD = (0.58 + 0.32 * white * (1 - 0.20 * stabilize) + 0.14 * fullStage) * hf
+  1424→			wPart.Size = Vector3.new(waveD, waveD, curSpan)
+  1425→			bulkN += 1; bulkParts[bulkN] = wPart; bulkCFs[bulkN] = beamCF * CFrame.Angles(0, 0, -simClock * 4.2 + idx * 1.05)
+  1426→			wPart.Transparency = 0.42 - 0.06 * white
+  1427→
+  1428→			-- 5) Muzzle focal glow + Physical 3D Nozzle Collar Shroud + Magnetic Nozzle Ring
+  1429→			local lensD = (0.64 + 0.22 * white) * hf
+  1430→			ls.muzzleLens.Size = Vector3.new(lensD, lensD, lensD)
+  1431→			bulkN += 1; bulkParts[bulkN] = ls.muzzleLens; bulkCFs[bulkN] = CFrame.new(startP + dir * 0.06)
+  1432→			ls.muzzleLens.Color = Color3.fromRGB(140, 244, 255):Lerp(Color3.fromRGB(238, 252, 255), white)
+  1433→			ls.muzzleLens.Transparency = 0.08
+  1434→
+  1435→			local shroudP = ls.collarShroud.part
+  1436→			local shroudW = (1.85 + 0.65 * fullStage) * hf
+  1437→			shroudP.Size = Vector3.new(shroudW, shroudW, 1.35)
+  1438→			bulkN += 1; bulkParts[bulkN] = shroudP
+  1439→			bulkCFs[bulkN] = startLookCF * CFrame.new(0, 0, -0.32) * CFrame.Angles(0, 0, simClock * 1.65 * (idx % 2 == 0 and 1 or -1) + idx)
+  1440→			shroudP.Transparency = 1 - clamp01((0.36 + 0.22 * fullStage) * ls.ext)
+  1441→
+  1442→			local cRingP = ls.collarRing.part
+  1443→			local cRingBS = ls.collarRing.baseSize
+  1444→			local cRingD = (1.72 + 0.26 * white) * (1 + 0.045 * math.sin(simClock * 6.5 + idx))
+  1445→			cRingP.Size = Vector3.new(
+  1446→				cRingBS.X * (cRingD / math.max(cRingBS.X, 0.01)),
+  1447→				cRingBS.Y * (cRingD / math.max(cRingBS.Y, 0.01)),
+  1448→				cRingBS.Z * (cRingD / math.max(cRingBS.Z, 0.01))
+  1449→			)
+  1450→			bulkN += 1; bulkParts[bulkN] = cRingP
+  1451→			bulkCFs[bulkN] = startLookCF * CFrame.new(0, 0, -0.14) * CFrame.Angles(0, 0, simClock * 3.2 + idx)
+  1452→			cRingP.Transparency = 1 - clamp01((0.52 + 0.24 * fullStage) * ls.ext)
+  1453→
+  1454→			-- 6) 8 Staggered Ultra-Fine Micro-Wavelets per Barrel (48 total!):
+  1455→			--    Born at 0.000 alpha inside the glowing collar and dissolved at 0.000 alpha inside the corona!
+  1456→			local nPulses = #ls.pulses
+  1457→			for pIdx = 1, nPulses do
+  1458→				local pObj = ls.pulses[pIdx]
+  1459→				local mp = pObj.part
+  1460→				local uPulse = (firePhase + (pIdx - 1) / nPulses) % 1
+  1461→				local pEnv = imperceptibleBell(uPulse)
+  1462→				local pAlpha = clamp01(pEnv * (0.14 + 0.08 * fullStage) * ls.ext)
+  1463→				if pAlpha < 0.0022 then
+  1464→					if mp.Transparency < 1 then mp.Transparency = 1 end
+  1465→				else
+  1466→					local easedU = uPulse ^ 1.12
+  1467→					local pPos = startP + dir * (curSpan * easedU)
+  1468→					local pW = (0.34 + 0.24 * fullStage + 0.14 * easedU) * boostScale
+  1469→					local pL = (0.68 + 0.44 * fullStage) * boostScale
+  1470→					mp.Size = Vector3.new(pW, pW, pL)
+  1471→					bulkN += 1; bulkParts[bulkN] = mp
+  1472→					bulkCFs[bulkN] = safeLookAt(pPos, FOCUS) * CFrame.Angles(0, 0, simClock * 4.5 + pIdx * 1.57)
+  1473→					mp.Transparency = 1 - pAlpha
+  1474→				end
+  1475→			end
+  1476→
+  1477→			-- 7) 4 Hair-Thin Cyan Collar Guide Filaments
+  1478→			local guideLen = math.min(curSpan * 0.82, 3.6)
+  1479→			local guideCol = Color3.fromRGB(64, 232, 255):Lerp(Color3.fromRGB(175, 232, 255), white)
+  1480→			for gIdx, gOff in ipairs(GUIDE_OFFSETS) do
+  1481→				local rail = ls.guides[gIdx]
+  1482→				local gStart = startLookCF:PointToWorldSpace(Vector3.new(gOff.X, gOff.Y, -0.05))
+  1483→				local gEnd = startLookCF:PointToWorldSpace(Vector3.new(gOff.X * 0.42, gOff.Y * 0.42, -guideLen))
+  1484→				local gSpan = (gEnd - gStart).Magnitude
+  1485→				rail.Size = Vector3.new(gSpan, 0.048, 0.048)
+  1486→				bulkN += 1; bulkParts[bulkN] = rail
+  1487→				bulkCFs[bulkN] = safeLookAt((gStart + gEnd) * 0.5, gEnd) * CFrame.Angles(0, math.pi * 0.5, 0)
+  1488→				rail.Color = guideCol
+  1489→				rail.Transparency = 0.28 + 0.12 * white
+  1490→			end
+  1491→		end
+  1492→	end
+  1493→
+  1494→	-- ------------------------------------------------------------------------
+  1495→	-- D) GPU-NATIVE HIGH-POLY EMISSIVE MODULATION (0.00 ms VERTEX RE-UPLOAD!)
+  1496→	-- ------------------------------------------------------------------------
+  1497→	if mask > 0 or starEnergy > 0.004 or fuel > 0.02 then
+  1498→		local roomLit = 1 - chamberDark
+  1499→		local emissiveGain = (1.0 - 0.40 * roomLit) * (1 + 0.12 * impactPulse)
+  1500→		local emTint = Color3.fromRGB(255, 255, 255):Lerp(Color3.fromRGB(255, 132, 188), meltFrac * 0.78)
+  1501→		for _, item in ipairs(emissiveSurfaces) do
+  1502→			item.sa.EmissiveStrength = item.base * emissiveGain
+  1503→			item.sa.EmissiveTint = emTint
+  1504→		end
+  1505→	end
+  1506→
+  1507→	-- ------------------------------------------------------------------------
+  1508→	-- E) LIVING MICRO-CONTINUUM 3D FUSION SUN + 540 MICRO-WISPS + 64 MICRO-SPARKS
+  1509→	--    (Every individual wisp is tiny, low-contrast, and fades via C^2 sin^3.5 bell
+  1510→	--     below 1/255 bit quantization so vanishing & spawning are 100% imperceptible!)
+  1511→	-- ------------------------------------------------------------------------
+  1512→	local ambStrength = clamp01(starEnergy * (cyan * 0.78 + white * 1.0) * (1 - 0.16 * stabilize))
+  1513→	if ambStrength <= 0.005 then
+  1514→		for _, chc in ipairs(chamberCushions) do
+  1515→			if chc.mesh.part.Transparency < 1 then chc.mesh.part.Transparency = 1 end
+  1516→		end
+  1517→		for _, am in ipairs(ambientMist) do
+  1518→			if am.mesh.part.Transparency < 1 then am.mesh.part.Transparency = 1 end
+  1519→		end
+  1520→	else
+  1521→		-- 12 Soft Continuous Steady Chamber Cushions (seamless velvet foundation!)
+  1522→		for i = 1, CHAMBER_CUSHION_COUNT do
+  1523→			local chc = chamberCushions[i]
+  1524→			local mp = chc.mesh.part
+  1525→			local sx = chc.baseSize * 1.18 * (0.90 + 0.14 * white)
+  1526→			local sy = chc.baseSize * 0.92 * (0.90 + 0.14 * white)
+  1527→			mp.Size = Vector3.new(sx, sy, 3.4)
+  1528→			local pos = FOCUS + chc.origin + Vector3.new(
+  1529→				math.sin(simClock * 0.35 + chc.phase) * 0.45,
+  1530→				math.cos(simClock * 0.30 + chc.phase) * 0.38,
+  1531→				0
+  1532→			)
+  1533→			bulkN += 1; bulkParts[bulkN] = mp
+  1534→			bulkCFs[bulkN] = CFrame.new(pos) * CFrame.Angles(0, 0, chc.roll0 + simClock * 0.08)
+  1535→			mp.Transparency = 1 - clamp01(ambStrength * 0.135)
+  1536→		end
+  1537→
+  1538→		-- 224 4-Puff Micro-Mist Constellations (= 896 tiny drifting, curling & sub-bit dissolving chamber micro-clouds!)
+  1539→		for i = 1, AMBIENT_MIST_COUNT do
+  1540→			local am = ambientMist[i]
+  1541→			local mp = am.mesh.part
+  1542→			local uCyc = (simClock * am.cycleRate + am.u0) % 1
+  1543→			if uCyc < am.prevU then
+  1544→				-- Wrapped at exact 0.0000 alpha! Refresh micro-offset while completely invisible:
+  1545→				am.jitter = Vector3.new(
+  1546→					rng:NextNumber(-1.45, 1.45),
+  1547→					rng:NextNumber(-1.20, 1.20),
+  1548→					rng:NextNumber(-0.85, 0.85)
+  1549→				)
+  1550→			end
+  1551→			am.prevU = uCyc
+  1552→
+  1553→			local lifeEnv = imperceptibleBell(uCyc)
+  1554→			local peakAlpha = am.isIce and 0.120 or 0.175
+  1555→			local alpha = clamp01(lifeEnv * ambStrength * peakAlpha)
+  1556→			if alpha < 0.0022 then
+  1557→				if mp.Transparency < 1 then mp.Transparency = 1 end
+  1558→			else
+  1559→				local driftOffset = am.driftVel * ((uCyc - 0.5) * 4.2)
+  1560→				local curlX = math.sin(simClock * 0.62 + am.phase) * 0.85
+  1561→				local curlY = math.cos(simClock * 0.54 + am.phase * 1.3) * 0.72
+  1562→				local pos = FOCUS + am.origin + am.jitter + driftOffset + Vector3.new(curlX, curlY, 0)
+  1563→				local sz = am.baseSize * (0.86 + 0.28 * uCyc) * (0.90 + 0.15 * white)
+  1564→				mp.Size = Vector3.new(sz * 1.14, sz * 0.94, 2.2)
+  1565→				bulkN += 1; bulkParts[bulkN] = mp
+  1566→				bulkCFs[bulkN] = CFrame.new(pos) * CFrame.Angles(0, 0, am.roll0 + simClock * am.rollVel)
+  1567→				mp.Transparency = 1 - alpha
+  1568→			end
+  1569→		end
+  1570→	end
+  1571→
+  1572→	if starEnergy <= 0.004 then
+  1573→		centerDriver.Brightness = 0
+  1574→		nebulaFrontLight.Brightness = 0
+  1575→		for _, cl in ipairs(chamberCobaltLights) do cl.light.Brightness = 0 end
+  1576→		opaqueSunBody.Transparency = 1
+  1577→		softNeonAura.Transparency = 1
+  1578→		for _, sh in ipairs(starShells) do sh.mesh.part.Transparency = 1 end
+  1579→		for _, cp in ipairs(coronaPlumes) do if cp.mesh.part.Transparency < 1 then cp.mesh.part.Transparency = 1 end end
+  1580→		for _, cc in ipairs(coreCushions) do if cc.mesh.part.Transparency < 1 then cc.mesh.part.Transparency = 1 end end
+  1581→		for _, nb in ipairs(chamberNebula) do if nb.mesh.part.Transparency < 1 then nb.mesh.part.Transparency = 1 end end
+  1582→		for _, aw in ipairs(ambientWisps) do if aw.part.Transparency < 1 then aw.part.Transparency = 1 end end
+  1583→		for _, mr in ipairs(magRings) do mr.mesh.part.Transparency = 1 end
+  1584→	else
+  1585→		local roomLit = 1 - chamberDark
+  1586→
+  1587→		centerDriver.Color = Color3.fromRGB(228, 243, 255)
+  1588→			:Lerp(Color3.fromRGB(246, 250, 255), white)
+  1589→			:Lerp(Color3.fromRGB(255, 120, 182), meltFrac * 0.75)
+  1590→		centerDriver.Range = 14
+  1591→		centerDriver.Brightness = starEnergy * (0.48 * chamberDark + 0.15 * roomLit)
+  1592→
+  1593→		nebulaFrontLight.Brightness = 0
+  1594→		for _, cl in ipairs(chamberCobaltLights) do
+  1595→			cl.light.Brightness = 0
+  1596→		end
+  1597→
+  1598→		-- 1) 100%-OPAQUE (Transparency = 0) Organic FBM Z-Occluding Inner Core (tucked inside billowing cloud corona!)
+  1599→		local wobX = 1.04 + 0.035 * math.sin(simClock * 3.1)
+  1600→		local wobY = 0.97 + 0.035 * math.cos(simClock * 2.7)
+  1601→		opaqueSunBody.Size = Vector3.new(
+  1602→			opaqueSunBase.X * (opaqueDiam * wobX / math.max(opaqueSunBase.X, 0.01)),
+  1603→			opaqueSunBase.Y * (opaqueDiam * wobY / math.max(opaqueSunBase.Y, 0.01)),
+  1604→			opaqueSunBase.Z * (opaqueDiam / math.max(opaqueSunBase.Z, 0.01))
+  1605→		)
+  1606→		bulkN += 1; bulkParts[bulkN] = opaqueSunBody
+  1607→		bulkCFs[bulkN] = CFrame.new(FOCUS) * CFrame.Angles(simClock * 0.95, simClock * -1.25, simClock * 0.75)
+  1608→		opaqueSunBody.Color = Color3.fromRGB(235, 254, 255)
+  1609→			:Lerp(Color3.fromRGB(255, 255, 255), clamp01(fullStage * 0.65 + white * 0.35))
+  1610→			:Lerp(Color3.fromRGB(255, 215, 238), meltFrac * 0.6)
+  1611→		opaqueSunBody.Transparency = 0
+  1612→
+  1613→		-- Tucked organic solar prominence Neon sub-shell (never draws a smooth billiard-ball ring!)
+  1614→		local auraD = opaqueDiam * (1.03 + 0.04 * math.sin(simClock * 4.2))
+  1615→		softNeonAura.Size = Vector3.new(
+  1616→			softNeonBase.X * (auraD * 1.06 / math.max(softNeonBase.X, 0.01)),
+  1617→			softNeonBase.Y * (auraD * 0.95 / math.max(softNeonBase.Y, 0.01)),
+  1618→			softNeonBase.Z * (auraD / math.max(softNeonBase.Z, 0.01))
+  1619→		)
+  1620→		bulkN += 1; bulkParts[bulkN] = softNeonAura
+  1621→		bulkCFs[bulkN] = CFrame.new(FOCUS) * CFrame.Angles(simClock * -1.18, simClock * 0.96, simClock * -0.82)
+  1622→		softNeonAura.Color = Color3.fromRGB(95, 244, 255)
+  1623→			:Lerp(Color3.fromRGB(245, 251, 255), white)
+  1624→			:Lerp(Color3.fromRGB(255, 145, 195), meltFrac * 0.75)
+  1625→		softNeonAura.Transparency = 0.46 - 0.06 * white
+  1626→
+  1627→		-- 2) 6 Multi-Lobed Feathered 3D Cloud Billows & Solar Prominence Shells (reference smoky plasma silhouette!)
+  1628→		for idxS, sh in ipairs(starShells) do
+  1629→			local p = sh.mesh.part
+  1630→			local bs = sh.mesh.baseSize
+  1631→			local rv = sh.rotVel * simClock * (1 + 0.6 * meltFrac)
+  1632→			if sh.kind == "CLOUD_BILLOW_A" then
+  1633→				local d = opaqueDiam * (1.58 + 0.14 * white + 0.05 * math.sin(simClock * 2.9))
+  1634→				p.Size = Vector3.new(d * 1.12, d * 0.96, d * 0.58)
+  1635→				p.Transparency = 1 - clamp01(starEnergy * 0.88)
+  1636→			elseif sh.kind == "CLOUD_BILLOW_B" then
+  1637→				local d = opaqueDiam * (1.72 + 0.16 * white + 0.05 * math.cos(simClock * 2.4))
+  1638→				p.Size = Vector3.new(d * 0.96, d * 1.14, d * 0.58)
+  1639→				p.Transparency = 1 - clamp01(starEnergy * 0.78)
+  1640→			elseif sh.kind == "CLOUD_BILLOW_C" then
+  1641→				local d = opaqueDiam * (1.86 + 0.18 * white * (1 - 0.22 * stabilize))
+  1642→				p.Size = Vector3.new(d * 1.08, d * 1.02, d * 0.56)
+  1643→				p.Transparency = 1 - clamp01(starEnergy * 0.64)
+  1644→			elseif sh.kind == "PROMINENCE" then
+  1645→				local targetD = opaqueDiam * (1.18 + 0.08 * white + 0.03 * math.sin(simClock * 3.5))
+  1646→				p.Size = Vector3.new(
+  1647→					bs.X * (targetD * 1.08 / math.max(bs.X, 0.01)),
+  1648→					bs.Y * (targetD * 0.95 / math.max(bs.Y, 0.01)),
+  1649→					bs.Z * (targetD / math.max(bs.Z, 0.01))
+  1650→				)
+  1651→				p.Transparency = 1 - clamp01(starEnergy * 0.84)
+  1652→			elseif sh.kind == "CYAN_INNER" then
+  1653→				local targetD = opaqueDiam * (1.36 + 0.16 * cyan * (1 - 0.42 * white))
+  1654→				p.Size = Vector3.new(
+  1655→					bs.X * (targetD / math.max(bs.X, 0.01)),
+  1656→					bs.Y * (targetD / math.max(bs.Y, 0.01)),
+  1657→					bs.Z * (targetD / math.max(bs.Z, 0.01))
+  1658→				)
+  1659→				p.Transparency = 1 - clamp01(cyan * (1 - 0.42 * white) * 0.70 + white * 0.30) * starEnergy
+  1660→			else
+  1661→				local d = opaqueDiam * (2.05 + 0.22 * cyan * (1 - 0.45 * white))
+  1662→				p.Size = Vector3.new(d * 1.12, d * 0.98, d * 0.62)
+  1663→				p.Transparency = 1 - clamp01(cyan * (1 - 0.52 * white) * 0.58 + white * 0.28) * starEnergy
+  1664→			end
+  1665→			bulkN += 1; bulkParts[bulkN] = p
+  1666→			bulkCFs[bulkN] = CFrame.new(FOCUS) * sh.baseTilt * CFrame.Angles(rv.X * 0.35, rv.Y * 0.35, rv.Z)
+  1667→		end
+  1668→
+  1669→		-- 3) 144 Billowing & Imperceptibly Dissolving 3D Solar Corona Billows (576 micro-billows masking sphere rim!)
+  1670→		local plumeVis = clamp01(cyan * 0.82 + white * 0.96) * starEnergy * (1 - 0.10 * stabilize)
+  1671→		local radTighten = 1 - 0.10 * stabilize
+  1672→		local szTighten = 1 - 0.12 * stabilize
+  1673→		for i = 1, CORONA_PLUME_COUNT do
+  1674→			local cp = coronaPlumes[i]
+  1675→			local mp = cp.mesh.part
+  1676→			local uErupt = (simClock * cp.eruptRate + cp.u0) % 1
+  1677→			if uErupt < cp.prevU then
+  1678→				cp.angJitter = rng:NextNumber(-0.35, 0.35)
+  1679→			end
+  1680→			cp.prevU = uErupt
+  1681→
+  1682→			local pAlpha = clamp01(plumeVis * imperceptibleBell(uErupt) * 0.52)
+  1683→			if pAlpha < 0.0022 then
+  1684→				if mp.Transparency < 1 then mp.Transparency = 1 end
+  1685→			else
+  1686→				local orbCF = CFrame.fromAxisAngle(cp.rotAxis, simClock * cp.orbitSpeed + cp.angJitter)
+  1687→				local worldDir = orbCF:VectorToWorldSpace(cp.baseDir)
+  1688→				local rDist = opaqueRadius * (0.78 + 0.68 * uErupt) * cp.radFactor * radTighten
+  1689→				local pos = FOCUS + worldDir * rDist
+  1690→				local sz = opaqueDiam * cp.sizeFactor * (0.85 + 0.38 * uErupt) * (0.92 + 0.20 * white) * szTighten
+  1691→				mp.Size = Vector3.new(sz * 1.08, sz * 0.94, sz * 0.64)
+  1692→				bulkN += 1; bulkParts[bulkN] = mp
+  1693→				bulkCFs[bulkN] = CFrame.new(pos) * CFrame.Angles(0, 0, cp.roll0 + simClock * cp.rollVel)
+  1694→				mp.Transparency = 1 - pAlpha
+  1695→			end
+  1696→		end
+  1697→
+  1698→		-- 4A) 10 Soft Continuous Core-to-Mid Base Cushions (smoky white-ice inner halo + cobalt/cyan mid shroud!)
+  1699→		local nebExpand = clamp01(cyan * 0.88 + white * 1.0)
+  1700→		local stagePull = (0.96 - 0.04 * white) * (1 - 0.10 * stabilize)
+  1701→		for i = 1, CORE_CUSHION_COUNT do
+  1702→			local cc = coreCushions[i]
+  1703→			local mp = cc.mesh.part
+  1704→			local localAppear = smooth(cc.distNorm * 0.30, cc.distNorm * 0.30 + 0.45, nebExpand) * starEnergy
+  1705→			if localAppear <= 0.005 then
+  1706→				if mp.Transparency < 1 then mp.Transparency = 1 end
+  1707→			else
+  1708→				local curScale = (0.54 + 0.46 * nebExpand) * stagePull
+  1709→				local sz = cc.baseSize * (0.92 + 0.16 * white) * (1 - 0.10 * stabilize)
+  1710→				mp.Size = Vector3.new(sz * 1.12, sz * 0.96, 2.8)
+  1711→				local sw = simClock * 0.16 + cc.phase
+  1712→				bulkN += 1; bulkParts[bulkN] = mp
+  1713→				bulkCFs[bulkN] = CFrame.new(FOCUS + cc.baseOffset * curScale) * CFrame.Angles(0, 0, cc.roll0 + sw)
+  1714→				local w = cc.isIce and clamp01(cyan * 0.55 + white * 0.96)
+  1715→					or (cc.isCyan and clamp01(cyan * 0.88 * (1 - 0.32 * white) + white * 0.56) or clamp01(cyan * 0.38 + white * 0.92))
+  1716→				mp.Transparency = 1 - clamp01(localAppear * w * (cc.isIce and 0.32 or 0.26))
+  1717→			end
+  1718→		end
+  1719→
+  1720→		-- 4B) 192 4-Puff Micro-Nebula Constellations (= 768 tiny advecting, swirling & sub-bit dissolving micro-clouds!)
+  1721→		for i = 1, NEBULA_COUNT do
+  1722→			local nb = chamberNebula[i]
+  1723→			local mp = nb.mesh.part
+  1724→			local localAppear = smooth(nb.distNorm * 0.35, nb.distNorm * 0.35 + 0.46, nebExpand) * starEnergy
+  1725→			if localAppear <= 0.008 then
+  1726→				if mp.Transparency < 1 then mp.Transparency = 1 end
+  1727→			else
+  1728→				local uAdv = (simClock * nb.advectRate + nb.u0) % 1
+  1729→				if uAdv < nb.prevU then
+  1730→					nb.jitter = Vector3.new(
+  1731→						rng:NextNumber(-0.85, 0.85),
+  1732→						rng:NextNumber(-0.75, 0.75),
+  1733→						rng:NextNumber(-0.55, 0.55)
+  1734→					)
+  1735→				end
+  1736→				nb.prevU = uAdv
+  1737→
+  1738→				local advEnv = imperceptibleBell(uAdv)
+  1739→				local weight = nb.isInnerIce
+  1740→					and clamp01(cyan * 0.58 + white * 0.98)
+  1741→					or (nb.isCyanAccent
+  1742→						and clamp01(cyan * 0.94 * (1 - 0.35 * white) + white * 0.58)
+  1743→						or clamp01(cyan * 0.40 + white * 0.96))
+  1744→				local centerFocus = (1.08 - 0.18 * nb.distNorm) * (1 - 0.16 * stabilize * nb.distNorm)
+  1745→				local rawAlpha = clamp01(localAppear * weight * centerFocus * advEnv * (nb.isInnerIce and 0.34 or 0.29))
+  1746→				if rawAlpha < 0.0022 then
+  1747→					if mp.Transparency < 1 then mp.Transparency = 1 end
+  1748→				else
+  1749→					local swAng = simClock * nb.swirlSpeed
+  1750→					local cSw, sSw = math.cos(swAng), math.sin(swAng)
+  1751→					local bo = nb.baseOffset + nb.jitter
+  1752→					local radialFlow = 0.78 + 0.34 * uAdv
+  1753→					local curScale = (0.52 + 0.48 * nebExpand) * stagePull * radialFlow
+  1754→					local curOff = Vector3.new(
+  1755→						bo.X * cSw - bo.Y * sSw * 0.32,
+  1756→						bo.Y * cSw + bo.X * sSw * 0.26,
+  1757→						bo.Z + 0.45 * math.sin(simClock * 1.15 + nb.phase)
+  1758→					) * curScale
+  1759→					local sz = nb.baseSize * (0.86 + 0.28 * uAdv) * (1 - 0.10 * stabilize)
+  1760→					mp.Size = Vector3.new(sz * 1.12, sz * 0.96, 2.1)
+  1761→					bulkN += 1; bulkParts[bulkN] = mp
+  1762→					bulkCFs[bulkN] = CFrame.new(FOCUS + curOff) * CFrame.Angles(0, 0, nb.roll0 + swAng * 1.4)
+  1763→					mp.Transparency = 1 - rawAlpha
+  1764→				end
+  1765→			end
+  1766→		end
+  1767→
+  1768→		-- 5) 64 Feathered Volumetric 3D Magnetic Ion Micro-Wisps (= 256 gaseous micro-puffs, zero sharp specks!)
+  1769→		local wispVis = clamp01(cyan * 0.55 + white * 0.90) * starEnergy
+  1770→		for i = 1, AMBIENT_WISP_COUNT do
+  1771→			local aw = ambientWisps[i]
+  1772→			local wp = aw.part
+  1773→			local uLife = (simClock * aw.lifeRate + aw.lifeU0) % 1
+  1774→			if uLife < aw.prevLifeU then
+  1775→				aw.radJitter = rng:NextNumber(-0.95, 0.95)
+  1776→			end
+  1777→			aw.prevLifeU = uLife
+  1778→
+  1779→			local lifeBell = imperceptibleBell(uLife)
+  1780→			local wAlpha = clamp01(wispVis * lifeBell * 0.13)
+  1781→			if wAlpha < 0.0022 then
+  1782→				if wp.Transparency < 1 then wp.Transparency = 1 end
+  1783→			else
+  1784→				local th = aw.u0 + simClock * aw.speed
+  1785→				local rNow = (aw.radius + aw.radJitter) * (0.88 + 0.16 * math.sin(simClock * 1.2 + aw.phase))
+  1786→				local localP = Vector3.new(math.cos(th) * rNow, math.sin(th) * rNow * 0.78, math.sin(th * 2 + aw.phase) * 1.3)
+  1787→				local nextTh = th + (aw.speed >= 0 and 0.08 or -0.08)
+  1788→				local nextP = Vector3.new(math.cos(nextTh) * rNow, math.sin(nextTh) * rNow * 0.78, math.sin(nextTh * 2 + aw.phase) * 1.3)
+  1789→				local worldP = FOCUS + aw.tilt:VectorToWorldSpace(localP)
+  1790→				local worldNext = FOCUS + aw.tilt:VectorToWorldSpace(nextP)
+  1791→				wp.Size = Vector3.new(aw.thick, aw.thick, aw.len * (0.85 + 0.30 * lifeBell))
+  1792→				bulkN += 1; bulkParts[bulkN] = wp
+  1793→				bulkCFs[bulkN] = safeLookAt(worldP, worldNext)
+  1794→				wp.Transparency = 1 - wAlpha
+  1795→			end
+  1796→		end
+  1797→
+  1798→		-- 6) 3 Smooth Precessing 3D Cyan Toroidal Magnetic Containment Rings
+  1799→		local ringVis = clamp01(cyan * 0.34 + white * 0.54 + stabilize * 0.40) * starEnergy
+  1800→		for _, mr in ipairs(magRings) do
+  1801→			local mp = mr.mesh.part
+  1802→			local bs = mr.mesh.baseSize
+  1803→			local ringD = opaqueDiam * mr.scale * (1 + 0.024 * math.sin(simClock * 3.6))
+  1804→			mp.Size = Vector3.new(
+  1805→				bs.X * (ringD / math.max(bs.X, 0.01)),
+  1806→				bs.Y * (ringD / math.max(bs.Y, 0.01)),
+  1807→				bs.Z * (ringD / math.max(bs.Z, 0.01))
+  1808→			)
+  1809→			local rv = mr.vel * simClock
+  1810→			bulkN += 1; bulkParts[bulkN] = mp
+  1811→			bulkCFs[bulkN] = CFrame.new(FOCUS) * mr.tilt * CFrame.Angles(rv.X, rv.Y, rv.Z)
+  1812→			mp.Transparency = 1 - clamp01(ringVis * 0.42)
+  1813→		end
+  1814→	end
+  1815→
+  1816→	if bulkN > 0 then
+  1817→		Workspace:BulkMoveTo(bulkParts, bulkCFs, Enum.BulkMoveMode.FireCFrameChanged)
+  1818→	end
+  1819→end)
+  1820→
+  1821→print("[3D REFERENCE VFX V14C] Round Spherical Core + Living 2688-Micro-Cloud 3D Swarm Engine online.")
+  1822→

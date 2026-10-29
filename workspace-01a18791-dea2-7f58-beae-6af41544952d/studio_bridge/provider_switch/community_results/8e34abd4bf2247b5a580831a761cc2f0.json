@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "8e34abd4bf2247b5a580831a761cc2f0",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 234,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"note\":\"Play-only; no modifications to existing control room\",\"candidate\":\"PRE5_CONTROL_ROOM_ARCH_CANDIDATE\",\"parts\":182}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793265463.4102805,
+  "_ntfy_id": "l7WAnnzFbHFz",
+  "_ntfy_time": 1793265463
+}

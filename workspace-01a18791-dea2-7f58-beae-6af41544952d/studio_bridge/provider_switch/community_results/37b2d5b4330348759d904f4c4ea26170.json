@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "37b2d5b4330348759d904f4c4ea26170",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 242,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "preview lights added"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793266076.7395031,
+  "_ntfy_id": "Y7ACBIE4MI31",
+  "_ntfy_time": 1793266077
+}

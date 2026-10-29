@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "80db74a80034477fa8dc77c7101fbe24",
+  "tool": "script_read",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 549,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "  1233→\t\t\"PROJECTOR_\"..site.tag..\"_PHOTONIC_WHITE_BEAM\",\n  1234→\t\ta+Vector3.new(0,0,0.7),b,2.45,C.white,0.32)\n  1235→\tlocal scorch=ball(damage,\"MOLTEN_EMITTER_DAMAGE_\"..site.tag,\n  1236→\t\tradial(28,23),3.1,C.orange,Enum.Material.Neon,1)\n  1237→\tlocal spit=particles(scorch,\"BROKEN_EMITTER_SHOWER\",\n  1238→\t\tSPARK,105,C.orange,1.15,0.15,32)\n  1239→\tlocal lightSource=lamp(lens,C.azure,0.08,36)\n  1240→\tlocal focusSparks=particles(lens,\"EACH_LENS_FIRES_IN_ORDER\","
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793215237.222604,
+  "_ntfy_id": "Kxo7lXsLLEA9",
+  "_ntfy_time": 1793215237
+}

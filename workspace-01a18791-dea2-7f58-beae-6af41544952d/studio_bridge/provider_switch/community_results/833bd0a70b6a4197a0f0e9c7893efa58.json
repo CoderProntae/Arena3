@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "833bd0a70b6a4197a0f0e9c7893efa58",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 566,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "SWAP_OK kitMesh=32 workspaceBaseParts=2127 swapped=UPPER_LEFT,REAR_LEFT"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793218287.9175177,
+  "_ntfy_id": "mkrqMuy4Skic",
+  "_ntfy_time": 1793218288
+}

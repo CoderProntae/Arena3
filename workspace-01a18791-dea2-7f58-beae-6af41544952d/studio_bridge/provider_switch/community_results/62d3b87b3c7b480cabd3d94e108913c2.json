@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "62d3b87b3c7b480cabd3d94e108913c2",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 96,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"spools\":{\"PIPE_SPOOL_REAR_RIGHT_RUPTURED\":false,\"PIPE_SPOOL_REAR_LEFT_RUPTURED\":true,\"PIPE_SPOOL_UPPER_RIGHT_RUPTURED\":true,\"PIPE_SPOOL_UPPER_LEFT_RUPTURED\":true},\"heads\":{\"UPPER\":[],\"LOWER\":[],\"LOWER_RIGHT\":[],\"RIGHT\":{\"broken\":true,\"severity\":0.4511859071598603},\"LOWER_LEFT\":{\"broken\":true,\"severity\":0.42106322710884028},\"LEFT\":{\"broken\":true,\"severity\":0.4891666776589725}},\"pipeMask\":164,\"visualMask\":164,\"ventCount\":6,\"mode\":\"MELTDOWN\",\"age\":257.6583335902542,\"brokenEmitters\":14}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793259666.2942247,
+  "_ntfy_id": "fUJY5f4h7A8C",
+  "_ntfy_time": 1793259666
+}

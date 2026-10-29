@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "4ddd294e56954dbd9734a6ea9666c018",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 24,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "FAZ2_EDIT_REBUILD_COMPLETED"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793256893.039896,
+  "_ntfy_id": "cA4m3RdpoNgt",
+  "_ntfy_time": 1793256894
+}

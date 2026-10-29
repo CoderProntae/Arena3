@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "a11899d6645740f0ba0e84d17cb4d05b",
+  "tool": "get_console_output",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 193,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "[CORE PROTOCOL REMAKE] Geometry rays: 23/23 clear (six heads at TWO camera heights, core + nine samples). Brightness/appearance still need Studio screenshot comparison.\n[CORE] Physical server ready. CHECKPOINT 02: six real mechanical fuel sources; no photons or automatic ONLINE. Meltdown gameplay retained.\n[MESH] Six approved GLBs; real 3D handoff active; 2D core beams/particles disabled.\n[PILOT 3D FLOW] Zero 2D ParticleEmitter/Beam policy active; 3D EditableMesh engine authoritative.\n[PILOT 3D] Six physical GLBs + authoritative 02-05 state ready. Zero 2D ParticleEmitter/Beam.\n[MESH] R5= COLD ; six real heads; relay mask= 0\nCamTrack Theme: Light\nAnimation Spoofer cannot run while game is running\n[CORE PROTOCOL REMAKE R3] Film camera and true third person; physical reactor is server owned.\nCamTrack Theme: Light\nAnimation Spoofer cannot run while game is running\n[FAZ42] Pipe damage visual controller ready\n[MESH] R5= MELTDOWN ; six real heads; relay mask= 63\n0_7955432\n0_7905952\n[3D REFERENCE VFX V15] Simultaneous 6-Laser Lockstep + Equal-Length Center Convergence + V14D Core online.\n[FAZ4] DAMAGE_PIPE_RUPTURE_KIT_01 kuruldu (32 MeshPart, gizli; 8 agiz ankraji)\n[M14] Glass laser controller ready\n[FAZ2] Multi-tone Slate-Iron Chamber, 4 Radial Sliding Hatches & 10-Blade CNC Rear Turbine active!\n[FAZ3-REV4] Zero-ZFight + Zero-Skybox Forebay Hall + Hollow-Bore Piping Ring (M11) + 6 Shared-Batch Service Bays (M12) active! (75 static 3D MeshParts)"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793263668.7756815,
+  "_ntfy_id": "hy47Y41PZwwO",
+  "_ntfy_time": 1793263669
+}

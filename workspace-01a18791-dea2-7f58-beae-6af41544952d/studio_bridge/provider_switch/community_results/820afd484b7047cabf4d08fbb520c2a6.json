@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "820afd484b7047cabf4d08fbb520c2a6",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 161,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"spools\":{\"REAR_RIGHT\":{\"intact\":6,\"damaged\":0},\"UPPER_RIGHT\":{\"intact\":6,\"damaged\":0},\"REAR_LEFT\":{\"intact\":6,\"damaged\":0},\"UPPER_LEFT\":{\"intact\":6,\"damaged\":0}},\"mode\":\"COLD\",\"mask\":0,\"clouds\":0}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793262337.1603365,
+  "_ntfy_id": "kOWO2jZVKDST",
+  "_ntfy_time": 1793262337
+}

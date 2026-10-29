@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "e9ca986fe1884247bb3a001d13e3290a",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 107,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"rays\":[],\"mode\":\"MELTDOWN\",\"count\":2,\"mask\":30}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793259820.5127451,
+  "_ntfy_id": "u1wQnySXfsY6",
+  "_ntfy_time": 1793259821
+}

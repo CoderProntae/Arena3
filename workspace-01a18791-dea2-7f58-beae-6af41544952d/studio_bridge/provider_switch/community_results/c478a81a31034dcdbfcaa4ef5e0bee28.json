@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "c478a81a31034dcdbfcaa4ef5e0bee28",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 179,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "SAFE_FAILURE_PRESERVED"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793263324.374312,
+  "_ntfy_id": "ZXyFHyOk4HU2",
+  "_ntfy_time": 1793263324
+}

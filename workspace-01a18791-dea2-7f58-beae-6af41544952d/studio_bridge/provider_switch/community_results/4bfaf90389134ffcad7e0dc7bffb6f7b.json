@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "4bfaf90389134ffcad7e0dc7bffb6f7b",
+  "tool": "script_read",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 550,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "  2328→local function crackPanes(intensity)\n  2329→\tif state.windowBroken then return end\n  2330→\tfor i=1,math.floor(6+10*intensity) do\n  2331→\t\tlocal x=rng:NextNumber(-52,52)\n  2332→\t\tlocal y=rng:NextNumber(32,69)\n  2333→\t\tlocal last=Vector3.new(x,y,93.72)\n  2334→\t\tfor step=1,4 do\n  2335→\t\t\tlocal p=last+Vector3.new(rng:NextNumber(-2.8,2.8),\n  2336→\t\t\t\trng:NextNumber(0.6,2),0)\n  2337→\t\t\tbeam(glassScarFolder,\"HAIRLINE_BOROSILICATE_CRACK\",\n  2338→\t\t\t\tlast,p,0.10,i%4==0 and C.orange or C.ivory,\n  2339→\t\t\t\t\tEnum.Material.Neon,0.24)\n  2340→\t\t\tlast=p\n  2341→\t\tend\n  2342→\tend"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793215248.9379117,
+  "_ntfy_id": "wcIyQKuxwXO5",
+  "_ntfy_time": 1793215249
+}

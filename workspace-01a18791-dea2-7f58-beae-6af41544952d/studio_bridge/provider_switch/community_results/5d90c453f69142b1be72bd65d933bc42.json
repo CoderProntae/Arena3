@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "5d90c453f69142b1be72bd65d933bc42",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 125,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "[{\"name\":\"PANORAMIC_LAMINATED_GLASS_1\",\"count\":80},{\"name\":\"PANORAMIC_LAMINATED_GLASS_2\",\"count\":30},{\"moving\":220}]"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793261045.8879364,
+  "_ntfy_id": "9Jecos5Q12CH",
+  "_ntfy_time": 1793261046
+}

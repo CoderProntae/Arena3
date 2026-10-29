@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "20234fdc0f5f40eca20fd39723721ecc",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 58,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "GLASS_LAYER_03 CREATED"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793258014.983699,
+  "_ntfy_id": "WPPSMoOSKvyt",
+  "_ntfy_time": 1793258015
+}

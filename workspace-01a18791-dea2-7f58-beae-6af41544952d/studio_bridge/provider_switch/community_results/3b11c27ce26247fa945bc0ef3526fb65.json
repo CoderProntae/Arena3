@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "3b11c27ce26247fa945bc0ef3526fb65",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 485,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"CustomVapor\":\"76337 (LocalScript)\",\"CORE_PROTOCOL_Server\":\"141072 (Script)\",\"Faz2_ChamberAndTurbine\":\"65619 (Script)\",\"ReactorPilot_SixHeads\":\"13470 (Script)\",\"Faz3_PipingAndServiceBays\":\"YOK\"}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793212731.3603897,
+  "_ntfy_id": "pm2kNpWEluAl",
+  "_ntfy_time": 1793212731
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "db4448078a6e4b3092f022ca275d800d",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 50,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "L1 hidden L2/L3 shown"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793257464.7132947,
+  "_ntfy_id": "ecCoab1dTxZK",
+  "_ntfy_time": 1793257465
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "53dccb6d2cab4bb6b08dcaa26c1e37d5",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 169,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"attrs\":{\"T186\":\"{\\\"visible\\\":16,\\\"visualMask\\\":36,\\\"mask\\\":36,\\\"age\\\":186.4333421550691,\\\"active\\\":{\\\"REAR_RIGHT\\\":false,\\\"UPPER_RIGHT\\\":true,\\\"REAR_LEFT\\\":false,\\\"UPPER_LEFT\\\":true}}\",\"T87\":\"{\\\"visible\\\":8,\\\"visualMask\\\":4,\\\"mask\\\":4,\\\"age\\\":87.47917103394866,\\\"active\\\":{\\\"REAR_RIGHT\\\":false,\\\"UPPER_RIGHT\\\":true,\\\"REAR_LEFT\\\":false,\\\"UPPER_LEFT\\\":false}}\"},\"mode\":\"MELTDOWN\",\"age\":206.6541764959693}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793262707.9431574,
+  "_ntfy_id": "gDFmZcBZbS3l",
+  "_ntfy_time": 1793262708
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "122a4caf627d44eaad494e833fc5f10e",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 251,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"scrollsLeft\":false,\"short\":\"Kısa Parça\",\"longNamePreserved\":false,\"swapped\":{\"x\":36,\"text\":\"Yeni Parça\"},\"invalidIdRejected\":true,\"emptyTitleRejected\":true,\"xBefore\":36,\"shortX\":36,\"stopped\":\"RADYO KAPALI\",\"xAfter\":36}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793273608.7583733,
+  "_ntfy_id": "6WbMwupqXI3P",
+  "_ntfy_time": 1793273608
+}

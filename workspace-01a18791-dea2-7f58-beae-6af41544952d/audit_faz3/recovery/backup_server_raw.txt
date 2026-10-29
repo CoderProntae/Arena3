@@ -1,0 +1,3882 @@
+     1→--[[
+     2→ Gameplay server: real operator controls, coolant, failure and meltdown.
+     3→ CHECKPOINT 01 deletes the former boot score and all startup render logic.
+     4→ Only the accepted physical button may enter STARTUP. At this visual gate
+     5→ the six approved GLBs move; NO ignition, audio, screen lens or ONLINE yet.
+     6→ The user's approval is required before subsequent startup stages exist.
+     7→]]
+     8→
+     9→local Players=game:GetService("Players")
+    10→local Workspace=game:GetService("Workspace")
+    11→local ReplicatedStorage=game:GetService("ReplicatedStorage")
+    12→local Lighting=game:GetService("Lighting")
+    13→local TweenService=game:GetService("TweenService")
+    14→local RunService=game:GetService("RunService")
+    15→local Debris=game:GetService("Debris")
+    16→
+    17→local CFG={
+    18→	STUDIO_AUTO_STARTUP=false, -- Studio ONLY: autonomous visual preview. No clicks.
+    19→	STUDIO_AUTO_MELTDOWN=false, -- Studio ONLY: start a test 12 seconds after Play.
+    20→	STUDIO_PREVIEW_SECOND=0, -- Optional: 244 resembles user's 15:53 screenshot.
+    21→	SILENT_PROTOTYPE=true, -- Visual only: unverified catalog audio remains muted.
+    22→	-- Accepted physical START input is the one authoritative age zero.
+    23→	-- The old video timestamp does not control gameplay.
+    24→	MELTDOWN_SECONDS=435,       -- Reference's first chapter: 11:49 to 19:04.
+    25→	RESET_DELAY=57,
+    26→	SHUTDOWN_RESCUE_UNTIL=270,
+    27→	MAX_DEBRIS=245,
+    28→	INTERACTION_DISTANCE=11, -- avatar-sized room; server validates EVERY click.
+    29→	-- Exposure is an ART DIRECTION constraint, not a performance switch.
+    30→	-- V1's whiteout came from 30-brightness core lights with 120-stud
+    31→	-- reach, 0.9-1.55 bloom and an overlarge glowing control console.
+    32→	VISUAL={
+    33→		ROOM_EXPOSURE=-0.24,
+    34→		BLOOM_THRESHOLD=1.88,
+    35→		BLOOM_IDLE=0.20,
+    36→		BLOOM_MELTDOWN=0.35,
+    37→		CORE_LIGHT_RANGE=59, -- Star at z=26; glass z=93: >67 away.
+    38→		CORE_LIGHT_IDLE=2.25,
+    39→		CORE_LIGHT_MAX=5.4,
+    40→		PHYSICAL_BUTTON_NEON_ALPHA=0.52,
+    41→	},
+    42→	AUDIO={
+    43→		opening="rbxassetid://1843973421", -- Roblox Creator Store score
+    44→		escalation="rbxassetid://9040229071",
+    45→		finale="rbxassetid://9042675817",
+    46→		idle="rbxassetid://9112775175",
+    47→		turbine="rbxassetid://9118747525",
+    48→		siren="rbxassetid://9113073742",
+    49→		siren2="rbxassetid://9113073796",
+    50→		panel="rbxassetid://9120099286",
+    51→		switch="rbxassetid://9120099286",
+    52→		laser="rbxassetid://9116231442",
+    53→		pressure="rbxassetid://9117895914",
+    54→		coolant="rbxassetid://9120562287",
+    55→		plasma="rbxassetid://9125742111",
+    56→		hiss="rbxassetid://9117665655",
+    57→		electricity="rbxassetid://9114247505",
+    58→		steel="rbxassetid://9116554136",
+    59→		rupture="rbxassetid://9116546593",
+    60→		glass="rbxassetid://7140153519",
+    61→		quake="rbxassetid://9114224217",
+    62→		impact="rbxassetid://9120705982",
+    63→		explosion="rbxassetid://9114363548",
+    64→		gate="rbxassetid://9114307430",
+    65→		rain="rbxassetid://9112854440",
+    66→	},
+    67→}
+    68→local C={
+    69→	white=Color3.fromRGB(252,252,255),
+    70→	porcelain=Color3.fromRGB(233,228,228),
+    71→	silver=Color3.fromRGB(151,168,183),
+    72→	trim=Color3.fromRGB(92,105,117),
+    73→	slate=Color3.fromRGB(42,51,66),
+    74→	charcoal=Color3.fromRGB(23,30,43),
+    75→	black=Color3.fromRGB(9,14,25),
+    76→	cobalt=Color3.fromRGB(26,77,203),
+    77→	azure=Color3.fromRGB(38,168,253),
+    78→	cyan=Color3.fromRGB(97,244,251),
+    79→	violet=Color3.fromRGB(137,65,255),
+    80→	magenta=Color3.fromRGB(251,72,246),
+    81→	mint=Color3.fromRGB(98,245,161),
+    82→	amber=Color3.fromRGB(252,185,51),
+    83→	orange=Color3.fromRGB(252,98,36),
+    84→	red=Color3.fromRGB(251,43,53),
+    85→	burgundy=Color3.fromRGB(96,20,28),
+    86→	chamber=Color3.fromRGB(143,72,49),
+    87→	floor=Color3.fromRGB(222,218,223),
+    88→	floorInset=Color3.fromRGB(207,207,214),
+    89→	wall=Color3.fromRGB(196,191,193),
+    90→	ivory=Color3.fromRGB(247,240,233),
+    91→	warm=Color3.fromRGB(255,197,170),
+    92→	frame=Color3.fromRGB(80,75,79),
+    93→	midnight=Color3.fromRGB(5,12,32),
+    94→	navy=Color3.fromRGB(21,54,123),
+    95→	nebula=Color3.fromRGB(39,110,208),
+    96→	ruby=Color3.fromRGB(141,24,37),
+    97→}
+    98→-- All original authored coordinates are expressed in design units.
+    99→-- Human scale, NOT a giant doll: building, machines and controls together
+   100→-- are half-size. The unmodified 5-6-stud Roblox character can now reach
+   101→-- a chest-height lever; the control-room ceiling is ~29, not ~58 studs.
+   102→local WORLD_SCALE=0.50
+   103→local UNITS=Vector3
+   104→local FRAME=CFrame
+   105→local Vector3={
+   106→	new=function(x,y,z)
+   107→		return UNITS.new((x or 0)*WORLD_SCALE,
+   108→			(y or 0)*WORLD_SCALE,(z or 0)*WORLD_SCALE)
+   109→	end,
+   110→	zero=UNITS.zero,
+   111→}
+   112→local CFrame={
+   113→	new=function(x,y,z)
+   114→		if type(x)=="number" or x==nil then
+   115→			return FRAME.new((x or 0)*WORLD_SCALE,
+   116→				(y or 0)*WORLD_SCALE,(z or 0)*WORLD_SCALE)
+   117→		end
+   118→		-- A Vector3 passed here ALREADY represents world-space studs.
+   119→		return FRAME.new(x)
+   120→	end,
+   121→	lookAt=FRAME.lookAt,
+   122→	Angles=FRAME.Angles,
+   123→}
+   124→local TAU=2*math.pi
+   125→local CORE=Vector3.new(0,53,0)
+   126→local rng=Random.new(52570)
+   127→local now=time
+   128→local SPARK="rbxasset://textures/particles/sparkles_main.dds"
+   129→local SMOKE="rbxasset://textures/particles/smoke_main.dds"
+   130→
+   131→do
+   132→	local previous=Workspace:FindFirstChild("CORE_PROTOCOL_V2_WORLD")
+   133→	if previous then previous:Destroy() end
+   134→	local priorRemote=ReplicatedStorage:FindFirstChild("CORE_PROTOCOL_V2_CUES")
+   135→	if priorRemote then priorRemote:Destroy() end
+   136→end
+   137→for _,id in ipairs({"CORE_PROTOCOL_BLOOM","CORE_PROTOCOL_GRADE",
+   138→	"CORE_PROTOCOL_ATMOS","CORE_PROTOCOL_RAYS",
+   139→	"CORE_PROTOCOL_V2_BLOOM","CORE_PROTOCOL_V2_GRADE",
+   140→	"CORE_PROTOCOL_V2_ATMOS","CORE_PROTOCOL_V2_RAYS"}) do
+   141→	local e=Lighting:FindFirstChild(id)
+   142→	if e then e:Destroy() end
+   143→end
+   144→local remote=Instance.new("RemoteEvent")
+   145→remote.Name="CORE_PROTOCOL_V2_CUES"
+   146→remote.Parent=ReplicatedStorage
+   147→local world=Instance.new("Model")
+   148→world.Name="CORE_PROTOCOL_V2_WORLD"
+   149→world.Parent=Workspace
+   150→world:SetAttribute("SilentPrototype",CFG.SILENT_PROTOTYPE)
+   151→pcall(function() world.ModelStreamingMode=Enum.ModelStreamingMode.Persistent end)
+   152→local function folder(parent,name)
+   153→	local f=Instance.new("Folder")
+   154→	f.Name=name;f.Parent=parent
+   155→	return f
+   156→end
+   157→local chamber=folder(world,"01_CONTAINMENT")
+   158→local gallery=folder(world,"02_PANORAMIC_CONTROL_ROOM")
+   159→local machine=folder(world,"03_STAR_REACTOR")
+   160→local service=folder(world,"04_REACTOR_SERVICE_CORRIDORS")
+   161→local interfaces=folder(world,"05_WORKING_MACHINERY")
+   162→local damage=folder(world,"06_DAMAGE_THAT_STAYS")
+   163→local transient=folder(damage,"MOMENTARY_SHARDS")
+   164→local fractures=folder(damage,"PERMANENT_SCARS")
+   165→local soundAnchors=folder(world,"07_SPATIAL_SOUNDS")
+   166→
+   167→local bloom=Instance.new("BloomEffect")
+   168→bloom.Name="CORE_PROTOCOL_V2_BLOOM"
+   169→bloom.Intensity=CFG.VISUAL.BLOOM_IDLE
+   170→bloom.Size=22;bloom.Threshold=CFG.VISUAL.BLOOM_THRESHOLD
+   171→bloom.Parent=Lighting
+   172→local grade=Instance.new("ColorCorrectionEffect")
+   173→grade.Name="CORE_PROTOCOL_V2_GRADE";grade.Contrast=0.045;grade.Brightness=0.055
+   174→grade.Saturation=0.015;grade.TintColor=Color3.fromRGB(252,249,246)
+   175→grade.Parent=Lighting
+   176→local atmosphere=Instance.new("Atmosphere")
+   177→atmosphere.Name="CORE_PROTOCOL_V2_ATMOS";atmosphere.Density=0.012
+   178→atmosphere.Haze=0.018;atmosphere.Color=Color3.fromRGB(120,145,191)
+   179→atmosphere.Decay=Color3.fromRGB(9,17,37)
+   180→atmosphere.Parent=Lighting
+   181→do
+   182→	local sunrays=Instance.new("SunRaysEffect")
+   183→	sunrays.Name="CORE_PROTOCOL_V2_RAYS";sunrays.Intensity=0.0
+   184→	sunrays.Spread=0.5;sunrays.Parent=Lighting
+   185→end
+   186→Lighting.ClockTime=0
+   187→Lighting.Brightness=2.05
+   188→Lighting.ExposureCompensation=CFG.VISUAL.ROOM_EXPOSURE
+   189→Lighting.Ambient=Color3.fromRGB(138,137,142)
+   190→Lighting.OutdoorAmbient=Color3.fromRGB(59,58,70)
+   191→Lighting.FogColor=Color3.fromRGB(9,17,37)
+   192→Lighting.FogStart=225;Lighting.FogEnd=530
+   193→
+   194→local function part(parent,name,cf,size,color,material,alpha,collide,shape)
+   195→	local p=Instance.new("Part")
+   196→	p.Name=name;p.CFrame=cf;p.Size=size
+   197→	p.Color=color or C.silver;p.Material=material or Enum.Material.Metal
+   198→	p.Transparency=alpha or 0;p.Anchored=true
+   199→	p.CanCollide=collide==true;p.CanTouch=collide==true
+   200→	p.CastShadow=(p.Material~=Enum.Material.Neon)
+   201→	p.TopSurface=Enum.SurfaceType.Smooth
+   202→	p.BottomSurface=Enum.SurfaceType.Smooth
+   203→	if shape then p.Shape=shape end
+   204→	p.Parent=parent
+   205→	return p
+   206→end
+   207→local function box(parent,name,pos,size,color,mat,alpha,collide)
+   208→	return part(parent,name,CFrame.new(pos),size,color,mat,alpha,collide)
+   209→end
+   210→local function ball(parent,name,pos,r,color,mat,alpha,collide)
+   211→	return part(parent,name,CFrame.new(pos),Vector3.new(2*r,2*r,2*r),
+   212→		color,mat,alpha,collide,Enum.PartType.Ball)
+   213→end
+   214→local function beam(parent,name,a,b,width,color,mat,alpha,collide)
+   215→	local length=(b-a).Magnitude
+   216→	if length<0.01 then return nil end
+   217→	return part(parent,name,CFrame.lookAt((a+b)/2,b),
+   218→		UNITS.new(width*WORLD_SCALE,width*WORLD_SCALE,length),
+   219→		color,mat,alpha,collide)
+   220→end
+   221→local function tube(parent,name,a,b,r,color,mat,alpha,collide)
+   222→	local length=(b-a).Magnitude
+   223→	if length<0.01 then return nil end
+   224→	return part(parent,name,CFrame.lookAt((a+b)/2,b)*
+   225→		CFrame.Angles(0,math.pi/2,0),
+   226→		UNITS.new(length,2*r*WORLD_SCALE,2*r*WORLD_SCALE),
+   227→		color,mat,alpha,collide,Enum.PartType.Cylinder)
+   228→end
+   229→local function cylY(parent,name,center,r,height,color,mat,alpha,collide)
+   230→	return part(parent,name,CFrame.new(center)*CFrame.Angles(0,0,math.pi/2),
+   231→		Vector3.new(height,2*r,2*r),color,mat,alpha,collide,
+   232→		Enum.PartType.Cylinder)
+   233→end
+   234→local function circleXY(parent,name,center,r,n,width,color,mat,alpha)
+   235→	local pieces={}
+   236→	for i=0,n-1 do
+   237→		local a=i*TAU/n;local b=(i+1)*TAU/n
+   238→		local p=center+Vector3.new(math.cos(a)*r,math.sin(a)*r,0)
+   239→		local q=center+Vector3.new(math.cos(b)*r,math.sin(b)*r,0)
+   240→		pieces[#pieces+1]=beam(parent,name.."_"..i,p,q,width,color,mat,alpha)
+   241→	end
+   242→	return pieces
+   243→end
+   244→local function circleXZ(parent,name,center,r,n,width,color,mat,alpha)
+   245→	local pieces={}
+   246→	for i=0,n-1 do
+   247→		local a=i*TAU/n;local b=(i+1)*TAU/n
+   248→		local p=center+Vector3.new(math.cos(a)*r,0,math.sin(a)*r)
+   249→		local q=center+Vector3.new(math.cos(b)*r,0,math.sin(b)*r)
+   250→		pieces[#pieces+1]=beam(parent,name.."_"..i,p,q,width,color,mat,alpha)
+   251→	end
+   252→	return pieces
+   253→end
+   254→local function lamp(parent,color,power,range)
+   255→	local l=Instance.new("PointLight")
+   256→	l.Color=color;l.Brightness=power
+   257→	l.Range=math.min(range*WORLD_SCALE,120)
+   258→	l.Shadows=false;l.Parent=parent
+   259→	return l
+   260→end
+   261→local function particles(parent,name,texture,rate,color,initial,final,speed)
+   262→	local e=Instance.new("ParticleEmitter")
+   263→	e.Name=name;e.Texture=texture;e.Enabled=false;e.Rate=rate
+   264→	e.Speed=NumberRange.new(speed*0.5,speed)
+   265→	e.Lifetime=NumberRange.new(0.7,1.9)
+   266→	e.SpreadAngle=Vector2.new(65,65)
+   267→	e.Color=ColorSequence.new(color,color)
+   268→	e.Size=NumberSequence.new({NumberSequenceKeypoint.new(0,initial*WORLD_SCALE),
+   269→		NumberSequenceKeypoint.new(1,final*WORLD_SCALE)})
+   270→	e.Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0.13),
+   271→		NumberSequenceKeypoint.new(1,1)})
+   272→	e.LightEmission=0.8;e.Parent=parent
+   273→	return e
+   274→end
+   275→local function soundtrack(id,parent,name,volume,looped,range)
+   276→	if CFG.SILENT_PROTOTYPE or not id or id=="" then return nil end
+   277→	local a=Instance.new("Sound")
+   278→	a.Name=name;a.SoundId=id;a.Volume=volume or 0.5
+   279→	a.Looped=looped==true
+   280→	a.RollOffMaxDistance=(range or 260)*WORLD_SCALE
+   281→	a.Parent=parent
+   282→	return a
+   283→end
+   284→local function sfx(key,parent,volume,pitch,seconds)
+   285→	if CFG.SILENT_PROTOTYPE then return end
+   286→	local id=CFG.AUDIO[key]
+   287→	if not id then return end
+   288→	local a=soundtrack(id,parent,"SFX_"..key,volume or 0.6,false,280)
+   289→	a.PlaybackSpeed=pitch or 1;a:Play()
+   290→	Debris:AddItem(a,seconds or 17)
+   291→end
+   292→local function tween(object,seconds,properties,style)
+   293→	local t=TweenService:Create(object,TweenInfo.new(seconds,
+   294→		style or Enum.EasingStyle.Quad,Enum.EasingDirection.Out),properties)
+   295→	t:Play();return t
+   296→end
+   297→local function caption(parent,face,text,textSize,fg,canvas)
+   298→	-- In-world SurfaceGui on a real piece of equipment, NOT screen HUD.
+   299→	local gui=Instance.new("SurfaceGui")
+   300→	gui.Name="ENGRAVED_VIEW";gui.Face=face
+   301→	local pixels=canvas or Vector2.new(880,300)
+   302→	gui.CanvasSize=Vector2.new(math.max(100,math.floor(pixels.X*WORLD_SCALE)),
+   303→		math.max(64,math.floor(pixels.Y*WORLD_SCALE)))
+   304→	gui.LightInfluence=0;gui.AlwaysOnTop=false;gui.Parent=parent
+   305→	local label=Instance.new("TextLabel")
+   306→	label.Name="INSCRIPTION"
+   307→	label.BackgroundTransparency=1
+   308→	label.Size=UDim2.fromScale(1,1)
+   309→	label.Text=text or ""
+   310→	label.TextWrapped=true
+   311→	label.TextColor3=fg or C.white
+   312→	label.TextStrokeTransparency=0.13
+   313→	label.TextSize=math.max(13,math.floor((textSize or 48)*WORLD_SCALE))
+   314→	label.Font=Enum.Font.Code
+   315→	label.Parent=gui
+   316→	return label
+   317→end
+   318→local function ePanel(parent,name,pos,size,text,tint,face,textSize)
+   319→	local b=box(parent,name,pos,size,C.charcoal,Enum.Material.Metal)
+   320→	local display=box(parent,name.."_LIT_SCREEN",
+   321→		pos+Vector3.new(0,0,(face==Enum.NormalId.Back and 1 or -1)
+   322→			*(size.Z/WORLD_SCALE/2+0.15)),
+   323→		Vector3.new(size.X/WORLD_SCALE-0.6,
+   324→			size.Y/WORLD_SCALE-0.55,0.18),
+   325→		tint or C.black,Enum.Material.SmoothPlastic,0.04)
+   326→	local gui=caption(display,face or Enum.NormalId.Back,text,
+   327→		textSize or 75,C.white,
+   328→		Vector2.new(math.floor((size.X/WORLD_SCALE-0.6)*44),
+   329→			math.floor((size.Y/WORLD_SCALE-0.55)*44)))
+   330→	gui.TextScaled=false;gui.TextWrapped=false
+   331→	gui.Font=Enum.Font.GothamBold
+   332→	gui.TextStrokeTransparency=0.76
+   333→	gui.TextXAlignment=Enum.TextXAlignment.Center
+   334→	gui.TextYAlignment=Enum.TextYAlignment.Center
+   335→	gui.Size=UDim2.fromScale(0.96,0.88)
+   336→	gui.Position=UDim2.fromScale(0.02,0.06)
+   337→	return {outer=b,screen=display,label=gui}
+   338→end
+   339→local function fracture(from,to,n,tint,parent)
+   340→	local last=from
+   341→	for i=1,n do
+   342→		local p=from:Lerp(to,i/n)
+   343→		if i<n then p=p+Vector3.new(rng:NextNumber(-2.6,2.6),
+   344→			rng:NextNumber(-2.6,2.6),rng:NextNumber(-2.6,2.6)) end
+   345→		local seg=beam(parent or transient,"ERRATIC_DISCHARGE",last,p,
+   346→			rng:NextNumber(0.16,0.48),tint or C.cyan,
+   347→			Enum.Material.Neon,0.04)
+   348→		if parent==nil and seg then Debris:AddItem(seg,0.32) end
+   349→		last=p
+   350→	end
+   351→end
+   352→local function throwShard(ref,color,scale,velocity,life)
+   353→	if #transient:GetChildren()>=CFG.MAX_DEBRIS then return end
+   354→	local wasNeon=ref.Material==Enum.Material.Neon
+   355→	local shard=part(transient,"REAL_FALLING_SHRAPNEL",ref.CFrame,
+   356→		ref.Size*math.min(scale or 0.6,0.76),
+   357→		wasNeon and C.trim or color or ref.Color,
+   358→		wasNeon and Enum.Material.Metal or ref.Material,
+   359→		0.03,true,ref.Shape)
+   360→	shard.Anchored=false
+   361→	shard.AssemblyLinearVelocity=velocity or Vector3.new(0,18,18)
+   362→	shard.AssemblyAngularVelocity=Vector3.new(rng:NextNumber(-8,8),
+   363→		rng:NextNumber(-8,8),rng:NextNumber(-8,8))
+   364→	Debris:AddItem(shard,life or 13)
+   365→end
+   366→local state -- declared before shake so auxiliary controls cannot shake STARTUP
+   367→local function shake(power,duration)
+   368→	if state and state.mode=="STARTUP" then return end
+   369→	remote:FireAllClients("SHAKE",power,duration)
+   370→end
+   371→local function flash(power,hue)
+   372→	remote:FireAllClients("FLASH",power,hue)
+   373→end
+   374→local function centerPulse(radius,duration,color)
+   375→	-- The V1 pulse grew to a 187-STUD white sphere; it physically crossed
+   376→	-- the 93-stud observation plane and overexposed the entire control room.
+   377→	-- The cinematic belongs BEHIND the glass. World-space diameter <= 52.
+   378→	local safeDiameter=math.min(52,math.max(8,radius*4.6))
+   379→	local spark=ball(transient,"CHAMBER_ONLY_PLASMA_SURGE",
+   380→		CORE+Vector3.new(0,0,23),
+   381→		math.min(1.7,radius*0.35),color or C.magenta,
+   382→		Enum.Material.Neon,0.66)
+   383→	spark.CastShadow=false
+   384→	local shower=particles(spark,"RADIAL_WHITE_HOT_DISCHARGE",
+   385→		SPARK,0,color or C.ivory,0.62,0.045,32)
+   386→	shower.SpreadAngle=Vector2.new(180,180)
+   387→	shower.Lifetime=NumberRange.new(0.32,0.78)
+   388→	shower:Emit(math.floor(16+radius*4))
+   389→	tween(spark,duration,{Size=Vector3.new(safeDiameter,safeDiameter,
+   390→		safeDiameter),Transparency=1},Enum.EasingStyle.Quart)
+   391→	Debris:AddItem(spark,duration+0.25)
+   392→end
+   393→local function outwardFrontWave(first,last,seconds,color)
+   394→	local wave={}
+   395→	for i=0,35 do
+   396→		local a=i*TAU/36;local b=(i+1)*TAU/36
+   397→		wave[#wave+1]=beam(transient,"WINDOW_FACING_SHOCK_RING",
+   398→			CORE+Vector3.new(math.cos(a)*first,math.sin(a)*first,29),
+   399→			CORE+Vector3.new(math.cos(b)*first,math.sin(b)*first,29),
+   400→			1.05,color or C.violet,Enum.Material.Neon,0.48)
+   401→	end
+   402→	task.spawn(function()
+   403→		local started=now()
+   404→		while now()-started<seconds do
+   405→			local u=math.clamp((now()-started)/seconds,0,1)
+   406→			local r=first+(last-first)*u
+   407→			for i,p in ipairs(wave) do
+   408→				local a=(i-1)*TAU/36;local b=i*TAU/36
+   409→				local x=CORE+Vector3.new(math.cos(a)*r,math.sin(a)*r,29)
+   410→				local y=CORE+Vector3.new(math.cos(b)*r,math.sin(b)*r,29)
+   411→				p.CFrame=CFrame.lookAt((x+y)/2,y)
+   412→				p.Size=UNITS.new(1.05*WORLD_SCALE,1.05*WORLD_SCALE,
+   413→					(y-x).Magnitude)
+   414→				p.Transparency=0.48+0.51*u
+   415→			end
+   416→			task.wait(0.085)
+   417→		end
+   418→		for _,p in ipairs(wave) do p:Destroy() end
+   419→	end)
+   420→end
+   421→
+   422→-- ================================================================
+   423→-- 1. RECTANGULAR CONTAINMENT: red/orange hazard bay, blue plasma backdrop.
+   424→-- ================================================================
+   425→-- R5's large OLD, non-approved outer chamber base showed as red slabs and
+   426→-- a black/orange-striped floor around the seven approved GLBs. Retint only
+   427→-- those procedural BACKGROUND Parts to the blue-grey 360p facility palette.
+   428→-- Their replacements as original GLBs remain a separate review task.
+   429→box(chamber,"INDUSTRIAL_FLOOR",Vector3.new(0,-2,-4),
+   430→	Vector3.new(192,4,188),Color3.fromRGB(34,48,73),
+   431→	Enum.Material.DiamondPlate,0,true)
+   432→box(chamber,"DARK_CORE_STAGE",Vector3.new(0,0.12,0),
+   433→	Vector3.new(132,0.22,119),Color3.fromRGB(50,64,91),
+   434→	Enum.Material.Metal,0,true)
+   435→box(chamber,"BACK_CONTAINMENT_WALL",Vector3.new(0,56,-92),
+   436→	Vector3.new(194,112,3.3),Color3.fromRGB(55,73,103),
+   437→	Enum.Material.Metal,0,true)
+   438→box(chamber,"LEFT_CONTAINMENT_WALL",Vector3.new(-96,55,-2),
+   439→	Vector3.new(3.4,110,183),Color3.fromRGB(55,73,103),
+   440→	Enum.Material.Metal,0,true)
+   441→box(chamber,"RIGHT_CONTAINMENT_WALL",Vector3.new(96,55,-2),
+   442→	Vector3.new(3.4,110,183),Color3.fromRGB(55,73,103),
+   443→	Enum.Material.Metal,0,true)
+   444→box(chamber,"RIBBED_CEILING",Vector3.new(0,110,-3),
+   445→	Vector3.new(192,3,188),C.slate,Enum.Material.Metal,0,true)
+   446→for _,wallX in ipairs({-65,65}) do
+   447→	box(chamber,"GIANT_REAR_SAFETY_PANEL",Vector3.new(wallX,57,-88.9),
+   448→		Vector3.new(43,61,0.5),C.charcoal,Enum.Material.Metal)
+   449→	box(chamber,"RECESS_ORANGE_ARMOR",Vector3.new(wallX,54,-88.5),
+   450→		Vector3.new(36,47,0.4),C.chamber,Enum.Material.Metal)
+   451→	box(chamber,"HAZARD_HATCH",Vector3.new(wallX,55,-88.1),
+   452→		Vector3.new(26,29,0.3),C.black,Enum.Material.Metal)
+   453→	for row=1,6 do
+   454→		local y=33+(row-1)*8.4
+   455→		beam(chamber,"BACK_PANEL_HAZARD_SHEVRON",
+   456→			Vector3.new(wallX-17,y,-87.65),
+   457→			Vector3.new(wallX+17,y,-87.65),
+   458→			0.42,row%2==0 and C.orange or C.amber,
+   459→			Enum.Material.Neon,0.13)
+   460→		for col=1,4 do
+   461→			box(chamber,"HATCH_VENT_BLADE",
+   462→				Vector3.new(wallX-12+col*4.8,y+2.5,-87.6),
+   463→				Vector3.new(3.6,1.16,0.28),C.slate,Enum.Material.Metal)
+   464→		end
+   465→	end
+   466→	for _,x in ipairs({wallX-21,wallX+21}) do
+   467→		beam(chamber,"REAR_INNER_LUMINESCENT_TRIM",
+   468→			Vector3.new(x,17,-88),Vector3.new(x,97,-88),
+   469→			0.64,C.orange,Enum.Material.Neon,0.19)
+   470→	end
+   471→end
+   472→box(chamber,"MIDNIGHT_BACK_CORE_RECESS",Vector3.new(0,57,-90.3),
+   473→	Vector3.new(57,87,0.5),C.black,Enum.Material.Metal)
+   474→for side=-1,1,2 do
+   475→	local x=side*85
+   476→	for row=0,12 do
+   477→		local y=12+row*7.4
+   478→		local plate=box(chamber,"CONTAINMENT_PANEL_SEAM",
+   479→			Vector3.new(x,y,-44),Vector3.new(0.12,0.26,84),
+   480→			row%3==0 and C.orange or C.trim,
+   481→			row%3==0 and Enum.Material.Neon or Enum.Material.Metal,
+   482→			row%3==0 and 0.23 or 0)
+   483→		plate.CastShadow=false
+   484→	end
+   485→end
+   486→for i=0,19 do
+   487→	local x=-91+i*9.6
+   488→	beam(chamber,"CHAMBER_CEILING_SERVICE_RAIL",
+   489→		Vector3.new(x,107,-89),Vector3.new(x,107,82),
+   490→		i%4==0 and 0.68 or 0.19,
+   491→		i%4==0 and C.trim or C.slate,Enum.Material.Metal)
+   492→end
+   493→local chamberServiceLights={}
+   494→for i=0,23 do
+   495→	local x=-84+(i%12)*15.2
+   496→	local z=-69+math.floor(i/12)*111
+   497→	local lightPart=ball(chamber,"CAMBER_BEAM_LAMP",
+   498→		Vector3.new(x,102,z),0.62,
+   499→		i%3==0 and C.violet or C.azure,Enum.Material.Neon)
+   500→	if i%4==0 then
+   501→		chamberServiceLights[#chamberServiceLights+1]=
+   502→			lamp(lightPart,C.violet,0.68,35)
+   503→	end
+   504→end
+   505→for x=-84,84,12 do
+   506→	beam(chamber,"COLD_BLUE_FLOOR_SERVICE_HAIRLINE",
+   507→		Vector3.new(x,0.29,-74),Vector3.new(x,0.29,79),
+   508→		0.11,Color3.fromRGB(137,177,227),Enum.Material.Neon,0.68)
+   509→end
+   510→for _,z in ipairs({-72,77}) do
+   511→	for i=0,18 do
+   512→		box(chamber,"BOUNDARY_HAZARD_BAND",
+   513→			Vector3.new(-87+i*9.6,0.41,z),Vector3.new(4,0.12,0.92),
+   514→			i%2==0 and C.amber or C.black,
+   515→			i%2==0 and Enum.Material.Neon or Enum.Material.Metal,
+   516→			i%2==0 and 0.21 or 0)
+   517→	end
+   518→end
+   519→
+   520→-- ================================================================
+   521→-- 2. CONTROL LAB: MUTED WARM TILE, BLACK LIFT, DARK-FRAMED GLASS.
+   522→-- ================================================================
+   523→local floor=box(gallery,"LOW_SHEEN_WARM_LAB_FLOOR",Vector3.new(0,22.3,127),
+   524→	Vector3.new(126,3.4,72),C.floor,
+   525→	Enum.Material.SmoothPlastic,0,true)
+   526→floor.Reflectance=0.025
+   527→for ix=-5,5 do
+   528→	for iz=0,6 do
+   529→		local tile=box(gallery,"SETBACK_GREY_CERAMIC_TILE",
+   530→			Vector3.new(ix*10.6,24.06,98+iz*9.4),
+   531→			Vector3.new(10.35,0.075,9.16),
+   532→			(ix+iz)%4==0 and C.floor or C.floorInset,
+   533→			Enum.Material.SmoothPlastic,0.03)
+   534→		tile.Reflectance=0.015
+   535→	end
+   536→end
+   537→-- Recessed black square in the reference becomes a functional lift bay.
+   538→box(gallery,"FLOOR_LIFT_DARK_RECESS",Vector3.new(0,24.145,128),
+   539→	Vector3.new(40,0.09,29),C.black,
+   540→	Enum.Material.SmoothPlastic,0.03)
+   541→local pitTrim={}
+   542→for _,line in ipairs({
+   543→	{Vector3.new(-20,24.2,113.4),Vector3.new(20,24.2,113.4)},
+   544→	{Vector3.new(-20,24.2,142.6),Vector3.new(20,24.2,142.6)},
+   545→	{Vector3.new(-20,24.2,113.4),Vector3.new(-20,24.2,142.6)},
+   546→	{Vector3.new(20,24.2,113.4),Vector3.new(20,24.2,142.6)},
+   547→	}) do
+   548→	pitTrim[#pitTrim+1]=beam(gallery,"RECESSED_LIFT_EDGE_HAIRLINE",
+   549→		line[1],line[2],0.20,C.ivory,Enum.Material.Neon,0.58)
+   550→end
+   551→box(gallery,"RECESSED_METAL_GRILLE_CEILING",
+   552→	Vector3.new(0,81.8,127.2),
+   553→	Vector3.new(130,3.5,73),C.frame,Enum.Material.Metal,0,true)
+   554→-- Screwed-in ceramic ceiling cassettes, exposed dark service rails and
+   555→-- black vents replace the bare flat V3 slab. All strips remain behind lamps.
+   556→for ix=-2,2 do
+   557→	for iz=0,5 do
+   558→		local x=ix*24
+   559→		local z=99+iz*11.5
+   560→		box(gallery,"PATINATED_RECESSED_CEILING_CASSETTE",
+   561→				Vector3.new(x,79.82,z),Vector3.new(22.5,0.22,10.2),
+   562→				(ix+iz)%4==0 and Color3.fromRGB(175,173,177)
+   563→					or Color3.fromRGB(119,125,137),
+   564→				Enum.Material.Metal,0.025)
+   565→		box(gallery,"BLACK_AIRFLOW_VENT_GRILLE",
+   566→			Vector3.new(x,79.63,z+2.9),
+   567→			Vector3.new(16.2,0.11,3.3),C.charcoal,
+   568→				Enum.Material.Metal)
+   569→		for slit=-4,4 do
+   570→			beam(gallery,"VENT_HAIRLINE",
+   571→				Vector3.new(x+slit*1.45,79.55,z+2.0),
+   572→				Vector3.new(x+slit*1.45,79.55,z+3.9),
+   573→				0.06,C.trim,Enum.Material.Metal)
+   574→		end
+   575→	end
+   576→end
+   577→box(gallery,"LAB_REAR_WALL_LEFT",Vector3.new(-37,52,163),
+   578→	Vector3.new(53,57,2.1),C.wall,Enum.Material.Metal,0,true)
+   579→box(gallery,"LAB_REAR_WALL_RIGHT",Vector3.new(37,52,163),
+   580→	Vector3.new(53,57,2.1),C.wall,Enum.Material.Metal,0,true)
+   581→box(gallery,"REAR_DOOR_HEADER",Vector3.new(0,68,163),
+   582→	Vector3.new(22,22,2.1),C.trim,Enum.Material.Metal,0,true)
+   583→for _,side in ipairs({-1,1}) do
+   584→	for _,data in ipairs({{108,34},{152,22}}) do
+   585→		box(gallery,"CONTROL_ROOM_SIDE_WALL_SEGMENT",
+   586→			Vector3.new(side*62,52,data[1]),
+   587→			Vector3.new(2.3,57,data[2]),C.wall,
+   588→			Enum.Material.Metal,0,true)
+   589→	end
+   590→	box(gallery,"SIDE_DOOR_OVERHEAD_LINTEL",
+   591→		Vector3.new(side*62,62,132),
+   592→		Vector3.new(2.3,38,16),C.silver,Enum.Material.Metal,0,true)
+   593→	beam(gallery,"SIDE_EXIT_DIM_STATUS_CABLE",
+   594→		Vector3.new(side*60.75,42,124),
+   595→		Vector3.new(side*60.75,42,140),0.16,C.mint,
+   596→		Enum.Material.Neon,0.66)
+   597→end
+   598→-- White inset perimeter panels, cable runners and visible fasteners.
+   599→for _,side in ipairs({-1,1}) do
+   600→	for n=0,4 do
+   601→		local z=101+n*12.9
+   602→		beam(gallery,"CONTROL_LAB_PANEL_VERTICAL_JOINT",
+   603→			Vector3.new(side*60.35,29,z),
+   604→			Vector3.new(side*60.35,75,z),
+   605→			0.12,C.trim,Enum.Material.Metal)
+   606→		for _,y in ipairs({32,68}) do
+   607→			ball(gallery,"SIDE_WALL_COUNTERSUNK_BOLT",
+   608→				Vector3.new(side*60.25,y,z+1.0),0.17,
+   609→				C.silver,Enum.Material.Metal)
+   610→		end
+   611→	end
+   612→end
+   613→-- Laminated VISUAL pane: Glass material erases translucent Neon and
+   614→-- particles behind it in Roblox's renderer, even at 98% transparency.
+   615→-- Thin SmoothPlastic preserves the glass boundary AND the whole reactor.
+   616→box(gallery,"FRONT_WINDOW_LOW_DARK_SILL",
+   617→	Vector3.new(0,25.15,93.3),
+   618→	Vector3.new(126,2.6,2.5),C.frame,Enum.Material.Metal,0,true)
+   619→box(gallery,"FRONT_WINDOW_UPPER_BURGUNDY_ARCH",
+   620→	Vector3.new(0,77.0,93.3),
+   621→	Vector3.new(126,11,2.5),C.frame,Enum.Material.Metal,0,true)
+   622→for _,side in ipairs({-1,1}) do
+   623→	box(gallery,"WINDOW_HEAVY_SIDE_COLUMN",
+   624→		Vector3.new(side*57.3,50.8,93.4),
+   625→		Vector3.new(9.6,49.2,3.6),C.frame,
+   626→		Enum.Material.Metal,0,true)
+   627→end
+   628→local glassPanes={}
+   629→-- Two laminated panels meet at x=43. This leaves both emitters and
+   630→-- the star visible from the centered camera and the default spawn.
+   631→for i,spec in ipairs({{-5.5,97.0},{48.5,11.0}}) do
+   632→	local pane=box(gallery,"PANORAMIC_LAMINATED_GLASS_"..i,
+   633→		Vector3.new(spec[1],49.25,93.25),
+   634→		Vector3.new(spec[2],45.0,0.4),
+   635→		C.ivory,Enum.Material.SmoothPlastic,0.985,true)
+   636→	pane.Reflectance=0.045
+   637→	glassPanes[#glassPanes+1]=pane
+   638→end
+   639→box(gallery,"SLIM_OFFSET_GLASS_MULLION",
+   640→	Vector3.new(43,49.25,93.5),
+   641→	Vector3.new(0.72,45.0,1.2),
+   642→	C.frame,Enum.Material.Metal)
+   643→for _,y in ipairs({26.68,71.95}) do
+   644→	beam(gallery,"VIEWING_WINDOW_DARK_EDGE",
+   645→		Vector3.new(-54,y,94),Vector3.new(54,y,94),
+   646→		0.16,C.ruby,Enum.Material.Neon,0.71)
+   647→end
+   648→for _,side in ipairs({-1,1}) do
+   649→	beam(gallery,"GLASS_PERIMETER_DARK_TRIM",
+   650→		Vector3.new(side*54,26.7,94),
+   651→		Vector3.new(side*54,71.9,94),0.24,C.frame,
+   652→		Enum.Material.Metal,0)
+   653→end
+   654→-- Permanent instrument-wall occupancy on the LEFT of the glass, as in
+   655→-- the reference frame. It does NOT move or ever cover the core at x~=0.
+   656→-- Main sightline crosses at x≈-18; LEFT projector head at x≈-31.
+   657→-- Rack's right edge is x=-36: none of the SIX emitter heads is hidden.
+   658→box(gallery,"PERMANENT_LEFT_INSTRUMENT_BACKPLATE",
+   659→	Vector3.new(-45,50.4,95.22),Vector3.new(18,40.4,1.0),
+   660→	C.frame,Enum.Material.Metal,0,true)
+   661→local frontStatusLamps={}
+   662→for group=0,1 do
+   663→	local sx=-50.1+group*9.15
+   664→	box(gallery,"INDICATOR_BANK_BAKELITE_RECESS",
+   665→		Vector3.new(sx,65.5,95.96),Vector3.new(7.2,3.0,0.22),
+   666→		C.black,Enum.Material.Metal)
+   667→	for index=0,7 do
+   668→		local light=box(gallery,"SMALL_RED_STATUS_LED_NOT_BUTTON",
+   669→			Vector3.new(sx-2.65+(index%4)*1.75,
+   670→				66.15-math.floor(index/4)*1.18,96.15),
+   671→			Vector3.new(0.88,0.45,0.12),C.ruby,
+   672→			Enum.Material.Neon,0.38)
+   673→		frontStatusLamps[#frontStatusLamps+1]={part=light,
+   674→			group=group,index=index}
+   675→	end
+   676→end
+   677→local leftFrontTelemetry=ePanel(gallery,
+   678→	"VISIBLE_FRONT_WALL_GENERATOR_DIAGNOSTIC",
+   679→	Vector3.new(-47.8,53.2,95.88),
+   680→	Vector3.new(12.2,10.1,0.38),
+   681→	"CORE COLD\nPWR 000%\nTEMP 0026C",
+   682→	C.black,Enum.NormalId.Back,83)
+   683→local leftFrontCoolant=ePanel(gallery,
+   684→	"VISIBLE_FRONT_WALL_COOLANT_DIAGNOSTIC",
+   685→	Vector3.new(-47.8,39.0,95.88),
+   686→	Vector3.new(12.2,9.7,0.38),
+   687→	"FLOW 050%\nE-COOL 100%\nKEYS 0/3",
+   688→	C.black,Enum.NormalId.Back,81)
+   689→-- A visibly readable left-wall stack, not distant 8-pixel digits.
+   690→leftFrontTelemetry.label.TextXAlignment=Enum.TextXAlignment.Left
+   691→leftFrontCoolant.label.TextXAlignment=Enum.TextXAlignment.Left
+   692→leftFrontTelemetry.label.Position=UDim2.fromScale(0.065,0.06)
+   693→leftFrontCoolant.label.Position=UDim2.fromScale(0.065,0.06)
+   694→local frontIndicatorCells={}
+   695→for row=0,6 do
+   696→	for col=0,3 do
+   697→		local color=(row+col)%6==0 and C.amber
+   698→			or (row*3+col)%7==0 and C.red or C.azure
+   699→		local diode=box(gallery,"AMBER_AND_BLUE_STATUS_PIXELS",
+   700→			Vector3.new(-40.2+col*1.05,57.5-row*2.29,96.1),
+   701→			Vector3.new(0.63,0.83,0.13),color,
+   702→			Enum.Material.Neon,0.53)
+   703→		frontIndicatorCells[#frontIndicatorCells+1]={part=diode,
+   704→			row=row,col=col,normal=color}
+   705→	end
+   706→end
+   707→for _,y in ipairs({30.8,47.6,63.9,69.9}) do
+   708→	beam(gallery,"LEFT_INSTRUMENT_EXPOSED_DARK_TRIM",
+   709→		Vector3.new(-53.9,y,96.07),
+   710→		Vector3.new(-36.1,y,96.07),
+   711→		0.13,C.trim,Enum.Material.Metal)
+   712→end
+   713→-- 360p gallery: thin BLACK status letterbox above the glass, with white
+   714→-- terminal type. The previous 5.7-unit glowing WHITE slab obscured the
+   715→-- upper physical emitter and washed out half the observation window.
+   716→local mainSign=ePanel(gallery,"OVER_WINDOW_EMERGENCY_LETTERBOX",
+   717→	Vector3.new(0,77.2,95.05),Vector3.new(48,3.3,0.55),
+   718→	"AWAITING STARTUP...",C.black,Enum.NormalId.Back,66)
+   719→mainSign.outer.Color=C.frame
+   720→mainSign.screen.Color=Color3.fromRGB(11,17,30)
+   721→mainSign.screen.Material=Enum.Material.SmoothPlastic
+   722→mainSign.screen.Transparency=0
+   723→mainSign.label.TextSize=math.floor(75*WORLD_SCALE)
+   724→mainSign.label.Font=Enum.Font.Code
+   725→mainSign.label.TextColor3=C.ivory
+   726→local coreReadout=ePanel(gallery,"CENTER_PHYSICAL_REACTOR_STATUS",
+   727→	Vector3.new(0,72.0,95.18),Vector3.new(29,2.4,0.45),
+   728→	"CORE 0026C  /  PRESS 018",C.black,
+   729→	Enum.NormalId.Back,56)
+   730→local leftReadout=ePanel(gallery,"LEFT_COOLANT_STATUS",
+   731→	Vector3.new(-39,73.7,95.15),Vector3.new(24,3.7,0.4),
+   732→	"COOLANT 050%",C.black,Enum.NormalId.Back,73)
+   733→local rightReadout=ePanel(gallery,"RIGHT_SYSTEM_STATUS",
+   734→	Vector3.new(39,73.7,95.15),Vector3.new(24,3.7,0.4),
+   735→	"FEEDS OFF / RODS SAFE",C.black,Enum.NormalId.Back,68)
+   736→-- In-world side diagnostics, lamp matrices, colored ceiling ribbons.
+   737→local matrixLamps={}
+   738→local ceilingBulbs={}
+   739→local floorFloods={}
+   740→local waveformBars={}
+   741→local wallScreenLabels={}
+   742→for _,side in ipairs({-1,1}) do
+   743→	local wallCF=CFrame.lookAt(Vector3.new(side*60.58,57,112),
+   744→		Vector3.new(0,57,112))
+   745→	part(gallery,"SIDE_BLACK_STATUS_CONSOLE",wallCF,
+   746→		Vector3.new(29,27,0.45),C.black,Enum.Material.Metal)
+   747→	local screen=part(gallery,"SIDE_SCROLLING_OPERATIONAL_SCREEN",
+   748→		wallCF*CFrame.new(side==-1 and -4.5 or 0,
+   749→			side==-1 and -4.4 or -8,-0.39),
+   750→		side==-1 and Vector3.new(18,10.8,0.16)
+   751→			or Vector3.new(25,8.5,0.16),
+   752→		C.black,Enum.Material.SmoothPlastic)
+   753→	local label=caption(screen,Enum.NormalId.Front,
+   754→		"CORE COLD\nTEMP 0026C\nPWR  000%\nFLOW 050%",
+   755→		68,C.ivory,Vector2.new(side==-1 and 580 or 660,345))
+   756→	label.TextScaled=false;label.TextWrapped=false
+   757→	label.Font=Enum.Font.GothamBold
+   758→	label.TextStrokeTransparency=0.72
+   759→	label.TextXAlignment=Enum.TextXAlignment.Left
+   760→	label.TextYAlignment=Enum.TextYAlignment.Center
+   761→	label.Size=UDim2.fromScale(0.93,0.93)
+   762→	label.Position=UDim2.fromScale(0.04,0.06)
+   763→	wallScreenLabels[side]=label
+   764→	if side==-1 then
+   765→		screen:SetAttribute("Role","MAIN_SYSTEMS")
+   766→		-- Reference's prominent THREE red lamp banks sit ABOVE the
+   767→		-- monitor; a small colored key matrix sits BESIDE it, not across
+   768→		-- the entire upper wall like the V1 screenshot.
+   769→		for bank=0,2 do
+   770→			local bankCF=wallCF*CFrame.new(-9.3+bank*9.25,
+   771→				11.15,-0.43)
+   772→			part(gallery,"TRIPLE_RED_HAZARD_BANK_HOUSING",
+   773→				bankCF,Vector3.new(7.7,3.2,0.18),
+   774→				C.frame,Enum.Material.Metal)
+   775→			for row=0,1 do
+   776→				for col=0,4 do
+   777→					part(gallery,"RED_HAZARD_BANK_DIODE",
+   778→						bankCF*CFrame.new(-2.87+col*1.4,
+   779→							0.72-row*1.39,-0.14),
+   780→						Vector3.new(0.66,0.44,0.12),
+   781→						C.red,Enum.Material.Neon,0.08)
+   782→				end
+   783→			end
+   784→		end
+   785→		for row=1,5 do
+   786→			for col=1,5 do
+   787→				local cc=wallCF*CFrame.new(4.6+(col-1)*1.78,
+   788→					-0.1-(row-1)*2.2,-0.43)
+   789→				local tint=(row+col)%5==0 and C.amber
+   790→					or (row*2+col)%3==0 and C.ruby or C.azure
+   791→				local cell=part(gallery,
+   792→					"LEFT_DIAGNOSTIC_COMPACT_COLOR_MATRIX",
+   793→					cc,Vector3.new(1.15,1.15,0.13),
+   794→					tint,Enum.Material.Neon,0.64)
+   795→				matrixLamps[#matrixLamps+1]={part=cell,row=row,
+   796→					col=col,side=side,normal=tint}
+   797→			end
+   798→		end
+   799→	else
+   800→		screen:SetAttribute("Role","SERVICE_SYSTEMS")
+   801→		for row=1,5 do
+   802→			for col=1,12 do
+   803→				local cc=wallCF*CFrame.new(-13+(col-1)*2.35,
+   804→					11.0-(row-1)*2.62,-0.43)
+   805→				local tint=(row+col)%6==0 and C.orange
+   806→					or (row+col)%3==0 and C.violet or C.azure
+   807→				local cell=part(gallery,"LIVE_STATUS_LED_CELL",
+   808→					cc,Vector3.new(1.36,0.92,0.13),
+   809→					tint,Enum.Material.Neon,0.63)
+   810→				matrixLamps[#matrixLamps+1]={part=cell,row=row,
+   811→					col=col,side=side,normal=tint}
+   812→			end
+   813→		end
+   814→	end
+   815→	for n=0,5 do
+   816→		local base=wallCF*CFrame.new(-11+n*4.5,-14.25,-0.36)
+   817→		local bar=part(gallery,"ALIVE_OSCILLOSCOPE_BAR",
+   818→			base,Vector3.new(0.62,2.8,0.18),
+   819→			C.mint,Enum.Material.Neon,0.58)
+   820→		waveformBars[#waveformBars+1]={part=bar,home=base,n=n,side=side}
+   821→	end
+   822→	for n=0,8 do
+   823→		local z=99+n*7.1
+   824→		beam(gallery,"CEILING_EXPOSED_CABLE_CONDUIT",
+   825→			Vector3.new(side*(31+n%3*6),78.9,z),
+   826→			Vector3.new(side*(31+n%3*6),78.9,z+6.3),
+   827→			0.3,C.charcoal,Enum.Material.Metal)
+   828→	end
+   829→end
+   830→for n=0,27 do
+   831→	local x=-53+(n%14)*8.1
+   832→	local z=n<14 and 100 or 155
+   833→	local tint=n%7==0 and C.magenta or n%5==0 and C.amber
+   834→		or n%3==0 and C.mint or C.azure
+   835→	local housing=box(gallery,"TINY_CEILING_SIGNAL_BULB",
+   836→		Vector3.new(x,78.8,z),Vector3.new(0.85,0.36,0.7),
+   837→		tint,Enum.Material.Neon,0.62)
+   838→	local glow=n%5==0 and lamp(housing,tint,0.13,17) or nil
+   839→	ceilingBulbs[#ceilingBulbs+1]={part=housing,point=glow,
+   840→		index=n,normal=tint}
+   841→end
+   842→-- Colored emergency/festival signal chain visible in the reference.
+   843→-- Small separate PointLights tint nearby metal; the control room stays ivory.
+   844→for _,side in ipairs({-1,1}) do
+   845→	for n=0,16 do
+   846→		local z=99+n*3.6
+   847→		local palette={C.magenta,C.amber,C.mint,C.azure,C.red,C.violet}
+   848→		local hue=palette[(n*2+(side==1 and 3 or 0))%#palette+1]
+   849→		beam(gallery,"CEILING_BULB_HANGING_CABLE",
+   850→			Vector3.new(side*58.5,79.45,z),
+   851→			Vector3.new(side*58.5,77.25,z),
+   852→			0.09,C.charcoal,Enum.Material.Metal)
+   853→		local globe=ball(gallery,"MULTICOLOR_CAGED_SIGNAL_BULB",
+   854→			Vector3.new(side*58.5,76.7,z),0.60,
+   855→			hue,Enum.Material.Neon,0.05)
+   856→		if n%2==0 then lamp(globe,hue,0.62,20) end
+   857→	end
+   858→end
+   859→for n=0,10 do
+   860→	local x=-50+n*10
+   861→	local marker=box(gallery,"RECESSED_FLOOR_RED_WARNING_RAIL",
+   862→		Vector3.new(x,29.1,96.8),Vector3.new(1.3,0.18,0.42),
+   863→		C.ruby,Enum.Material.Neon,0.62)
+   864→	floorFloods[#floorFloods+1]={body=marker,
+   865→		point=lamp(marker,C.warm,0.07,22),index=n}
+   866→end
+   867→for n=-5,5 do
+   868→	beam(gallery,"OVERHEAD_CEILING_CROSSBRACE",
+   869→		Vector3.new(n*10.8,79.4,95),
+   870→		Vector3.new(n*10.8,79.4,160),
+   871→		n%3==0 and 0.63 or 0.19,C.slate,Enum.Material.Metal)
+   872→end
+   873→local roomFillLights={}
+   874→for _,point in ipairs({
+   875→	Vector3.new(-44,74,130),Vector3.new(-15,74,143),
+   876→	Vector3.new(17,74,143),Vector3.new(45,74,130),
+   877→	Vector3.new(-46,60,105),Vector3.new(-14,64,112),
+   878→	Vector3.new(14,64,112),Vector3.new(46,60,105),
+   879→	}) do
+   880→	local anchor=ball(gallery,"HIDDEN_SOFT_WARM_AREA_LIGHT_ANCHOR",
+   881→		point,0.18,C.ivory,Enum.Material.SmoothPlastic,1)
+   882→	roomFillLights[#roomFillLights+1]=lamp(anchor,C.ivory,1.12,66)
+   883→end
+   884→local alarmFixtures={}
+   885→local bigLampBezel=box(gallery,"CENTRAL_RED_FRAMED_STATUS_LIGHT",
+   886→	Vector3.new(0,80.1,120),Vector3.new(46,2.2,6.2),
+   887→	C.ruby,Enum.Material.Metal)
+   888→local bigLampDiffuser=box(gallery,"DIFFUSE_IVORY_FLUORESCENT",
+   889→	Vector3.new(0,79.50,120),Vector3.new(43.5,0.38,5.1),
+   890→	C.porcelain,Enum.Material.SmoothPlastic,0.08)
+   891→local bigLampPoint=lamp(bigLampDiffuser,C.warm,0.49,36)
+   892→for _,p in ipairs({-45,-26,-8,8,26,45}) do
+   893→	local blockLight=box(gallery,"SUSPENDED_RUST_RED_HAZARD_FRAME",
+   894→		Vector3.new(p,79.8,112),Vector3.new(9.1,1.3,2.1),
+   895→		C.frame,Enum.Material.Metal)
+   896→	local shade=box(gallery,"WARM_RED_LAMP_DIFFUSER",
+   897→		blockLight.Position-Vector3.new(0,0.78,0),
+   898→		Vector3.new(8.4,0.21,1.6),C.ivory,
+   899→		Enum.Material.Neon,0.19)
+   900→	alarmFixtures[#alarmFixtures+1]={body=shade,
+   901→		light=lamp(shade,C.warm,0.18,21),index=#alarmFixtures+1}
+   902→end
+   903→-- ================================================================
+   904→-- 3. FACE-ON SIX-EMITTER WHITE STAR; exact focus of the 144p reference.
+   905→-- ================================================================
+   906→-- A DARK, layered cobalt wall, not a 90%-transparent neon sheet in
+   907→-- front of the rust-red wall. Screenshot reference: blue/black occupies
+   908→-- the entire chamber; white light is confined to the actual small star.
+   909→local plasmaBackdrop=box(machine,"OPAQUE_DEEP_COBALT_CHAMBER_BACK",
+   910→	Vector3.new(0,54,-57),Vector3.new(79,84,1.5),
+   911→	Color3.fromRGB(13,31,91),Enum.Material.SmoothPlastic,0.02)
+   912→plasmaBackdrop.CastShadow=false
+   913→-- Only the old OUTER framing slabs are retinted blue-grey steel to match
+   914→-- 360p cold imagery. The separately APPROVED brown PBR mesh rear bulkhead
+   915→-- and its two grille banks are untouched (no silent model replacement).
+   916→for _,side in ipairs({-1,1}) do
+   917→	local x=side*51.5
+   918→	box(chamber,"OUTER_BLUE_GREY_FACETED_BACKPLATE",
+   919→		Vector3.new(x,55,-59.0),Vector3.new(24.4,71,1.0),
+   920→		Color3.fromRGB(87,101,128),Enum.Material.Metal)
+   921→	box(chamber,"DEEP_REACTOR_ACCESS_BAY",
+   922→		Vector3.new(x,53,-58.1),Vector3.new(17.8,31,0.6),
+   923→		C.charcoal,Enum.Material.Metal)
+   924→	local plaque=box(chamber,"CONTAINMENT_DANGER_MARKER",
+   925→		Vector3.new(x,54,-57.6),Vector3.new(13.8,7.4,0.25),
+   926→		C.black,Enum.Material.Metal)
+   927→	local sign=caption(plaque,Enum.NormalId.Back,
+   928→		"CONTAINMENT  /  04",49,C.ivory,Vector2.new(640,210))
+   929→	sign.TextScaled=true;sign.TextWrapped=false
+   930→	for row=0,8 do
+   931→		local y=17+row*9.4
+   932→		beam(chamber,"ARMOR_HAZARD_DIAGONAL",
+   933→			Vector3.new(x-10.0,y,-57.51),
+   934→			Vector3.new(x-5.5,y+4.1,-57.51),
+   935→			0.62,row%2==0 and C.amber or C.orange,
+   936→			Enum.Material.Neon,0.11)
+   937→		beam(chamber,"ARMOR_VERTICAL_TRIM",
+   938→			Vector3.new(x+10.7,y,-57.4),
+   939→			Vector3.new(x+10.7,y+7.5,-57.4),
+   940→			0.23,C.trim,Enum.Material.Metal)
+   941→	end
+   942→end
+   943→-- Low, blue wall wash is addressable by the chamber-only dark transition.
+   944→-- The gallery's physically separate control lights stay on.
+   945→local chamberWashLights={}
+   946→for _,x in ipairs({-40,0,40}) do
+   947→	local glow=ball(machine,"BACKDROP_BLUE_WASH_INVISIBLE",
+   948→		Vector3.new(x,55,-48),0.16,C.azure,
+   949→		Enum.Material.SmoothPlastic,1)
+   950→	chamberWashLights[#chamberWashLights+1]=
+   951→		lamp(glow,x==0 and C.cobalt or C.azure,1.25,67)
+   952→end
+   953→local remoteNebula={}
+   954→local chamberMist={}
+   955→for n=1,12 do
+   956→	local a=n*TAU/12
+   957→	local center=CORE+Vector3.new(math.cos(a)*38,
+   958→		math.sin(a)*29,-28-(n%3)*8)
+   959→	local anchor=ball(machine,"VOLUMETRIC_INDIGO_MIST_ANCHOR",
+   960→		center,0.07,C.black,Enum.Material.SmoothPlastic,1)
+   961→	anchor.CanQuery=false
+   962→	local smoke=particles(anchor,"BLUE_AND_PURPLE_MOVING_PLASMA",
+   963→		SMOKE,8,n%3==0 and C.violet or C.nebula,
+   964→		7.5,17.5,2.5)
+   965→	smoke.Lifetime=NumberRange.new(2.8,5.8)
+   966→	smoke.SpreadAngle=Vector2.new(180,180)
+   967→	smoke.Acceleration=Vector3.new(0,2.7,0)
+   968→	smoke.Transparency=NumberSequence.new({
+   969→		NumberSequenceKeypoint.new(0,0.91),
+   970→		NumberSequenceKeypoint.new(0.31,0.59),
+   971→		NumberSequenceKeypoint.new(1,1)})
+   972→	smoke.LightEmission=0.22
+   973→	smoke.Enabled=true
+   974→	chamberMist[#chamberMist+1]=smoke
+   975→end
+   976→for n=1,62 do
+   977→	local x=rng:NextNumber(-57,57)
+   978→	local y=rng:NextNumber(14,92)
+   979→	local z=-55.95+rng:NextNumber(0,0.64)
+   980→	local blob=ball(machine,"INDIGO_REACTOR_CLOUD_"..n,
+   981→		Vector3.new(x,y,z),1,C.nebula,
+   982→		Enum.Material.Neon,rng:NextNumber(0.72,0.88))
+   983→	blob.Size=Vector3.new(rng:NextNumber(5,20),
+   984→		rng:NextNumber(2,9),rng:NextNumber(0.13,0.32))
+   985→	blob.Color=n%9==0 and C.violet
+   986→		or n%3==0 and C.cobalt or C.nebula
+   987→	blob.CastShadow=false
+   988→	remoteNebula[#remoteNebula+1]=blob
+   989→end
+   990→for n=1,105 do
+   991→	local a=Vector3.new(rng:NextNumber(-57,57),
+   992→		rng:NextNumber(16,91),-54.9)
+   993→	local b=a+Vector3.new(rng:NextNumber(-4,4),
+   994→		rng:NextNumber(-2,2),0)
+   995→	local vein=beam(machine,"WISPY_BLUE_ELECTRICAL_CRACKLE",
+   996→		a,b,rng:NextNumber(0.08,0.24),
+   997→		n%11==0 and C.magenta or C.azure,
+   998→		Enum.Material.Neon,0.61)
+   999→	vein.CastShadow=false
+  1000→end
+  1001→for n=1,90 do
+  1002→	local mote=ball(machine,"DISTANT_BLUE_FLECK",
+  1003→		Vector3.new(rng:NextNumber(-55,55),
+  1004→			rng:NextNumber(18,88),-54.3),
+  1005→		rng:NextNumber(0.065,0.21),
+  1006→		n%11==0 and C.magenta or C.azure,
+  1007→		Enum.Material.Neon,rng:NextNumber(0.38,0.75))
+  1008→	mote.CastShadow=false
+  1009→end
+  1010→for _,x in ipairs({-46,-15,15,46}) do
+  1011→	local lampBody=ball(machine,"BACKDROP_INDIGO_RECESS_LIGHT",
+  1012→		Vector3.new(x,49,-54.9),0.18,C.navy,
+  1013→		Enum.Material.SmoothPlastic,1)
+  1014→	lamp(lampBody,C.cobalt,0.28,29)
+  1015→end
+  1016→for _,side in ipairs({-1,1}) do
+  1017→	for n=0,6 do
+  1018→		local x=side*(51+n*3.2)
+  1019→		beam(machine,"REACTOR_REAR_BLUE_VANE",
+  1020→			Vector3.new(x,26,-55),Vector3.new(x,89,-55),
+  1021→			0.33,n%2==0 and C.azure or C.violet,
+  1022→			Enum.Material.Neon,0.54)
+  1023→	end
+  1024→end
+  1025→for _,r in ipairs({20,28,39,52}) do
+  1026→	circleXZ(machine,"CORE_FLOOR_HEAT_OUTLINE_"..r,
+  1027→		Vector3.new(0,0.38,0),r,48,
+  1028→		r==39 and 0.38 or 0.2,r==39 and C.amber or C.cobalt,
+  1029→		Enum.Material.Neon,r==39 and 0.13 or 0.33)
+  1030→end
+  1031→cylY(machine,"HEAVY_REACTOR_FOUNDATION",
+  1032→	Vector3.new(0,6,0),20,11,C.trim,
+  1033→	Enum.Material.DiamondPlate,0,true)
+  1034→cylY(machine,"FOUNDATION_INDUCTION_RING",
+  1035→	Vector3.new(0,12.3,0),22.6,0.65,C.azure,
+  1036→	Enum.Material.Neon,0.22)
+  1037→for _,sy in ipairs({20,87}) do
+  1038→	for n=0,8 do
+  1039→		local a=n*TAU/9
+  1040→		local x=math.cos(a)*34;local z=math.sin(a)*18-23
+  1041→		tube(machine,"OVERSIZED_CORE_SUSPENSION_PISTON",
+  1042→			Vector3.new(x,sy, z),
+  1043→			Vector3.new(x*1.21,sy+(sy>53 and 11 or -12),z*1.4),
+  1044→			0.82,C.trim,Enum.Material.Metal)
+  1045→	end
+  1046→end
+  1047→local coreRoot=ball(machine,"INNER_HEART_VIOLET_PLASMA",CORE,
+  1048→	7.8,C.violet,Enum.Material.Neon,0.68)
+  1049→local whiteStar=ball(machine,"INCANDESCENT_VISIBLE_STAR",
+  1050→	CORE+Vector3.new(0,0,35),5.6,C.white,
+  1051→	Enum.Material.Neon,0.04)
+  1052→local pinkCrown=ball(machine,"MAGENTA_PHOTOSPHERE",
+  1053→	CORE+Vector3.new(0,0,27),12.5,C.magenta,
+  1054→	Enum.Material.Neon,0.90)
+  1055→local paleHalo=ball(machine,"SOFT_WHITE_CONTAINMENT_HALO",
+  1056→	CORE+Vector3.new(0,0,25),19,C.violet,
+  1057→	Enum.Material.Neon,0.96)
+  1058→local corona=ball(machine,"BACKLIT_WHITE_PHOTOSPHERE_CORONA",
+  1059→	CORE+Vector3.new(0,0,32),10.7,C.ivory,
+  1060→	Enum.Material.Neon,0.89)
+  1061→corona.CastShadow=false
+  1062→local coreLamp=lamp(whiteStar,C.ivory,
+  1063→	CFG.VISUAL.CORE_LIGHT_IDLE,CFG.VISUAL.CORE_LIGHT_RANGE)
+  1064→local coreDust=particles(whiteStar,"SPARKS_IN_THE_PLASMA",
+  1065→	SPARK,48,C.white,1.55,0.08,22)
+  1066→coreDust.LightEmission=1
+  1067→coreDust.SpreadAngle=Vector2.new(180,180)
+  1068→coreDust.Enabled=false
+  1069→local coreSmoke=particles(coreRoot,"BLUE_PLASMA_MIST",
+  1070→	SMOKE,10,C.cobalt,2.7,12,4)
+  1071→coreSmoke.LightEmission=0.28
+  1072→coreSmoke.Color=ColorSequence.new(C.nebula,C.violet)
+  1073→coreSmoke.Transparency=NumberSequence.new({
+  1074→	NumberSequenceKeypoint.new(0,0.84),
+  1075→	NumberSequenceKeypoint.new(0.38,0.58),
+  1076→	NumberSequenceKeypoint.new(1,1)})
+  1077→coreSmoke.Lifetime=NumberRange.new(2.3,4.4)
+  1078→coreSmoke.Enabled=true
+  1079→-- Radial tongues turn the central orb into a visible, irregular STAR
+  1080→-- rather than a featureless glowing billiard ball. Entirely inactive in COLD.
+  1081→local coreSpokes={}
+  1082→for n=0,11 do
+  1083→	local a=n*TAU/12
+  1084→	local r=n%3==0 and 18.5 or 12.5
+  1085→	local inside=CORE+Vector3.new(math.cos(a)*3,
+  1086→		math.sin(a)*3,35)
+  1087→	local outside=CORE+Vector3.new(math.cos(a)*r,
+  1088→		math.sin(a)*r,34)
+  1089→	local spike=beam(machine,"PHOTOSPHERE_WHITE_FUSION_TONGUE",
+  1090→		inside,outside,n%3==0 and 2.1 or 0.86,
+  1091→		C.white,Enum.Material.Neon,1)
+  1092→	coreSpokes[#coreSpokes+1]=spike
+  1093→	local aura=beam(machine,"PHOTOSPHERE_SOFT_IRIS_AURA",
+  1094→		inside,outside,n%3==0 and 3.9 or 2.1,
+  1095→		C.magenta,Enum.Material.Neon,1)
+  1096→	coreSpokes[#coreSpokes+1]=aura
+  1097→end
+  1098→local fallingAsh=particles(coreRoot,"FALLOUT_FROM_CORE",
+  1099→	SMOKE,82,C.charcoal,4.4,28,18)
+  1100→fallingAsh.Lifetime=NumberRange.new(2.4,5.5)
+  1101→fallingAsh.Enabled=false
+  1102→for n=0,23 do
+  1103→	local a=n*TAU/24
+  1104→	local p=CORE+Vector3.new(math.cos(a)*16,math.sin(a)*16,18)
+  1105→	local q=CORE+Vector3.new(math.cos(a+0.14)*19,
+  1106→		math.sin(a+0.14)*19,16)
+  1107→	beam(machine,"CHAMBER_CONTAINED_MICRO_ARC",p,q,
+  1108→		n%6==0 and 0.18 or 0.12,
+  1109→		n%6==0 and C.white or C.violet,
+  1110→		Enum.Material.Neon,n%6==0 and 0.94 or 0.99)
+  1111→end
+  1112→
+  1113→-- Reference silhouette: vertical TOP and BOTTOM, LEFT and RIGHT,
+  1114→-- two inward-looking LOWER DIAGONAL heads. Never replace with evenly
+  1115→-- spaced X/Z torches (they would disappear from the observation window).
+  1116→local emitterSites={
+  1117→	{tag="UPPER",vec=Vector3.new(0,1,0)},
+  1118→	{tag="LEFT",vec=Vector3.new(-1,0,0)},
+  1119→	{tag="RIGHT",vec=Vector3.new(1,0,0)},
+  1120→	{tag="LOWER_LEFT",vec=Vector3.new(-0.72,-0.70,0)},
+  1121→	{tag="LOWER_RIGHT",vec=Vector3.new(0.72,-0.70,0)},
+  1122→	{tag="LOWER",vec=Vector3.new(0,-1,0)},
+  1123→}
+  1124→local function opticalJet(parent,name,a,b,width,color,alpha)
+  1125→	local a0=ball(parent,name.."_START",a,0.06,C.black,
+  1126→		Enum.Material.SmoothPlastic,1)
+  1127→	local a1=ball(parent,name.."_END",b,0.06,C.black,
+  1128→		Enum.Material.SmoothPlastic,1)
+  1129→	a0.CanQuery=false;a1.CanQuery=false
+  1130→	local pin0=Instance.new("Attachment");pin0.Parent=a0
+  1131→	local pin1=Instance.new("Attachment");pin1.Parent=a1
+  1132→	local jet=Instance.new("Beam")
+  1133→	jet.Name=name;jet.Attachment0=pin0;jet.Attachment1=pin1
+  1134→	jet.Width0=width*WORLD_SCALE
+  1135→	jet.Width1=width*0.67*WORLD_SCALE
+  1136→	jet.Segments=16;jet.FaceCamera=true
+  1137→	jet.LightEmission=1
+  1138→	jet.Transparency=NumberSequence.new(alpha)
+  1139→	jet.Color=ColorSequence.new(color,color)
+  1140→	jet.Parent=parent
+  1141→	return jet
+  1142→end
+  1143→local emitters={}
+  1144→for i,site in ipairs(emitterSites) do
+  1145→	local axis=site.vec.Unit
+  1146→	local function radial(r,z)
+  1147→		return CORE+axis*(r*WORLD_SCALE)+Vector3.new(0,0,z or 15)
+  1148→	end
+  1149→	local bareMetal={}
+  1150→	local mainBarrel=tube(machine,"PROJECTOR_"..site.tag.."_MAIN_SHAFT",
+  1151→		radial(36,10),radial(60,10),6.2,C.slate,
+  1152→		Enum.Material.Metal)
+  1153→	bareMetal[#bareMetal+1]=mainBarrel
+  1154→	bareMetal[#bareMetal+1]=tube(machine,
+  1155→		"PROJECTOR_"..site.tag.."_FRONT_SLEEVE",
+  1156→		radial(29,14),radial(40,14),4.85,C.silver,
+  1157→		Enum.Material.Metal)
+  1158→	bareMetal[#bareMetal+1]=tube(machine,
+  1159→		"PROJECTOR_"..site.tag.."_REAR_COLLAR",
+  1160→		radial(57,11),radial(64,11),6.55,C.slate,
+  1161→		Enum.Material.Metal)
+  1162→	for _,v in ipairs({36,43,50,57}) do
+  1163→		bareMetal[#bareMetal+1]=tube(machine,
+  1164→			"PROJECTOR_"..site.tag.."_CHROME_COLLAR",
+  1165→			radial(v-0.38,14),radial(v+0.38,14),
+  1166→			v==36 and 5.3 or 6.65,C.silver,Enum.Material.Metal)
+  1167→		bareMetal[#bareMetal+1]=tube(machine,
+  1168→			"PROJECTOR_"..site.tag.."_GLOWING_COOLANT_LOOP",
+  1169→			radial(v+0.58,14),radial(v+0.93,14),
+  1170→			v==36 and 5.25 or 6.7,
+  1171→			v==50 and C.violet or C.azure,
+  1172→			Enum.Material.Neon,0.48)
+  1173→		for bolt=0,3 do
+  1174→			local angle=bolt*TAU/4
+  1175→			local lateral=Vector3.new(-axis.Y,axis.X,0)
+  1176→			local rim=radial(v,16)+lateral*math.cos(angle)*5.4
+  1177→				+Vector3.new(0,0,math.sin(angle)*1.5)
+  1178→			bareMetal[#bareMetal+1]=ball(machine,
+  1179→				"PROJECTOR_SPRING_BOLT",rim,0.38,
+  1180→				C.silver,Enum.Material.Metal)
+  1181→		end
+  1182→	end
+  1183→	for side=-1,1,2 do
+  1184→		local lateral=Vector3.new(-axis.Y,axis.X,0)
+  1185→		bareMetal[#bareMetal+1]=beam(machine,
+  1186→			"PROJECTOR_TWIN_POWER_CONDUITS",
+  1187→			radial(43,9)+lateral*side*3.7,
+  1188→			radial(58,9)+lateral*side*3.7,0.42,
+  1189→			C.azure,Enum.Material.Neon,0.48)
+  1190→	end
+  1191→	-- A layered, hollow-looking machined projector, NOT a giant white orb.
+  1192→	-- Front metallic cylinder can be torn free during the scripted failure.
+  1193→	local nozzle=tube(machine,
+  1194→		"PROJECTOR_"..site.tag.."_BREAKABLE_MUZZLE_SLEEVE",
+  1195→		radial(27.2,18),radial(31.4,18),5.35,
+  1196→		C.silver,Enum.Material.Metal)
+  1197→	local blackBore=tube(machine,
+  1198→		"PROJECTOR_"..site.tag.."_DARK_INNER_BORE",
+  1199→		radial(25.7,18.1),radial(27.3,18.1),3.15,
+  1200→		C.black,Enum.Material.SmoothPlastic)
+  1201→	bareMetal[#bareMetal+1]=blackBore
+  1202→	local focusRing=tube(machine,
+  1203→		"PROJECTOR_"..site.tag.."_CYAN_IRIS_CHANNEL",
+  1204→		radial(26.0,21.9),radial(26.35,21.9),4.3,
+  1205→		C.azure,Enum.Material.Neon,0.57)
+  1206→	bareMetal[#bareMetal+1]=focusRing
+  1207→	local lens=ball(machine,"PROJECTOR_"..site.tag.."_BLUE_FOCUS",
+  1208→		radial(25.8,21.7),2.05,C.azure,Enum.Material.Neon,0.20)
+  1209→	local iris={}
+  1210→	for edge=0,11 do
+  1211→		local a=edge*TAU/12;local b=(edge+1)*TAU/12
+  1212→		local center=radial(29,22)
+  1213→		local p=center+Vector3.new(math.cos(a)*5.25,
+  1214→			math.sin(a)*4.45,0)
+  1215→		local q=center+Vector3.new(math.cos(b)*5.25,
+  1216→			math.sin(b)*5.25,0)
+  1217→		iris[#iris+1]=beam(machine,
+  1218→			"PROJECTOR_DETACHABLE_TEETH_"..site.tag,
+  1219→			p,q,0.48,C.white,Enum.Material.Metal)
+  1220→	end
+  1221→	local a=CORE+axis*(6*WORLD_SCALE)+Vector3.new(0,0,27)
+  1222→	local b=CORE+axis*(28*WORLD_SCALE)+Vector3.new(0,0,27)
+  1223→	local glow=beam(machine,"SIX_ARMS_"..site.tag.."_WIDE_HALO",
+  1224→		a,b,5.3,C.violet,Enum.Material.Neon,1)
+  1225→	local ray=beam(machine,"SIX_ARMS_"..site.tag.."_PINK_BEAM",
+  1226→		a,b,3.05,C.magenta,Enum.Material.Neon,1)
+  1227→	local filament=beam(machine,"SIX_ARMS_"..site.tag.."_WHITE_HOT_FILAMENT",
+  1228→		a,b,1.55,C.ivory,Enum.Material.Neon,1)
+  1229→	local softOptic=opticalJet(machine,
+  1230→		"PROJECTOR_"..site.tag.."_BLUE_RIBBON_BEAM",
+  1231→		a+Vector3.new(0,0,0.4),b,4.6,C.cyan,0.77)
+  1232→	local hotOptic=opticalJet(machine,
+  1233→		"PROJECTOR_"..site.tag.."_PHOTONIC_WHITE_BEAM",
+  1234→		a+Vector3.new(0,0,0.7),b,2.45,C.white,0.32)
+  1235→	local scorch=ball(damage,"MOLTEN_EMITTER_DAMAGE_"..site.tag,
+  1236→		radial(28,23),3.1,C.orange,Enum.Material.Neon,1)
+  1237→	local spit=particles(scorch,"BROKEN_EMITTER_SHOWER",
+  1238→		SPARK,105,C.orange,1.15,0.15,32)
+  1239→	local lightSource=lamp(lens,C.azure,0.08,36)
+  1240→	local focusSparks=particles(lens,"EACH_LENS_FIRES_IN_ORDER",
+  1241→		SPARK,0,C.cyan,0.72,0.04,13)
+  1242→	focusSparks.SpreadAngle=Vector2.new(180,180)
+  1243→	focusSparks.LightEmission=1
+  1244→	for _,distance in ipairs({40,48,55}) do
+  1245→		local rib=tube(machine,"PROJECTOR_RIVETED_MACHINED_CUFF",
+  1246→			radial(distance,14),radial(distance+0.52,14),
+  1247→			6.8,C.silver,Enum.Material.Metal)
+  1248→		bareMetal[#bareMetal+1]=rib
+  1249→		for _,side in ipairs({-1,1}) do
+  1250→			local offset=Vector3.new(-axis.Y,axis.X,0)*side*6.35
+  1251→			bareMetal[#bareMetal+1]=ball(machine,
+  1252→				"PROJECTOR_SHOULDER_RIVET",
+  1253→				radial(distance+0.27,14)+offset,
+  1254→				0.37,C.charcoal,Enum.Material.Metal)
+  1255→		end
+  1256→	end
+  1257→	local originalBody={}
+  1258→	for _,piece in ipairs(bareMetal) do
+  1259→		originalBody[piece]=piece.Color
+  1260→	end
+  1261→	emitters[i]={id=i,tag=site.tag,axis=axis,body=bareMetal,
+  1262→		originalBody=originalBody,
+  1263→		nozzle=nozzle,nozzleHome=nozzle.CFrame,lens=lens,
+  1264→		iris=iris,light=lightSource,
+  1265→		ray=ray,glow=glow,filament=filament,
+  1266→			hotOptic=hotOptic,softOptic=softOptic,scorch=scorch,
+  1267→		sparks=spit,focusSparks=focusSparks,broken=false}
+  1268→	hotOptic.Enabled=false;softOptic.Enabled=false
+  1269→end
+  1270→
+  1271→local frontBands={}
+  1272→for bandNum,r in ipairs({22.5,34.2,43.8}) do
+  1273→	local band={radius=r,speed=(bandNum%2==0 and -1 or 1)*
+  1274→		(0.16+bandNum*0.05),parts={},depth=19-bandNum*2}
+  1275→	for seg=0,47 do
+  1276→		local a=seg*TAU/48;local b=(seg+1)*TAU/48
+  1277→		local p=Vector3.new(math.cos(a)*r,math.sin(a)*r,0)
+  1278→		local q=Vector3.new(math.cos(b)*r,math.sin(b)*r,0)
+  1279→		local shape=CFrame.lookAt((p+q)/2,q)
+  1280→		local color=seg%6==0 and C.silver
+  1281→			or bandNum==2 and C.azure or C.violet
+  1282→		local section=part(machine,"SHEARABLE_ORBITAL_RING_"..
+  1283→			bandNum.."_"..seg,
+  1284→			CFrame.new(CORE+Vector3.new(0,0,band.depth))*shape,
+  1285→			Vector3.new(seg%6==0 and 0.68 or 0.29,
+  1286→				seg%6==0 and 0.68 or 0.29,
+  1287→				(q-p).Magnitude+0.06),color,
+  1288→			seg%6==0 and Enum.Material.Metal or Enum.Material.Neon,
+  1289→			seg%6==0 and 0 or 0.62)
+  1290→		band.parts[#band.parts+1]={part=section,home=shape,
+  1291→			broken=false,color=color,alpha=section.Transparency}
+  1292→	end
+  1293→	frontBands[#frontBands+1]=band
+  1294→end
+  1295→-- Decorative storm arcs are moved continuously in the actual X/Y plane.
+  1296→local dynamicArcs={}
+  1297→for i=1,34 do
+  1298→	local arc=beam(machine,"CENTER_PLASMA_ARC_"..i,
+  1299→		CORE+Vector3.new(2,0,28),
+  1300→		CORE+Vector3.new(17,5,29),
+  1301→		i%5==0 and 0.52 or 0.24,
+  1302→		i%9==0 and C.white or C.magenta,
+  1303→		Enum.Material.Neon,1)
+  1304→	dynamicArcs[#dynamicArcs+1]=arc
+  1305→end
+  1306→local rods={}
+  1307→for i=0,15 do
+  1308→	local a=i*TAU/16
+  1309→	local x=math.cos(a)*15.6
+  1310→	local z=math.sin(a)*13-5
+  1311→	local body=box(machine,"HYDRAULIC_SCRAM_CONTROL_ROD",
+  1312→		Vector3.new(x,97,z),Vector3.new(0.95,24,0.95),
+  1313→		C.charcoal,Enum.Material.Metal)
+  1314→	local tip=ball(machine,"CONTROL_ROD_VISIBLE_TIP",
+  1315→		Vector3.new(x,84,z),0.75,C.azure,Enum.Material.Neon)
+  1316→	rods[#rods+1]={body=body,tip=tip,x=x,z=z}
+  1317→end
+  1318→-- Real peripheral failures; they are supporting detail, never the main shot.
+  1319→local coolantLines={}
+  1320→for i=0,9 do
+  1321→	local angle=(i+0.5)*TAU/10
+  1322→	local x=math.cos(angle)*78;local z=math.sin(angle)*69
+  1323→	-- No reservoir or hose may stand dead-center in the camera window.
+  1324→	if math.abs(x)<43 then x=(x<0 and -1 or 1)*43 end
+  1325→	local tank=cylY(machine,"COOLANT_RESERVOIR_"..i,
+  1326→		Vector3.new(x,17,z),5.8,30,C.trim,
+  1327→		Enum.Material.Metal,0,true)
+  1328→	cylY(machine,"RESERVOIR_CYAN_GAUGE",
+  1329→		Vector3.new(x,19,z),6.04,24,C.azure,
+  1330→		Enum.Material.SmoothPlastic,0.86)
+  1331→	local fill=cylY(machine,"ACTIVE_BLUE_WATER",
+  1332→		Vector3.new(x,10,z),5.55,16,C.cobalt,
+  1333→		Enum.Material.Neon,0.61)
+  1334→	for _,y in ipairs({5,27}) do
+  1335→		cylY(machine,"TANK_PRESSURE_CLAMP",Vector3.new(x,y,z),
+  1336→			6.3,0.55,C.silver,Enum.Material.Metal)
+  1337→	end
+  1338→	local from=Vector3.new(x,39,z)
+  1339→	local to=Vector3.new(x*0.86,75,z*0.78)
+  1340→	local pipe=tube(machine,"BREAKABLE_BLUE_FEED_PIPE_"..i,
+  1341→		from,to,1.45,C.trim,Enum.Material.Metal,0,true)
+  1342→	local mouth=ball(damage,"PIPE_RUPTURE_LIP_"..i,
+  1343→		(from+to)/2,0.55,C.cyan,Enum.Material.Neon,1)
+  1344→	local spray=particles(mouth,"REAL_BROKEN_PIPE_JET",SPARK,
+  1345→		75,C.cyan,0.4,0.12,27)
+  1346→	spray.Acceleration=Vector3.new(0,-20,0)
+  1347→	local steam=particles(mouth,"STEAM_FROM_PRESSURE",SMOKE,
+  1348→		33,C.white,1.9,9,13)
+  1349→	coolantLines[i+1]={pipe=pipe,mouth=mouth,spray=spray,
+  1350→		steam=steam,fill=fill,broken=false,leaking=false,
+  1351→		x=x,z=z}
+  1352→end
+  1353→local viewportFeeds={}
+  1354→for _,side in ipairs({-1,1}) do
+  1355→	local x=side*45.7
+  1356→	local pipe=tube(machine,"FRONT_VIEWPORT_COOLANT_RISER",
+  1357→		Vector3.new(x,26,63),Vector3.new(x,72,63),0.78,
+  1358→		C.silver,Enum.Material.Metal)
+  1359→	local scar=ball(damage,"RISER_PRESSURE_RUPTURE",
+  1360→		Vector3.new(x,50,63),1.0,C.cyan,Enum.Material.Neon,1)
+  1361→	local jet=particles(scar,"VIEWABLE_CYAN_COOLANT_JET",
+  1362→		SPARK,21,C.cyan,0.85,0.1,21)
+  1363→	jet.Acceleration=Vector3.new(0,-15,5)
+  1364→	jet.SpreadAngle=Vector2.new(110,65)
+  1365→	local vapor=particles(scar,"BROKEN_MANIFOLD_BLUE_VAPOR",
+  1366→		SMOKE,8,C.azure,3,7,7)
+  1367→	vapor.Transparency=NumberSequence.new({
+  1368→		NumberSequenceKeypoint.new(0,0.76),
+  1369→		NumberSequenceKeypoint.new(1,1)})
+  1370→	viewportFeeds[#viewportFeeds+1]={pipe=pipe,scar=scar,
+  1371→		jet=jet,vapor=vapor}
+  1372→	for _,y in ipairs({31,41,62,70}) do
+  1373→		tube(machine,"FRONT_RISER_CHROME_BAND",
+  1374→			Vector3.new(x,y-0.25,63),
+  1375→			Vector3.new(x,y+0.25,63),1.04,
+  1376→			C.trim,Enum.Material.Metal)
+  1377→	end
+  1378→end
+  1379→-- ================================================================
+  1380→-- 4. ONLY REACTOR-RELATED CORRIDORS, CARD BAYS AND A SURVIVAL BUNKER.
+  1381→-- ================================================================
+  1382→local sideDoors={}
+  1383→local cardBays={}
+  1384→for _,side in ipairs({-1,1}) do
+  1385→	local x=side*84
+  1386→	box(service,"REACTOR_SERVICE_HALL_FLOOR",
+  1387→		Vector3.new(x,22.25,143),Vector3.new(43,3.5,109),
+  1388→		C.porcelain,Enum.Material.SmoothPlastic,0,true)
+  1389→	box(service,"CONTROL_ROOM_TO_HALL_THRESHOLD",
+  1390→		Vector3.new(side*62.5,22.2,132),Vector3.new(10,3.5,15),
+  1391→		C.silver,Enum.Material.Metal,0,true)
+  1392→	box(service,"REACTOR_HALL_CEILING",
+  1393→		Vector3.new(x,68,143),Vector3.new(45,2.2,109),
+  1394→		C.slate,Enum.Material.Metal,0,true)
+  1395→	box(service,"REACTOR_HALL_OUTER_WALL",
+  1396→		Vector3.new(side*107,45,143),Vector3.new(2,46,109),
+  1397→		C.porcelain,Enum.Material.Metal,0,true)
+  1398→	box(service,"REACTOR_HALL_BACK_WALL",
+  1399→		Vector3.new(x,45,198),Vector3.new(45,46,2),
+  1400→		C.porcelain,Enum.Material.Metal,0,true)
+  1401→	box(service,"REACTOR_HALL_FRONT_WALL",
+  1402→		Vector3.new(x,45,88),Vector3.new(45,46,2),
+  1403→		C.porcelain,Enum.Material.Metal,0,true)
+  1404→	box(service,"REACTOR_HALL_INNER_BACK_WALL",
+  1405→		Vector3.new(side*62,45,181),Vector3.new(2,46,35),
+  1406→		C.porcelain,Enum.Material.Metal,0,true)
+  1407→	local leaf=box(service,"AUTOMATIC_SIDE_AIRLOCK_LEAF",
+  1408→		Vector3.new(side*62,34,132),Vector3.new(1.2,19,14),
+  1409→		C.trim,Enum.Material.Metal,0,true)
+  1410→	local strip=box(service,"AIRLOCK_MOVING_STATUS_LIGHT",
+  1411→		Vector3.new(side*61.25,35,132),
+  1412→		Vector3.new(0.15,1.0,12),C.mint,Enum.Material.Neon)
+  1413→	local folderDoor={leaf=leaf,strip=strip,home=leaf.CFrame,
+  1414→		stripHome=strip.CFrame,open=false,lastNear=0,side=side}
+  1415→	sideDoors[#sideDoors+1]=folderDoor
+  1416→	for row=0,15 do
+  1417→		local z=95+row*6.5
+  1418→		beam(service,"SERVICE_HALL_CABLE_CHANNEL",
+  1419→			Vector3.new(side*104,27,z),
+  1420→			Vector3.new(side*104,58,z),
+  1421→			0.13,row%3==0 and C.orange or C.trim,
+  1422→			row%3==0 and Enum.Material.Neon or Enum.Material.Metal,
+  1423→			0.12)
+  1424→	end
+  1425→	for n=0,10 do
+  1426→		local z=96+n*9.6
+  1427→		local bulb=box(service,"SERVICE_HALL_FUNCTIONAL_LIGHT",
+  1428→			Vector3.new(x,66,z),Vector3.new(6.6,0.4,2.1),
+  1429→			C.white,Enum.Material.Neon,0.11)
+  1430→		if n%3==0 then lamp(bulb,C.white,0.85,36) end
+  1431→	end
+  1432→	for n=1,3 do
+  1433→		local z=109+(n-1)*35
+  1434→		local pc=Vector3.new(side*85,26.6,z)
+  1435→		local plinth=box(service,"CARD_BAY_SOLID_PEDESTAL",
+  1436→			pc-Vector3.new(0,1.4,0),Vector3.new(12,3.2,8),
+  1437→			C.trim,Enum.Material.Metal,0,true)
+  1438→		local top=box(service,"CARD_BAY_BEVELED_BEZEL",
+  1439→			pc+Vector3.new(0,0.3,0),Vector3.new(11.6,0.36,7.6),
+  1440→			C.charcoal,Enum.Material.Metal)
+  1441→		local lip=box(service,"CARD_BAY_NEON_PEDESTAL_EDGE",
+  1442→			pc+Vector3.new(0,0.58,0),Vector3.new(10.9,0.12,6.8),
+  1443→			C.azure,Enum.Material.Neon,0.7)
+  1444→		local card=part(service,"PICKUP_REACTOR_AUTH_CARD",
+  1445→			CFrame.new(pc+Vector3.new(0,1.3,0))
+  1446→				*CFrame.Angles(0,0,math.rad(18)),
+  1447→			Vector3.new(4.3,0.21,2.5),
+  1448→			C.mint,Enum.Material.Neon,1)
+  1449→		local badge=box(service,"PHYSICAL_CARD_FACE",
+  1450→			card.Position+Vector3.new(0,0.13,0),
+  1451→			Vector3.new(3.7,0.07,2.12),C.black,
+  1452→			Enum.Material.SmoothPlastic,1)
+  1453→		badge.CanQuery=false -- decorative face must not eat card clicks.
+  1454→		local cardDetector=Instance.new("ClickDetector")
+  1455→		cardDetector.MaxActivationDistance=9
+  1456→		cardDetector.Parent=card
+  1457→		local sign=box(service,"CARD_BAY_HARDWARE_LABEL",
+  1458→			pc+Vector3.new(0,3,-2.7),
+  1459→			Vector3.new(10.4,1.7,0.24),C.black,Enum.Material.Metal)
+  1460→		caption(sign,Enum.NormalId.Front,
+  1461→			"REACTOR AUTHORIZATION BAY "..n,41,C.white,
+  1462→			Vector2.new(920,200))
+  1463→		cardBays[#cardBays+1]={location=pc,side=side,
+  1464→			plinth=plinth,bezel=top,edge=lip,card=card,
+  1465→			face=badge,click=cardDetector,used=false,slot=nil}
+  1466→	end
+  1467→end
+  1468→local bunkerFloor=box(service,"EMERGENCY_BUNKER_HARD_FLOOR",
+  1469→	Vector3.new(0,22.3,198),Vector3.new(50,3.4,75),
+  1470→	C.silver,Enum.Material.DiamondPlate,0,true)
+  1471→box(service,"BUNKER_LOW_ROOF",Vector3.new(0,52,199),
+  1472→	Vector3.new(51,3,73),C.trim,Enum.Material.Metal,0,true)
+  1473→for _,side in ipairs({-1,1}) do
+  1474→	box(service,"BUNKER_METER_THICK_WALL",
+  1475→		Vector3.new(side*26,37,199),Vector3.new(3,30,73),
+  1476→		C.trim,Enum.Material.Metal,0,true)
+  1477→	beam(service,"FOSFOR_ESCAPE_STRIPE",
+  1478→		Vector3.new(side*22,24.25,165),
+  1479→		Vector3.new(side*22,24.25,228),
+  1480→		0.28,C.mint,Enum.Material.Neon)
+  1481→	for n=1,4 do
+  1482→		cylY(service,"BUNKER_OXYGEN_AND_POWER_TANK",
+  1483→			Vector3.new(side*20,30,174+n*10),2,10,
+  1484→			C.silver,Enum.Material.Metal)
+  1485→	end
+  1486→end
+  1487→box(service,"BUNKER_BACK_WALL",Vector3.new(0,38,235),
+  1488→	Vector3.new(50,31,2.5),C.trim,Enum.Material.Metal,0,true)
+  1489→for _,side in ipairs({-1,1}) do
+  1490→	box(service,"BUNKER_FRONT_ARMOR_FIXED",
+  1491→		Vector3.new(side*18,35,165.1),
+  1492→		Vector3.new(17,25,2),C.trim,Enum.Material.Metal,0,true)
+  1493→end
+  1494→box(service,"BUNKER_ENTRY_HEADER",Vector3.new(0,49,165.1),
+  1495→	Vector3.new(19,10,2.2),C.trim,Enum.Material.Metal,0,true)
+  1496→local bunkerGate=box(service,"AUTO_SEAL_BUNKER_GATE",
+  1497→	Vector3.new(0,59.5,165.1),Vector3.new(19,24,1.8),
+  1498→	C.trim,Enum.Material.Metal)
+  1499→local bunkerGateClosed=CFrame.new(0,36,165.1)
+  1500→local bunkerGateOpen=bunkerGate.CFrame
+  1501→local bunkerLamp=box(service,"BUNKER_INDICATOR",
+  1502→	Vector3.new(0,48,165.1),Vector3.new(7.5,0.9,1.6),
+  1503→	C.mint,Enum.Material.Neon)
+  1504→lamp(bunkerLamp,C.mint,1.45,35)
+  1505→for _,z in ipairs({180,197,214,227}) do
+  1506→	local bar=box(service,"BUNKER_AUTO_CEILING_BATTERY",
+  1507→		Vector3.new(0,48.9,z),Vector3.new(16,0.65,2.9),
+  1508→		C.mint,Enum.Material.Neon,0.16)
+  1509→	lamp(bar,C.mint,0.7,24)
+  1510→end
+  1511→local spawn=Instance.new("SpawnLocation")
+  1512→spawn.Name="CORE_PROTOCOL_V2_DIAGONAL_REFERENCE_VIEW"
+  1513→spawn.Size=Vector3.new(8,0.6,8)
+  1514→spawn.CFrame=CFrame.new(-29,24.45,151)
+  1515→spawn.Color=C.floor;spawn.Material=Enum.Material.Metal
+  1516→spawn.Anchored=true;spawn.Neutral=true;spawn.Duration=0
+  1517→spawn.Parent=gallery
+  1518→for _,v in ipairs(Workspace:GetDescendants()) do
+  1519→	if v:IsA("SpawnLocation") and v~=spawn then v.Enabled=false end
+  1520→end
+  1521→
+  1522→-- ================================================================
+  1523→-- 5. MACHINED, ANIMATED, FULLY FUNCTIONAL CONTROL HARDWARE.
+  1524→-- ================================================================
+  1525→local workingControls={}
+  1526→local function makeControl(name,kind,position,color,legend)
+  1527→	-- V1 used 11.6x9.5-stud Neon-heavy stations. Seven of those consumed
+  1528→	-- most of the user's actual screenshot. This assembly is 8x6.5 studs,
+  1529→	-- predominantly steel/bakelite with ONLY a narrow status pip.
+  1530→	local structure=folder(interfaces,name.."_FUNCTIONAL_STATION")
+  1531→	local base=box(structure,"CNC_STEEL_BEVELED_PEDESTAL",
+  1532→		position-Vector3.new(0,1.32,0),
+  1533→		Vector3.new(7.95,2.0,6.5),C.trim,
+  1534→		Enum.Material.Metal,0,true)
+  1535→	local collar=box(structure,"BLACK_BAKELITE_SLOPED_CAP",
+  1536→		position-Vector3.new(0,0.24,0),
+  1537→		Vector3.new(7.56,0.32,6.06),C.charcoal,
+  1538→		Enum.Material.Metal)
+  1539→	local neon=box(structure,"THIN_WORKING_INDICATOR_RAIL",
+  1540→		position+Vector3.new(0,-0.035,-0.7),
+  1541→		Vector3.new(7.0,0.055,3.88),color,
+  1542→		Enum.Material.Neon,0.84)
+  1543→	for _,side in ipairs({-1,1}) do
+  1544→		box(structure,"VISIBLE_METAL_SIDE_BOLT",
+  1545→			position+Vector3.new(side*3.48,-0.04,-2.27),
+  1546→			Vector3.new(0.27,0.11,0.27),C.silver,
+  1547→			Enum.Material.Metal)
+  1548→	end
+  1549→	local rim=cylY(structure,"POLISHED_SWITCH_BEZEL",
+  1550→		position+Vector3.new(0,0.15,-0.88),
+  1551→		1.33,0.27,C.silver,Enum.Material.Metal)
+  1552→	local innerRim=cylY(structure,"RECESSED_COLOR_SLEEVE",
+  1553→		position+Vector3.new(0,0.33,-0.88),
+  1554→		1.05,0.065,color,Enum.Material.Neon,0.7)
+  1555→	local handle
+  1556→	local rod=nil
+  1557→	local tip=nil
+  1558→	if kind=="lever" then
+  1559→		local bottom=position+Vector3.new(0,0.39,-0.88)
+  1560→		local top=bottom+Vector3.new(0,1.85,0)
+  1561→		rod=beam(structure,"MOVING_STEEL_SHAFT",
+  1562→			bottom,top,0.32,C.silver,Enum.Material.Metal)
+  1563→		handle=ball(structure,"GRAB_AND_CLICK_THIS_LEVER",
+  1564→			top,0.68,color,Enum.Material.SmoothPlastic)
+  1565→		tip=ball(structure,"LEVER_COLORED_TIP",
+  1566→			top+Vector3.new(0,0.43,0),0.23,color,
+  1567→			Enum.Material.Neon,0.38)
+  1568→		tip.CanQuery=false
+  1569→	elseif kind=="dial" then
+  1570→		handle=cylY(structure,"TACTILE_TURNING_COOLANT_DIAL",
+  1571→			position+Vector3.new(0,0.46,-0.88),
+  1572→			0.95,0.32,C.silver,Enum.Material.Metal)
+  1573→		rod=beam(structure,"DIAL_MOVABLE_CYAN_POINTER",
+  1574→			position+Vector3.new(0,0.68,-0.88),
+  1575→			position+Vector3.new(0,0.68,-1.99),
+  1576→			0.11,color,Enum.Material.Neon,0.24)
+  1577→		rod.CanQuery=false -- Do not steal clicks from the working knob.
+  1578→		innerRim:SetAttribute("WorkingDial",true)
+  1579→	else
+  1580→		handle=cylY(structure,"CLICKABLE_COLORED_STEEL_PUSHER",
+  1581→			position+Vector3.new(0,0.47,-0.88),
+  1582→			0.94,0.32,color,Enum.Material.SmoothPlastic)
+  1583→		local ring=cylY(structure,"THIN_ILLUMINATED_BUTTON_RING",
+  1584→			position+Vector3.new(0,0.64,-0.88),
+  1585→			0.74,0.045,color,Enum.Material.Neon,
+  1586→			CFG.VISUAL.PHYSICAL_BUTTON_NEON_ALPHA)
+  1587→		ring.CanQuery=false -- Whole button always clicks its handle.
+  1588→	end
+  1589→	local outline=box(structure,"ENGRAVED_HARDWARE_NAMEPLATE",
+  1590→		position+Vector3.new(0,-0.07,1.83),
+  1591→		Vector3.new(7.0,0.09,1.25),C.black,Enum.Material.Metal)
+  1592→	local title=caption(outline,Enum.NormalId.Top,legend,46,C.ivory,
+  1593→		Vector2.new(340,90))
+  1594→	title.TextScaled=false;title.TextWrapped=false
+  1595→	title.Font=Enum.Font.GothamBold
+  1596→	title.TextStrokeTransparency=0.75
+  1597→	local feedback=ball(structure,"TINY_STATUS_PILOT_LED",
+  1598→		position+Vector3.new(2.68,0.31,-0.89),
+  1599→		0.25,color,Enum.Material.Neon,0.35)
+  1600→	local feedbackLight=lamp(feedback,color,0.08,5)
+  1601→	local detector=Instance.new("ClickDetector")
+  1602→	detector.MaxActivationDistance=9
+  1603→	detector.Parent=handle
+  1604→	local c={name=name,type=kind,root=structure,handle=handle,
+  1605→		rod=rod,tip=tip,base=base,collar=collar,
+  1606→		neon=neon,rim=rim,
+  1607→		status=feedback,statusLight=feedbackLight,
+  1608→		click=detector,pos=position,color=color,
+  1609→		lastUsed=-100,pressedUntil=0,angle=0}
+  1610→	workingControls[name]=c
+  1611→	return c
+  1612→end
+  1613→-- The V1 freestanding 56x18 desk blocked the CAMERA and its seven
+  1614→-- oversized Neon stations became the subject of the screenshot. The
+  1615→-- user's reference places a low, compact bank BELOW the left instrument
+  1616→-- wall; the middle of the floor stays empty for the hydraulic console.
+  1617→box(interfaces,"LEFT_CONSOLE_RECESSED_STEEL_FOOT",
+  1618→	Vector3.new(-42.5,26.05,109.5),Vector3.new(35,0.65,13.4),
+  1619→	C.trim,Enum.Material.Metal,0,true)
+  1620→for _,x in ipairs({-57,-44,-28}) do
+  1621→	for _,z in ipairs({104.5,114.2}) do
+  1622→		box(interfaces,"CNC_OPEN_BENCH_STEEL_SUPPORT",
+  1623→			Vector3.new(x,26.25,z),Vector3.new(1.1,3.45,1.1),
+  1624→			C.silver,Enum.Material.Metal,0,true)
+  1625→	end
+  1626→end
+  1627→-- Chest-height controls are physical. The earlier noncolliding tabletop
+  1628→-- let a full-sized player walk THROUGH the gap between console pedestals.
+  1629→-- A low FRONT kickplate and solid worktop keep the station accessible.
+  1630→box(interfaces,"UNDER_DESK_FRONT_ACCESS_KICKPLATE",
+  1631→	Vector3.new(-42.5,26.6,116.3),Vector3.new(35.2,2.6,0.65),
+  1632→	C.trim,Enum.Material.Metal,0,true)
+  1633→part(interfaces,"LOW_ANGLED_INSTRUMENT_SHELF",
+  1634→	CFrame.new(-42.5,28.3,109.5)
+  1635→		*CFrame.Angles(math.rad(-4),0,0),
+  1636→	Vector3.new(35.3,0.61,13.4),C.charcoal,
+  1637→	Enum.Material.Metal,0,true)
+  1638→for n=0,18 do
+  1639→	local x=-57.6+n*1.66
+  1640→	local led=box(interfaces,"SMALL_DESK_FEEDBACK_ONLY",
+  1641→		Vector3.new(x,28.97,102.7),
+  1642→		Vector3.new(0.51,0.11,0.42),
+  1643→		n%5==0 and C.amber or C.ruby,
+  1644→		Enum.Material.Neon,0.67)
+  1645→	led:SetAttribute("Index",n)
+  1646→end
+  1647→local coolantControl=makeControl("COOLANT","dial",
+  1648→	Vector3.new(-55,29.5,107),C.azure,"COOLANT")
+  1649→local powerControl=makeControl("REACTOR_POWER","lever",
+  1650→	Vector3.new(-44,29.5,107),C.mint,"POWER")
+  1651→local laserControl=makeControl("HEATING_LASERS","lever",
+  1652→	Vector3.new(-33,29.5,107),C.magenta,"LASERS")
+  1653→local eCoolControl=makeControl("EMERGENCY_COOLANT","lever",
+  1654→	Vector3.new(-55,29.5,112.5),C.cyan,"E-COOLANT")
+  1655→local ignitionControl=makeControl("INITIAL_STARTUP","button",
+  1656→	Vector3.new(-44,29.5,112.5),C.amber,"IGNITION")
+  1657→local requestControl=makeControl("SHUTDOWN_REQUEST","button",
+  1658→	Vector3.new(-33,29.5,112.5),C.red,"SHUTDOWN")
+  1659→-- Independently mounted guarded SCRAM is one small, honest lever.
+  1660→local scramControl=makeControl("GUARDED_SCRAM","lever",
+  1661→	Vector3.new(43,29.5,146),C.red,"SCRAM")
+  1662→local scramCover=box(interfaces,"MANUAL_RELEASE_SAFETY_GLASS",
+  1663→	scramControl.pos+Vector3.new(0,2.1,-0.88),
+  1664→	Vector3.new(4.3,5.0,3.3),C.ivory,
+  1665→	Enum.Material.SmoothPlastic,0.91)
+  1666→scramCover.CanQuery=false
+  1667→local scramCoverHome=scramCover.CFrame
+  1668→
+  1669→-- Raised shutdown console is an actual machine rising from the black floor
+  1670→-- pit. Its screen/slots are gameplay, not decorative dead buttons.
+  1671→local consoleParts={}
+  1672→local consoleModel=folder(interfaces,"RAISING_SHUTDOWN_CONSOLE")
+  1673→local function consolePart(name,pos,size,color,mat,alpha,collide)
+  1674→	local p=box(consoleModel,name,pos,size,color,mat,alpha,collide)
+  1675→	consoleParts[#consoleParts+1]={part=p,home=p.CFrame}
+  1676→	return p
+  1677→end
+  1678→consolePart("UNDERFLOOR_HYDRAULIC_RAM",
+  1679→	Vector3.new(0,24.5,126),Vector3.new(24,1.5,16),
+  1680→	C.trim,Enum.Material.DiamondPlate,0,true)
+  1681→consolePart("CHAMFERED_INDUSTRIAL_PODIUM",
+  1682→	Vector3.new(0,27.1,126),Vector3.new(30,4,15),
+  1683→	C.silver,Enum.Material.Metal,0,true)
+  1684→consolePart("DARK_SLOPING_TACTILE_TOP",
+  1685→	Vector3.new(0,29.35,126),Vector3.new(29.4,0.58,14.6),
+  1686→	C.charcoal,Enum.Material.Metal)
+  1687→local shutdownScreen=consolePart("REAL_WORKING_SHUTDOWN_STATUS",
+  1688→	Vector3.new(0,31.0,119.65),Vector3.new(24,2.25,0.42),
+  1689→	C.black,Enum.Material.SmoothPlastic)
+  1690→local shutdownLabel=caption(shutdownScreen,Enum.NormalId.Back,
+  1691→	"CARD ACCESS  0/3   /   SHUTDOWN LOCKED",43,C.amber,
+  1692→	Vector2.new(1080,230))
+  1693→local cardSlots={}
+  1694→for i=1,3 do
+  1695→	local x=-9+(i-1)*9
+  1696→	local plate=consolePart("PHYSICAL_CARD_SOCKET_"..i,
+  1697→		Vector3.new(x,29.78,126),Vector3.new(6.2,0.43,4.4),
+  1698→		C.black,Enum.Material.Metal)
+  1699→	local slot=consolePart("CARD_SOCKET_CLICKABLE_CONTACT_"..i,
+  1700→		Vector3.new(x,30.06,126),Vector3.new(4.8,0.24,2.8),
+  1701→		C.red,Enum.Material.Neon)
+  1702→	local shell=consolePart("CARD_GOLD_SOCKET_EDGE_"..i,
+  1703→		Vector3.new(x,29.97,126),Vector3.new(5.4,0.07,3.4),
+  1704→		C.silver,Enum.Material.Metal)
+  1705→	local click=Instance.new("ClickDetector")
+  1706→	click.MaxActivationDistance=8
+  1707→	click.Parent=slot
+  1708→	cardSlots[i]={plate=plate,slot=slot,edge=shell,
+  1709→		click=click,inserted=false}
+  1710→end
+  1711→local shutdownButton=consolePart("HEAVY_FINAL_SHUTDOWN_PLUNGER",
+  1712→	Vector3.new(0,30.01,131.2),Vector3.new(6.7,0.9,2.6),
+  1713→	C.red,Enum.Material.Neon)
+  1714→local shutdownButtonClick=Instance.new("ClickDetector")
+  1715→shutdownButtonClick.MaxActivationDistance=9
+  1716→shutdownButtonClick.Parent=shutdownButton
+  1717→local shutdownButtonPlate=consolePart("FINAL_SHUTDOWN_NAMEPLATE",
+  1718→	Vector3.new(0,29.8,133.5),Vector3.new(11,0.17,1.6),
+  1719→	C.black,Enum.Material.Metal)
+  1720→caption(shutdownButtonPlate,Enum.NormalId.Top,
+  1721→	"ARMED SHUTDOWN",46,C.white,Vector2.new(700,150))
+  1722→-- A light in the black lift aperture makes the movement physically obvious.
+  1723→local liftSpines={}
+  1724→for _,x in ipairs({-18,-9,0,9,18}) do
+  1725→	liftSpines[#liftSpines+1]=tube(interfaces,
+  1726→		"HYDRAULIC_LIFT_PISTON",
+  1727→		Vector3.new(x,15.5,127),Vector3.new(x,23.8,127),
+  1728→		0.63,C.silver,Enum.Material.Metal)
+  1729→end
+  1730→for _,data in ipairs(consoleParts) do
+  1731→	data.part.CFrame=data.home*CFrame.new(0,-16.5,0)
+  1732→	data.part.CanCollide=false
+  1733→end
+  1734→
+  1735→-- Spatial audio sources at the camera and at the real machinery.
+  1736→local coreAudio=ball(soundAnchors,"AUDIO_CORE",CORE,
+  1737→	0.38,C.black,Enum.Material.SmoothPlastic,1)
+  1738→local roomAudio=box(soundAnchors,"AUDIO_ROOM_SIREN",
+  1739→	Vector3.new(0,76,155),Vector3.new(2.4,1,1),
+  1740→	C.charcoal,Enum.Material.Metal)
+  1741→local hallAudio=box(soundAnchors,"AUDIO_AUTH_HALL",
+  1742→	Vector3.new(-85,49,144),Vector3.new(2,1,1),
+  1743→	C.charcoal,Enum.Material.Metal)
+  1744→local idleHum=soundtrack(CFG.AUDIO.idle,coreAudio,
+  1745→	"IDLE_CORE_AIR",0.14,true,300)
+  1746→local turbineHum=soundtrack(CFG.AUDIO.turbine,coreAudio,
+  1747→	"PUMP_MOTOR_BED",0.12,true,300)
+  1748→local siren=soundtrack(CFG.AUDIO.siren,roomAudio,
+  1749→	"ROOM_AIRRAID_SIREN",0.29,true,280)
+  1750→local siren2=soundtrack(CFG.AUDIO.siren2,roomAudio,
+  1751→	"SECOND_ALARM_CADENCE",0.22,true,280)
+  1752→local coolantAudio=soundtrack(CFG.AUDIO.rain,coreAudio,
+  1753→	"EMERGENCY_SPRINKLERS",0.16,true,260)
+  1754→if idleHum then idleHum:Play() end
+  1755→if turbineHum then turbineHum:Play() end
+  1756→
+  1757→-- ================================================================
+  1758→-- 6. REACTOR STATE, REAL CONTROLS, CARD AUTHORIZATION, SHUTDOWN LIFT.
+  1759→-- ================================================================
+  1760→local COOLANT_STEPS={0,25,50,75,100}
+  1761→local POWER_STEPS={0,25,50,75,100}
+  1762→state={
+  1763→	mode="COLD",temp=26,pressure=18,integrity=100,
+  1764→	powerIndex=1,power=0,coolIndex=3,cooling=50,
+  1765→	lasers=false,rods=0,emergency=false,
+  1766→	emergencyReserve=100,damagedPipes=0,
+  1767→	warningAt=0,heatHold=0,freezeHold=0,
+  1768→	startupAt=0,scramAt=0,freezedownAt=0,
+  1769→	meltdownAt=0,meltdownEvents={},afterAt=0,
+  1770→	windowBroken=false,
+  1771→	consoleRaised=false,bunkerSealed=false,
+  1772→	cardFound={false,false,false},
+  1773→	cardInserted={false,false,false},
+  1774→	failedShutdown=false,lateRodJam=false,
+  1775→	nextCenterBeat=0,beatNumber=0,
+  1776→	viewEventFlash=0,round=0,
+  1777→}
+  1778→local keyColors={C.azure,C.amber,C.magenta}
+  1779→local liftTimer=0
+  1780→local roomBeam=beam(damage,"EDGE_EMERGENCY_BLUE_ARC",
+  1781→	Vector3.new(-53,24.5,105),Vector3.new(-53,78.3,105),
+  1782→	0.55,C.azure,Enum.Material.Neon,1)
+  1783→local roomBeamHalo=beam(damage,"EDGE_EMERGENCY_ARC_HALO",
+  1784→	Vector3.new(-53,24.5,105),Vector3.new(-53,78.3,105),
+  1785→	1.8,C.cyan,Enum.Material.Neon,1)
+  1786→local beamFoot=cylY(damage,"EMERGENCY_COLUMN_FLOOR_AURA",
+  1787→	Vector3.new(-53,24.3,105),1.7,0.12,
+  1788→	C.azure,Enum.Material.Neon,1)
+  1789→local beamAnchor=ball(damage,"INDOOR_BEAM_INVISIBLE_LIGHT",
+  1790→	Vector3.new(-53,53,105),0.25,
+  1791→	C.black,Enum.Material.SmoothPlastic,1)
+  1792→local roomBeamLight=lamp(beamAnchor,C.azure,0,28)
+  1793→local glassScarFolder=folder(fractures,"WINDOW_CRACKS_THAT_STAY")
+  1794→local ringScarFolder=folder(fractures,"REAL_RING_AND_EMITTER_DAMAGE")
+  1795→local emergencySteam={}
+  1796→for _,p in ipairs({
+  1797→	Vector3.new(-43,31,98),Vector3.new(43,31,98),
+  1798→	Vector3.new(-45,39,-20),Vector3.new(45,39,-20),
+  1799→	}) do
+  1800→	local anchor=ball(damage,"PHYSICAL_STEAM_OUTLET",p,0.42,
+  1801→		C.trim,Enum.Material.Metal,0.12)
+  1802→	local fog=particles(anchor,"LOW_CONTRAST_COOLANT_VAPOR",
+  1803→		SMOKE,7,C.ivory,1.1,5.4,7)
+  1804→	fog.LightEmission=0.015
+  1805→	fog.Lifetime=NumberRange.new(0.65,1.45)
+  1806→	fog.Transparency=NumberSequence.new({
+  1807→		NumberSequenceKeypoint.new(0,0.72),
+  1808→		NumberSequenceKeypoint.new(1,1)})
+  1809→	fog.Acceleration=Vector3.new(0,4,0)
+  1810→	emergencySteam[#emergencySteam+1]=fog
+  1811→end
+  1812→local sparkShowers={}
+  1813→for n=1,8 do
+  1814→	local x=(n-4.5)*11.5
+  1815→	local pos=Vector3.new(x,87,-30)
+  1816→	local a=ball(damage,"UNLATCHABLE_CEILING_ISOLATOR",
+  1817→		pos,0.7,C.azure,Enum.Material.Neon,0.83)
+  1818→	local sparks=particles(a,"CEILING_REAL_SPARK_RAIN",
+  1819→		SPARK,35,C.orange,0.7,0.1,21)
+  1820→	sparks.Acceleration=Vector3.new(0,-21,0)
+  1821→	sparkShowers[#sparkShowers+1]={body=a,emitter=sparks,
+  1822→		z=pos.Z,index=n}
+  1823→end
+  1824→
+  1825→local function actualCoolant()
+  1826→	local flow=state.cooling
+  1827→	if state.emergency and state.emergencyReserve>0 then
+  1828→		flow=math.max(flow,100)
+  1829→	end
+  1830→	return flow*math.max(0.11,1-state.damagedPipes*0.087)
+  1831→end
+  1832→local function validOperator(player,position)
+  1833→	local ch=player.Character
+  1834→	local human=ch and ch:FindFirstChildOfClass("Humanoid")
+  1835→	local root=ch and ch:FindFirstChild("HumanoidRootPart")
+  1836→	return root and human and human.Health>0
+  1837→		and (root.Position-position).Magnitude<CFG.INTERACTION_DISTANCE
+  1838→end
+  1839→local function setPilot(control,tint,on)
+  1840→	control.status.Color=on and tint or C.slate
+  1841→	control.statusLight.Color=tint
+  1842→	control.statusLight.Brightness=on and 0.16 or 0.012
+  1843→	control.neon.Color=tint
+  1844→	control.neon.Transparency=on and 0.63 or 0.88
+  1845→end
+  1846→local function moveLever(control,angle,instant)
+  1847→	local base=control.pos+Vector3.new(0,0.39,-0.88)
+  1848→	local top=base+Vector3.new(0,
+  1849→		math.cos(angle)*1.85,-math.sin(angle)*1.85)
+  1850→	if not control.rod then return end
+  1851→	local cf=CFrame.lookAt((base+top)/2,top)
+  1852→	local tipPos=top+Vector3.new(0,0.43,0)
+  1853→	if instant then
+  1854→		control.rod.CFrame=cf
+  1855→		control.rod.Size=Vector3.new(0.32,0.32,(top-base).Magnitude)
+  1856→		control.handle.Position=top
+  1857→		if control.tip then control.tip.Position=tipPos end
+  1858→	else
+  1859→		tween(control.rod,0.43,{CFrame=cf,
+  1860→			Size=Vector3.new(0.32,0.32,(top-base).Magnitude)})
+  1861→		tween(control.handle,0.43,{Position=top})
+  1862→		if control.tip then
+  1863→			tween(control.tip,0.43,{Position=tipPos})
+  1864→		end
+  1865→	end
+  1866→	control.angle=angle
+  1867→end
+  1868→local function drawCoolantDial(instant)
+  1869→	local control=coolantControl
+  1870→	local phi=math.rad(-115+(state.coolIndex-1)*57.5)
+  1871→	local base=control.pos+Vector3.new(0,0.68,-0.88)
+  1872→	local endPoint=base+Vector3.new(math.sin(phi)*1.05,
+  1873→		0,-math.cos(phi)*1.05)
+  1874→	local cf=CFrame.lookAt((base+endPoint)/2,endPoint)
+  1875→	if instant then
+  1876→		control.rod.CFrame=cf
+  1877→		control.rod.Size=Vector3.new(0.11,0.11,(endPoint-base).Magnitude)
+  1878→	else
+  1879→		tween(control.rod,0.34,{CFrame=cf,
+  1880→			Size=Vector3.new(0.11,0.11,(endPoint-base).Magnitude)})
+  1881→	end
+  1882→	setPilot(control,state.cooling<25 and C.red or C.azure,
+  1883→		state.cooling>=25)
+  1884→end
+  1885→local function drawControls(instant)
+  1886→	drawCoolantDial(instant)
+  1887→	moveLever(powerControl,math.rad(-38+(state.powerIndex-1)*19),instant)
+  1888→	moveLever(laserControl,math.rad(state.lasers and 35 or -34),instant)
+  1889→	moveLever(eCoolControl,math.rad(state.emergency and 39 or -35),instant)
+  1890→	moveLever(scramControl,math.rad(state.rods>60 and 42 or -42),instant)
+  1891→	setPilot(powerControl,C.mint,state.power>=25)
+  1892→	setPilot(laserControl,C.magenta,state.lasers)
+  1893→	setPilot(eCoolControl,C.cyan,state.emergency)
+  1894→	setPilot(scramControl,state.lateRodJam and C.orange or C.red,
+  1895→		state.rods>55 or state.lateRodJam)
+  1896→end
+  1897→local function pressControl(control)
+  1898→	if control.type~="button" then return end
+  1899→	local orig=control.handle.CFrame
+  1900→	tween(control.handle,0.14,{CFrame=orig*CFrame.new(0,-0.105,0),
+  1901→		Color=C.ivory})
+  1902→	task.delay(0.2,function()
+  1903→		if control.handle.Parent then
+  1904→			tween(control.handle,0.23,{CFrame=orig,Color=control.color})
+  1905→		end
+  1906→	end)
+  1907→end
+  1908→local function setSideDoor(d,open)
+  1909→	if d.open==open then return end
+  1910→	d.open=open
+  1911→	d.leaf.CanCollide=false -- Never crush a player while translating.
+  1912→	local shift=CFrame.new(0,open and 20 or 0,0)
+  1913→	tween(d.leaf,open and 1.0 or 1.4,
+  1914→		{CFrame=d.home*shift})
+  1915→	tween(d.strip,open and 1.0 or 1.4,
+  1916→		{CFrame=d.stripHome*shift,
+  1917→			Color=open and C.azure or C.mint})
+  1918→	if not open then
+  1919→		task.delay(1.55,function()
+  1920→			if not d.open and d.leaf.Parent then
+  1921→				d.leaf.CanCollide=true
+  1922→			end
+  1923→		end)
+  1924→	end
+  1925→	sfx("gate",hallAudio,0.28,open and 1.18 or 0.84,6)
+  1926→end
+  1927→local function setBunkerSealed(value,instant)
+  1928→	if state.bunkerSealed==value and not instant then return end
+  1929→	state.bunkerSealed=value
+  1930→	bunkerLamp.Color=value and C.red or C.mint
+  1931→	local target=value and bunkerGateClosed or bunkerGateOpen
+  1932→	bunkerGate.CanCollide=false
+  1933→	if instant then
+  1934→		bunkerGate.CFrame=target
+  1935→	else
+  1936→		tween(bunkerGate,value and 4.6 or 3.2,
+  1937→			{CFrame=target},Enum.EasingStyle.Sine)
+  1938→		sfx("gate",roomAudio,0.54,0.72,13)
+  1939→		shake(0.55,2.5)
+  1940→	end
+  1941→	if value then
+  1942→		task.delay(instant and 0 or 4.8,function()
+  1943→			if state.bunkerSealed then bunkerGate.CanCollide=true end
+  1944→		end)
+  1945→	end
+  1946→end
+  1947→local function raiseShutdownConsole(instant)
+  1948→	if state.consoleRaised then return end
+  1949→	state.consoleRaised=true
+  1950→	liftTimer=now()
+  1951→	for _,data in ipairs(consoleParts) do
+  1952→		if instant then data.part.CFrame=data.home
+  1953→		else tween(data.part,3.8,{CFrame=data.home},
+  1954→			Enum.EasingStyle.Sine) end
+  1955→	end
+  1956→	task.delay(instant and 0 or 3.8,function()
+  1957→		if state.consoleRaised and consoleParts[1].part.Parent then
+  1958→			consoleParts[1].part.CanCollide=true
+  1959→			consoleParts[2].part.CanCollide=true
+  1960→		end
+  1961→	end)
+  1962→	if not instant then
+  1963→		sfx("gate",roomAudio,0.77,0.79,13)
+  1964→		shake(0.38,2.7)
+  1965→		flash(0.11,"ice")
+  1966→	end
+  1967→end
+  1968→local function lowerShutdownConsole(instant)
+  1969→	if not state.consoleRaised and not instant then return end
+  1970→	state.consoleRaised=false
+  1971→	for _,data in ipairs(consoleParts) do
+  1972→		data.part.CanCollide=false
+  1973→		local hidden=data.home*CFrame.new(0,-16.5,0)
+  1974→		if instant then data.part.CFrame=hidden
+  1975→		else tween(data.part,3.4,{CFrame=hidden}) end
+  1976→	end
+  1977→	if not instant then sfx("gate",roomAudio,0.35,0.86,8) end
+  1978→end
+  1979→local function randomizeAuthorizationCards()
+  1980→	local sites={}
+  1981→	for i=1,#cardBays do sites[i]=i end
+  1982→	for i=#sites,2,-1 do
+  1983→		local j=rng:NextInteger(1,i)
+  1984→		sites[i],sites[j]=sites[j],sites[i]
+  1985→	end
+  1986→	for _,bay in ipairs(cardBays) do
+  1987→		bay.slot=nil;bay.used=false
+  1988→		bay.card.Transparency=1
+  1989→		bay.card.CanQuery=false
+  1990→		bay.face.Transparency=1
+  1991→		bay.face.CanQuery=false
+  1992→		if bay.tag then bay.tag.Visible=false end
+  1993→		bay.edge.Transparency=0.7
+  1994→		bay.edge.Color=C.azure
+  1995→	end
+  1996→	state.cardFound={false,false,false}
+  1997→	state.cardInserted={false,false,false}
+  1998→	for slot=1,3 do
+  1999→		local bay=cardBays[sites[slot]]
+  2000→		bay.slot=slot
+  2001→		bay.card.Color=keyColors[slot]
+  2002→		bay.card.Transparency=0.07
+  2003→		bay.card.CanQuery=true
+  2004→		bay.face.Transparency=0.1
+  2005→		bay.face.Color=C.black
+  2006→		bay.edge.Color=keyColors[slot]
+  2007→		bay.edge.Transparency=0.17
+  2008→		if not bay.tag then
+  2009→			bay.tag=caption(bay.face,Enum.NormalId.Top,
+  2010→				"AUTH "..slot,41,C.white,Vector2.new(510,175))
+  2011→		end
+  2012→		bay.tag.Visible=true
+  2013→		bay.tag.Text="AUTH 0"..slot
+  2014→	end
+  2015→end
+  2016→local function cardCount()
+  2017→	local found=0;local inserted=0
+  2018→	for i=1,3 do
+  2019→		if state.cardFound[i] then found=found+1 end
+  2020→		if state.cardInserted[i] then inserted=inserted+1 end
+  2021→	end
+  2022→	return found,inserted
+  2023→end
+  2024→local modeCaptions={
+  2025→	COLD="CORE OFFLINE  /  STANDBY",
+  2026→	STARTUP="INITIALIZING MAIN REACTOR",
+  2027→	FAILED_STARTUP="IGNITION FAILED  /  GRID RESET",
+  2028→	ONLINE="CORE SYSTEMS NOMINAL",
+  2029→	WARNING="CORE HEAT RISING",
+  2030→	MELTDOWN="CONTAINMENT FAILURE",
+  2031→	FREEZEDOWN="COOLANT FREEZEDOWN",
+  2032→	SCRAM="EMERGENCY RODS INSERTED",
+  2033→	SUCCESS_SHUTDOWN="CONTROLLED SHUTDOWN",
+  2034→	AFTERMATH="CONTAINMENT LOST",
+  2035→	RESETTING="AUTOMATED MAINTENANCE",
+  2036→}
+  2037→local function updatePhysicalDisplays(current)
+  2038→	local found,inserted=cardCount()
+  2039→	local hot=state.mode=="WARNING" or state.mode=="MELTDOWN"
+  2040→		or state.mode=="AFTERMATH"
+  2041→	local title=modeCaptions[state.mode] or "CORE CONTROL"
+  2042→	if state.mode=="STARTUP" then
+  2043→		local age=math.max(0,current-state.startupAt)
+  2044→		title=age<.8 and "START COMMAND ACCEPTED"
+  2045→			or age<13 and "SIX PHYSICAL HEADS DEPLOYING"
+  2046→			or (world:GetAttribute("ReactorPilotStabilized") or 0)>.01
+  2047→			and "MAGNETIC FUSION  /  STABILIZING"
+  2048→			or (world:GetAttribute("ReactorPilotWhiteVolume") or 0)>.995
+  2049→			and "MAGNETIC WHITE FUSION"
+  2050→			or (world:GetAttribute("ReactorPilotCyanVolume") or 0)>.995
+  2051→			and "SIX REAL NOZZLES  /  CYAN FUSION"
+  2052→			or (world:GetAttribute("ReactorPilotRelayMask") or 0)>0
+  2053→			and "SIX PHYSICAL RELAYS SEQUENCING"
+  2054→			or (world:GetAttribute("ReactorPilotDarkness") or 0)>.995
+  2055→			and "CHAMBER POWERDOWN  /  SIX HEADS LIT"
+  2056→			or "PURGING SIX REAL FUEL NOZZLES"
+  2057→	end
+  2058→	if state.failedShutdown and state.mode=="MELTDOWN" then
+  2059→		title="SHUTDOWN FAILURE / REACTOR CRITICAL"
+  2060→	end
+  2061→	mainSign.label.Text=title
+  2062→	mainSign.label.TextColor3=hot and C.red
+  2063→		or state.mode=="SUCCESS_SHUTDOWN" and C.cyan
+  2064→		or state.mode=="FREEZEDOWN" and C.cyan or C.ivory
+  2065→	if state.mode=="STARTUP" then
+  2066→		coreReadout.label.Text=string.format("PHYSICAL HEADS %d/6  /  %04.0fC",
+  2067→			world:GetAttribute("ReactorPilotHeadsAtTip") or 0,state.temp)
+  2068→	else
+  2069→		coreReadout.label.Text=string.format(
+  2070→			"CORE %04.0fC  /  PRESS %03.0f",state.temp,state.pressure)
+  2071→	end
+  2072→	leftReadout.label.Text=string.format(
+  2073→		"FLOW %03d%%  /  E-COOL %03.0f%%",
+  2074→		state.cooling,state.emergencyReserve)
+  2075→	rightReadout.label.Text=state.lateRodJam
+  2076→		and "SCRAM JAMMED"
+  2077→		or state.rods>75 and "RODS INSERTED"
+  2078→		or state.mode=="COLD" and "FEEDS OFF / RODS SAFE"
+  2079→		or state.lasers and "FEEDS ON / HEAT ON"
+  2080→		or "FEEDS ON / HEAT OFF"
+  2081→	local failureAge=state.mode=="MELTDOWN"
+  2082→		and current-state.meltdownAt or 0
+  2083→	local outOfTime=state.mode=="MELTDOWN" and
+  2084→		failureAge>CFG.SHUTDOWN_RESCUE_UNTIL
+  2085→	shutdownLabel.Text=state.consoleRaised and string.format(
+  2086→		"AUTH %d/3   INSERTED %d/3    %s",
+  2087→		found,inserted,outOfTime and "TOO LATE"
+  2088→			or inserted<3 and "LOCKED"
+  2089→			or state.mode=="COLD" and "AWAIT IGNITION"
+  2090→			or state.mode=="FAILED_STARTUP" and "RESETTING"
+  2091→			or "READY")
+  2092→		or "PODIUM STOWED / AUTHORIZATION REQUIRED"
+  2093→	shutdownLabel.TextColor3=outOfTime and C.red
+  2094→		or inserted==3 and state.mode~="COLD"
+  2095→		and state.mode~="FAILED_STARTUP" and C.mint
+  2096→		or C.amber
+  2097→	for i,data in ipairs(cardSlots) do
+  2098→		data.slot.Color=state.cardInserted[i] and C.mint
+  2099→			or state.cardFound[i] and C.amber or C.red
+  2100→	end
+  2101→	local leftScreen=wallScreenLabels[-1]
+  2102→	local rightScreen=wallScreenLabels[1]
+  2103→	if leftScreen then
+  2104→		leftScreen.Text=string.format(
+  2105→			"CORE %s\nTEMP %04.0fC\nPWR  %03d%%\nFLOW %03.0f%%",
+  2106→			state.mode,state.temp,state.power,actualCoolant())
+  2107→		leftScreen.TextColor3=hot and C.ivory or C.cyan
+  2108→	end
+  2109→	if rightScreen then
+  2110→		local remaining=math.max(0,math.ceil(
+  2111→			CFG.MELTDOWN_SECONDS-failureAge))
+  2112→		local live=0
+  2113→		for _,e in ipairs(emitters) do
+  2114→			if not e.broken then live=live+1 end
+  2115→		end
+  2116→		rightScreen.Text=string.format(
+  2117→			"CHAMBER\nPRESS %03.0f\nSHELL %03.0f%%\nEMIT %d/6 %s",
+  2118→			state.pressure,state.integrity,live,
+  2119→			state.mode=="MELTDOWN" and
+  2120→				string.format("T-%d:%02d",math.floor(remaining/60),
+  2121→					remaining%60) or "READY")
+  2122→		rightScreen.TextColor3=hot and C.orange or C.azure
+  2123→	end
+  2124→	-- Left front wall is not a decorative dead UI: all its readouts
+  2125→	-- reflect the same server state as the real hardware below it.
+  2126→	if state.mode=="STARTUP" then
+  2127→		leftFrontTelemetry.label.Text=string.format(
+  2128→			"HEADS %d/6\nPWR %03d%%\nTEMP %04.0fC",
+  2129→			world:GetAttribute("ReactorPilotHeadsAtTip") or 0,
+  2130→			state.power,state.temp)
+  2131→	else
+  2132→		leftFrontTelemetry.label.Text=string.format(
+  2133→			"CORE %s\nPWR %03d%%\nTEMP %04.0fC",
+  2134→			state.mode,state.power,state.temp)
+  2135→	end
+  2136→	leftFrontTelemetry.label.TextColor3=hot and C.ivory or C.warm
+  2137→	leftFrontCoolant.label.Text=string.format(
+  2138→		"FLOW %03.0f%%\nE-COOL %03.0f%%\nKEYS %d/3",
+  2139→		actualCoolant(),state.emergencyReserve,found)
+  2140→	leftFrontCoolant.label.TextColor3=state.mode=="FREEZEDOWN"
+  2141→		and C.azure or hot and C.warm or C.ivory
+  2142→end
+  2143→for _,bay in ipairs(cardBays) do
+  2144→	bay.click.MouseClick:Connect(function(player)
+  2145→		if not bay.slot or bay.used then return end
+  2146→		if not validOperator(player,bay.card.Position) then return end
+  2147→		local slot=bay.slot
+  2148→		bay.used=true
+  2149→		state.cardFound[slot]=true
+  2150→		bay.card.Transparency=1;bay.card.CanQuery=false
+  2151→		bay.face.Transparency=1
+  2152→		if bay.tag then bay.tag.Visible=false end
+  2153→		bay.edge.Color=C.mint
+  2154→		bay.edge.Transparency=0.3
+  2155→		sfx("panel",hallAudio,0.58,1.02+slot*0.11,5)
+  2156→		flash(0.1,"ice")
+  2157→		if not state.consoleRaised then raiseShutdownConsole(false) end
+  2158→		updatePhysicalDisplays(now())
+  2159→	end)
+  2160→end
+  2161→for i,data in ipairs(cardSlots) do
+  2162→	data.click.MouseClick:Connect(function(player)
+  2163→		if not state.consoleRaised or not state.cardFound[i]
+  2164→			or state.cardInserted[i] then return end
+  2165→		if not validOperator(player,data.slot.Position) then return end
+  2166→		state.cardInserted[i]=true
+  2167→		data.slot.Color=C.mint
+  2168→		sfx("switch",roomAudio,0.58,1.08+i*0.08,5)
+  2169→		flash(0.08,"ice")
+  2170→		updatePhysicalDisplays(now())
+  2171→	end)
+  2172→end
+  2173→-- ================================================================
+  2174→-- 7. DAMAGE IS MECHANICAL AND ALWAYS CENTERED ON THE VIEWABLE STAR.
+  2175→-- ================================================================
+  2176→local function startLeak(id)
+  2177→	local p=coolantLines[id]
+  2178→	if not p or p.leaking or p.broken then return end
+  2179→	p.leaking=true
+  2180→	if Workspace:FindFirstChild("REACTOR_MESH_ASSEMBLY") then
+  2181→		-- This old R5 pipe was retired with the Part reactor. State is still
+  2182→		-- authoritative; actual approved-mesh service pipes are a later asset.
+  2183→		p.mouth.Transparency=1;p.steam.Enabled=false;p.spray.Enabled=false
+  2184→		sfx("hiss",coreAudio,0.4,0.89,12)
+  2185→		return
+  2186→	end
+  2187→	p.mouth.Transparency=0.26
+  2188→	p.steam.Enabled=true
+  2189→	p.spray.Enabled=true
+  2190→	p.spray:Emit(65)
+  2191→	sfx("hiss",p.mouth,0.4,0.89,12)
+  2192→end
+  2193→local function breakLine(id,quiet)
+  2194→	local p=coolantLines[id]
+  2195→	if not p or p.broken then return end
+  2196→	p.broken=true
+  2197→	state.damagedPipes=state.damagedPipes+1
+  2198→	p.pipe.Transparency=1
+  2199→	p.pipe.CanCollide=false
+  2200→	if Workspace:FindFirstChild("REACTOR_MESH_ASSEMBLY") then
+  2201→		-- Do NOT spray from the coordinates of an off-world Part pipe.
+  2202→		p.mouth.Transparency=1;p.spray.Enabled=false;p.steam.Enabled=false
+  2203→		if id==3 or id==6 then
+  2204→			local feed=viewportFeeds[id==3 and 1 or 2]
+  2205→			feed.scar.Transparency=1
+  2206→			feed.jet.Enabled=false;feed.vapor.Enabled=false
+  2207→		end
+  2208→		if not quiet then
+  2209→			sfx("rupture",coreAudio,0.55,0.8,15)
+  2210→			shake(0.36,1.2)
+  2211→		end
+  2212→		return
+  2213→	end
+  2214→	p.mouth.Transparency=0.07
+  2215→	p.mouth.Color=C.white
+  2216→	p.spray.Enabled=true;p.steam.Enabled=true
+  2217→	p.spray.Rate=114;p.steam.Rate=48
+  2218→	p.spray:Emit(145)
+  2219→	if id==3 or id==6 then
+  2220→		local feed=viewportFeeds[id==3 and 1 or 2]
+  2221→		feed.pipe.Color=C.burgundy
+  2222→		feed.scar.Transparency=0.16
+  2223→		feed.jet.Enabled=true;feed.jet:Emit(110)
+  2224→		feed.vapor.Enabled=true;feed.vapor:Emit(35)
+  2225→		fracture(feed.scar.Position,
+  2226→			feed.scar.Position+Vector3.new(
+  2227→				-feed.scar.Position.X*0.16/WORLD_SCALE,8,3),8,C.cyan)
+  2228→	end
+  2229→	for i=1,3 do
+  2230→		throwShard(p.pipe,C.trim,rng:NextNumber(0.19,0.33),
+  2231→			Vector3.new(rng:NextNumber(-26,26),
+  2232→				rng:NextNumber(5,30),rng:NextNumber(3,25)),14)
+  2233→	end
+  2234→	if not quiet then
+  2235→		sfx("pressure",p.mouth,0.58,0.93,14)
+  2236→		sfx("rupture",p.mouth,0.55,0.8,15)
+  2237→		shake(0.36,1.2)
+  2238→	end
+  2239→end
+  2240→local function failEmitter(id,quiet)
+  2241→	local e=emitters[id]
+  2242→	if not e or e.broken then return end
+  2243→	e.broken=true
+  2244→	if Workspace:FindFirstChild("REACTOR_MESH_ASSEMBLY") then
+  2245→		-- Keep R5's true fail flag for the six-mask publisher. Its old
+  2246→		-- spherical scorch, nozzle, and sparks no longer match the GLB positions.
+  2247→		e.scorch.Transparency=1;e.sparks.Enabled=false
+  2248→		e.ray.Transparency=1;e.filament.Transparency=1
+  2249→		e.hotOptic.Enabled=false;e.softOptic.Enabled=false
+  2250→		if not quiet then
+  2251→			sfx("steel",coreAudio,0.78,0.76,14)
+  2252→			sfx("electricity",coreAudio,0.74,0.9,12)
+  2253→			flash(0.18,"purple");shake(0.88,2.5)
+  2254→			centerPulse(4.2,0.8,C.magenta)
+  2255→		end
+  2256→		return
+  2257→	end
+  2258→	e.ray.Transparency=1
+  2259→	e.filament.Transparency=1
+  2260→	e.hotOptic.Enabled=false;e.softOptic.Enabled=false
+  2261→	e.glow.Color=C.red
+  2262→	e.glow.Transparency=0.94
+  2263→	e.light.Brightness=0
+  2264→	e.lens.Transparency=1
+  2265→	e.scorch.Transparency=0.13
+  2266→	e.scorch.Color=C.orange
+  2267→	e.sparks.Enabled=true;e.sparks:Emit(165)
+  2268→	local old=e.nozzle.CFrame
+  2269→	tween(e.nozzle,2.7,{CFrame=old*CFrame.new(
+  2270→		rng:NextNumber(-3,3),rng:NextNumber(-2,2),6)
+  2271→			*CFrame.Angles(0,math.rad(43),math.rad(38)),
+  2272→		Color=C.orange},Enum.EasingStyle.Back)
+  2273→	for i,iris in ipairs(e.iris) do
+  2274→		if i%3~=0 then
+  2275→			throwShard(iris,i%2==0 and C.orange or C.silver,
+  2276→				1.0,Vector3.new(e.axis.X*21+rng:NextNumber(-8,8),
+  2277→					e.axis.Y*25+rng:NextNumber(3,23),
+  2278→					rng:NextNumber(14,40)),18)
+  2279→			iris.Transparency=1
+  2280→		else
+  2281→			iris.Color=C.orange
+  2282→		end
+  2283→	end
+  2284→	local spot=e.scorch.Position
+  2285→	fracture(spot,CORE+Vector3.new(0,0,19),13,
+  2286→		quiet and C.orange or C.magenta)
+  2287→	if not quiet then
+  2288→		sfx("steel",coreAudio,0.78,0.76,14)
+  2289→		sfx("electricity",coreAudio,0.74,0.9,12)
+  2290→		flash(0.22,"purple")
+  2291→		shake(0.88,2.5)
+  2292→		centerPulse(4.2,0.8,C.magenta)
+  2293→	end
+  2294→end
+  2295→local function tearBand(id,startIndex,count,quiet)
+  2296→	local band=frontBands[id]
+  2297→	if not band then return end
+  2298→	if Workspace:FindFirstChild("REACTOR_MESH_ASSEMBLY") then
+  2299→		-- Old Part band is off-world: never spawn loose pieces of it in-room.
+  2300→		for n=0,count-1 do
+  2301→			band.parts[((startIndex+n-1)%#band.parts)+1].broken=true
+  2302→		end
+  2303→		if not quiet then
+  2304→			sfx("steel",coreAudio,0.49,0.86,9)
+  2305→			centerPulse(3.1,0.68,C.violet)
+  2306→		end
+  2307→		return
+  2308→	end
+  2309→	for n=0,count-1 do
+  2310→		local seg=band.parts[((startIndex+n-1)%#band.parts)+1]
+  2311→		if not seg.broken then
+  2312→			seg.broken=true
+  2313→			if n%2==0 then
+  2314→				throwShard(seg.part,n%3==0 and C.orange
+  2315→					or seg.color,1.0,
+  2316→					Vector3.new(rng:NextNumber(-28,28),
+  2317→						rng:NextNumber(-10,45),
+  2318→						rng:NextNumber(7,33)),17)
+  2319→			end
+  2320→			seg.part.Transparency=1
+  2321→		end
+  2322→	end
+  2323→	if not quiet then
+  2324→		sfx("steel",coreAudio,0.49,0.86,9)
+  2325→		centerPulse(3.1,0.68,C.violet)
+  2326→	end
+  2327→end
+  2328→local function crackPanes(intensity)
+  2329→	if state.windowBroken then return end
+  2330→	for i=1,math.floor(6+10*intensity) do
+  2331→		local x=rng:NextNumber(-52,52)
+  2332→		local y=rng:NextNumber(32,69)
+  2333→		local last=Vector3.new(x,y,93.72)
+  2334→		for step=1,4 do
+  2335→			local p=last+Vector3.new(rng:NextNumber(-2.8,2.8),
+  2336→				rng:NextNumber(0.6,2),0)
+  2337→			beam(glassScarFolder,"HAIRLINE_BOROSILICATE_CRACK",
+  2338→				last,p,0.10,i%4==0 and C.orange or C.ivory,
+  2339→					Enum.Material.Neon,0.24)
+  2340→			last=p
+  2341→		end
+  2342→	end
+  2343→	for side=-1,1,2 do
+  2344→		local center=Vector3.new(side*46,62,93.73)
+  2345→		for ray=0,7 do
+  2346→			local phi=ray*TAU/8
+  2347→			local edge=center+Vector3.new(
+  2348→				math.cos(phi)*(3+intensity*2.8),
+  2349→				math.sin(phi)*(3+intensity*2.8),0)
+  2350→			beam(glassScarFolder,"WINDOW_EDGE_SPIDER_CRACK",
+  2351→				center,edge,0.13,C.ivory,Enum.Material.Neon,0.26)
+  2352→		end
+  2353→	end
+  2354→	for _,pane in ipairs(glassPanes) do pane.Transparency=0.98 end
+  2355→	sfx("glass",roomAudio,0.39,0.84,7)
+  2356→	shake(0.26,0.7)
+  2357→end
+  2358→local function shatterWindow()
+  2359→	if state.windowBroken then return end
+  2360→	state.windowBroken=true
+  2361→	for _,pane in ipairs(glassPanes) do
+  2362→		pane.Transparency=1
+  2363→		pane.CanCollide=false
+  2364→		for i=1,12 do
+  2365→			local shard=part(transient,"HUMANOID_SIZED_GLAZING_SHARD",
+  2366→				pane.CFrame*CFrame.new(rng:NextNumber(-13,13),
+  2367→					rng:NextNumber(-15,15),0),
+  2368→				Vector3.new(rng:NextNumber(0.8,3.4),
+  2369→					rng:NextNumber(1.0,4.1),0.13),
+  2370→				C.cyan,Enum.Material.SmoothPlastic,0.19,true)
+  2371→			shard.Anchored=false
+  2372→			shard.AssemblyLinearVelocity=Vector3.new(
+  2373→				rng:NextNumber(-23,23),rng:NextNumber(3,27),
+  2374→				rng:NextNumber(23,49))
+  2375→			shard.AssemblyAngularVelocity=Vector3.new(
+  2376→				rng:NextNumber(-7,7),rng:NextNumber(-7,7),
+  2377→				rng:NextNumber(-7,7))
+  2378→			Debris:AddItem(shard,14)
+  2379→		end
+  2380→	end
+  2381→	glassScarFolder:ClearAllChildren()
+  2382→	for side=-1,1,2 do
+  2383→		for n=1,8 do
+  2384→			local x=side*(38+n*1.95)
+  2385→			beam(glassScarFolder,"STUCK_BROKEN_GLAZING_IN_FRAME",
+  2386→				Vector3.new(x,26.5,93.76),
+  2387→				Vector3.new(x+side*rng:NextNumber(-0.5,0.5),
+  2388→					27.7+rng:NextNumber(0,4),93.76),
+  2389→				0.20,C.ivory,Enum.Material.SmoothPlastic,0.27)
+  2390→		end
+  2391→	end
+  2392→	sfx("glass",roomAudio,0.95,0.72,15)
+  2393→	shake(1.1,3.5)
+  2394→	flash(0.36,"white")
+  2395→end
+  2396→local function activateRoomBeam()
+  2397→	roomBeam.Transparency=0.76
+  2398→	roomBeamHalo.Transparency=0.94
+  2399→	beamFoot.Transparency=0.74
+  2400→	roomBeamLight.Brightness=0.42
+  2401→	fracture(Vector3.new(-53,74,105),
+  2402→		Vector3.new(-53,24,105),16,C.cyan)
+  2403→	sfx("electricity",roomAudio,0.63,1.25,12)
+  2404→	flash(0.24,"ice")
+  2405→	shake(0.74,3.8)
+  2406→end
+  2407→local function overpressure()
+  2408→	for _,e in ipairs(emergencySteam) do
+  2409→		-- Cracked pipe: one brief burst. Permanent 124/s white steam
+  2410→		-- obscured V1's window for the REST of the meltdown.
+  2411→		e:Emit(19)
+  2412→	end
+  2413→	sfx("coolant",coreAudio,0.76,0.91,15)
+  2414→	shake(0.52,2.4)
+  2415→end
+  2416→local function continuedCorePulse(age)
+  2417→	state.beatNumber=state.beatNumber+1
+  2418→	local danger=math.clamp(age/CFG.MELTDOWN_SECONDS,0,1)
+  2419→	centerPulse(2.4+danger*3.1,0.82+danger*0.5,
+  2420→		age>275 and C.magenta or C.white)
+  2421→	if state.beatNumber%3==0 then
+  2422→		outwardFrontWave(8,45+danger*53,2.1+danger*0.8,
+  2423→			age>270 and C.red or C.violet)
+  2424→	end
+  2425→	sfx("plasma",coreAudio,0.21+danger*0.24,
+  2426→		rng:NextNumber(0.8,1.13),10)
+  2427→	if age>135 then shake(0.14+danger*0.32,0.7) end
+  2428→end
+  2429→local function flagAt(age,timeStamp,key,action)
+  2430→	if age>=timeStamp and not state.meltdownEvents[key] then
+  2431→		state.meltdownEvents[key]=true
+  2432→		action()
+  2433→	end
+  2434→end
+  2435→local function beginMeltdown(reason)
+  2436→	if state.mode=="MELTDOWN" or state.mode=="AFTERMATH"
+  2437→		or state.mode=="RESETTING" then return end
+  2438→	state.mode="MELTDOWN"
+  2439→	state.meltdownAt=now()
+  2440→	state.meltdownEvents={}
+  2441→	state.beatNumber=0
+  2442→	state.nextCenterBeat=now()+9
+  2443→	state.warningAt=now()
+  2444→	state.failedShutdown=false
+  2445→	state.viewEventFlash=now()+2
+  2446→	if siren then siren:Play() end
+  2447→	if idleHum then tween(idleHum,2,{Volume=0.08,
+  2448→		PlaybackSpeed=0.72}) end
+  2449→	if turbineHum then tween(turbineHum,3,{Volume=0.23,
+  2450→		PlaybackSpeed=1.2}) end
+  2451→	sfx("quake",coreAudio,0.42,1.07,14)
+  2452→	centerPulse(4,1.2,C.white)
+  2453→	outwardFrontWave(10,49,2.4,C.violet)
+  2454→	shake(0.65,2.7);flash(0.22,"purple")
+  2455→	local broadcastAt=Workspace:GetServerTimeNow()
+  2456→	remote:FireAllClients("MUSIC","START",0,
+  2457→		CFG.AUDIO.opening,broadcastAt,broadcastAt)
+  2458→	updatePhysicalDisplays(now())
+  2459→end
+  2460→local function failedShutdown()
+  2461→	if state.failedShutdown then return end
+  2462→	state.failedShutdown=true
+  2463→	state.lateRodJam=true
+  2464→	state.rods=38
+  2465→	scramControl.status.Color=C.orange
+  2466→	sfx("steel",coreAudio,0.92,0.58,20)
+  2467→	sfx("electricity",coreAudio,0.83,0.81,12)
+  2468→	failEmitter(1,false)
+  2469→	tearBand(2,25,11,false)
+  2470→	centerPulse(6,1.5,C.white)
+  2471→	outwardFrontWave(10,96,3.5,C.red)
+  2472→	shake(1.6,5)
+  2473→	flash(0.38,"red")
+  2474→	updatePhysicalDisplays(now())
+  2475→end
+  2476→-- A successful shutdown is a real change of state. Temperature and star
+  2477→-- fall smoothly, rotating field stops, rods descend and sirens go quiet.
+  2478→local function succeedShutdown()
+  2479→	if state.mode=="SUCCESS_SHUTDOWN"
+  2480→		or state.mode=="AFTERMATH" then return end
+  2481→	state.mode="SUCCESS_SHUTDOWN"
+  2482→	state.scramAt=now()
+  2483→	state.rods=100
+  2484→	state.powerIndex=1;state.power=0
+  2485→	state.coolIndex=5;state.cooling=100
+  2486→	state.lasers=false
+  2487→	state.emergency=false
+  2488→	if siren then siren:Stop() end
+  2489→	if siren2 then siren2:Stop() end
+  2490→	if coolantAudio then coolantAudio:Stop() end
+  2491→	remote:FireAllClients("MUSIC","STOP")
+  2492→	drawControls(false)
+  2493→	centerPulse(2.4,1.2,C.azure)
+  2494→	outwardFrontWave(8,58,2.6,C.azure)
+  2495→	sfx("gate",roomAudio,0.63,1.1,13)
+  2496→	sfx("coolant",coreAudio,0.45,0.88,11)
+  2497→	shake(0.55,2.1)
+  2498→	flash(0.23,"ice")
+  2499→	updatePhysicalDisplays(now())
+  2500→end
+  2501→-- The event list is intentionally a developer-only timeline. NO client
+  2502→-- countdown narrates it; all beats move real geometry/lights/particles.
+  2503→local function tickMeltdown(dt,current)
+  2504→	local age=current-state.meltdownAt
+  2505→	if age>=CFG.MELTDOWN_SECONDS then
+  2506→		-- detonate() is defined below and supplied through a declaration.
+  2507→		return "DETONATE"
+  2508→	end
+  2509→	if state.emergency then
+  2510→		state.emergencyReserve=math.max(0,
+  2511→			state.emergencyReserve-2.5*dt)
+  2512→		if state.emergencyReserve<=0 then
+  2513→			state.emergency=false
+  2514→			if coolantAudio then coolantAudio:Stop() end
+  2515→			for _,vent in ipairs(emergencySteam) do vent.Enabled=false end
+  2516→			drawControls(false)
+  2517→		end
+  2518→	end
+  2519→	local coolant=actualCoolant()
+  2520→	state.temp=math.min(2970,state.temp+
+  2521→		math.max(3.5,5.1+age*0.013+
+  2522→			(state.lasers and 2.2 or 0)+state.power*0.014
+  2523→			-coolant*0.022-(state.emergency and 1.8 or 0))*dt)
+  2524→	state.pressure=math.min(221,state.pressure+
+  2525→		(0.21+age*0.006+state.damagedPipes*0.025)*dt)
+  2526→	state.integrity=math.max(0,state.integrity-
+  2527→		(0.086+age*0.0009)*dt)
+  2528→	if current>=state.nextCenterBeat then
+  2529→		state.nextCenterBeat=current+rng:NextNumber(8.7,13.2)
+  2530→		continuedCorePulse(age)
+  2531→	end
+  2532→	flagAt(age,12,"FIRST_IMBALANCE",function()
+  2533→		state.viewEventFlash=now()+0.8
+  2534→		sfx("plasma",coreAudio,0.28,0.95,10)
+  2535→		outwardFrontWave(9,47,1.7,C.cyan)
+  2536→	end)
+  2537→	flagAt(age,36,"EARLY_PANEL_ALARMS",function()
+  2538→		startLeak(2)
+  2539→		sfx("pressure",coreAudio,0.28,0.96,11)
+  2540→		centerPulse(3.1,1.1,C.violet)
+  2541→	end)
+  2542→	flagAt(age,63,"MAGNETIC_STRESS",function()
+  2543→		tearBand(1,8,7,false)
+  2544→		fracture(CORE+Vector3.new(0,9,26),
+  2545→			CORE+Vector3.new(-28,22,28),12,C.magenta)
+  2546→		shake(0.46,1.5)
+  2547→	end)
+  2548→	flagAt(age,87,"THE_FIRST_TUBE_CRACKS",function()
+  2549→		breakLine(3)
+  2550→		overpressure()
+  2551→		centerPulse(3.8,1.0,C.white)
+  2552→	end)
+  2553→	flagAt(age,110,"RED_ROOM_COMES_ALIVE",function()
+  2554→		state.viewEventFlash=now()+2.9
+  2555→		if siren2 then siren2:Play() end
+  2556→		sfx("siren",roomAudio,0.54,1.05,15)
+  2557→		shake(0.52,2.6)
+  2558→		flash(0.23,"red")
+  2559→	end)
+  2560→	flagAt(age,143,"FIRST_GIANT_EMITTER_HEAD_RIPS",function()
+  2561→		failEmitter(2,false)
+  2562→		tearBand(1,22,8,false)
+  2563→		crackPanes(0.55)
+  2564→	end)
+  2565→	flagAt(age,169,"SCORE_AND_DISTORTION_SHIFT",function()
+  2566→		remote:FireAllClients("MUSIC","CROSSFADE",0,
+  2567→			CFG.AUDIO.escalation,Workspace:GetServerTimeNow(),
+  2568→			Workspace:GetServerTimeNow()-age)
+  2569→		centerPulse(4.8,1.3,C.white)
+  2570→		state.viewEventFlash=now()+3
+  2571→	end)
+  2572→	flagAt(age,186,"RIGHT_HAND_EMITTER_FALTERS",function()
+  2573→		failEmitter(3,false)
+  2574→		breakLine(6)
+  2575→		tearBand(2,12,9,false)
+  2576→		shake(1.0,3.2)
+  2577→	end)
+  2578→	flagAt(age,207,"VIOLET_FRONT_FIELD_TURNS",function()
+  2579→		outwardFrontWave(11,73,2.4,C.magenta)
+  2580→		centerPulse(5.4,1.15,C.violet)
+  2581→		for i=1,3 do sparkShowers[i].emitter.Enabled=true end
+  2582→	end)
+  2583→	flagAt(age,230,"LOWER_CONDUIT_FAILS",function()
+  2584→		failEmitter(4,false)
+  2585→		crackPanes(1.05)
+  2586→		breakLine(8)
+  2587→		sfx("steel",coreAudio,0.62,0.7,13)
+  2588→	end)
+  2589→	flagAt(age,250,"BLUE_SPRINKLER_PRESSURE",function()
+  2590→		overpressure()
+  2591→		state.viewEventFlash=now()+2
+  2592→		tearBand(3,6,12,false)
+  2593→		sfx("pressure",roomAudio,0.37,0.85,15)
+  2594→	end)
+  2595→	flagAt(age,271,"BOTTOM_DIAGONAL_ISOLATOR_BURNS",function()
+  2596→		failEmitter(5,false)
+  2597→		tearBand(2,36,10,false)
+  2598→		centerPulse(5.0,1.4,C.white)
+  2599→		shake(1.28,4.3)
+  2600→	end)
+  2601→	flagAt(age,294,"BRIEF_ALL_WHITE_PRESSURE_OUT",function()
+  2602→		centerPulse(8.2,1.5,C.white)
+  2603→		outwardFrontWave(11,91,3.0,C.white)
+  2604→		flash(0.61,"white")
+  2605→		sfx("quake",coreAudio,0.72,0.92,25)
+  2606→	end)
+  2607→	flagAt(age,305,"FINAL_SCORE_AND_ROOM_FIELD",function()
+  2608→		remote:FireAllClients("MUSIC","CROSSFADE",0,
+  2609→			CFG.AUDIO.finale,Workspace:GetServerTimeNow(),
+  2610→			Workspace:GetServerTimeNow()-age)
+  2611→		activateRoomBeam()
+  2612→		state.viewEventFlash=now()+4.5
+  2613→	end)
+  2614→	flagAt(age,327,"CONTROL_ROOM_BLUE_LIGHTNING",function()
+  2615→		fracture(Vector3.new(-20,77,108),
+  2616→			Vector3.new(-5,28,111),16,C.azure)
+  2617→		tearBand(1,37,10,false)
+  2618→		crackPanes(1.4)
+  2619→		sfx("electricity",roomAudio,0.8,1.12,10)
+  2620→	end)
+  2621→	flagAt(age,345,"BOTH_SIDE_HOUSINGS_PUNCH_OUT",function()
+  2622→		failEmitter(6,false)
+  2623→		breakLine(1)
+  2624→		for i=4,8 do sparkShowers[i].emitter.Enabled=true end
+  2625→		state.viewEventFlash=now()+2.7
+  2626→	end)
+  2627→	flagAt(age,363,"CENTRAL_JET_FANS_OUT",function()
+  2628→		outwardFrontWave(10,103,3.0,C.magenta)
+  2629→		centerPulse(8,1.5,C.white)
+  2630→		tearBand(3,25,15,false)
+  2631→		shake(1.3,4.4)
+  2632→	end)
+  2633→	flagAt(age,385,"FRACTURE_WALL_OF_LIGHT",function()
+  2634→		crackPanes(1.9)
+  2635→		centerPulse(8.6,1.9,C.magenta)
+  2636→		outwardFrontWave(14,109,3.3,C.red)
+  2637→		sfx("quake",coreAudio,0.72,0.83,28)
+  2638→	end)
+  2639→	flagAt(age,410,"BUNKER_PREPARES_TO_SEAL",function()
+  2640→		bunkerLamp.Color=C.amber
+  2641→		sfx("siren2",roomAudio,0.69,0.85,17)
+  2642→		shake(0.86,5.3)
+  2643→	end)
+  2644→	flagAt(age,424,"LAST_BUNKER_GATE_CLOSE",function()
+  2645→		setBunkerSealed(true,false)
+  2646→		breakLine(10,true)
+  2647→		state.viewEventFlash=now()+10
+  2648→		flash(0.39,"red")
+  2649→	end)
+  2650→	flagAt(age,430,"CORE_CONTRACTS_FOR_ITS_FINAL_BREAK",function()
+  2651→		centerPulse(4.2,2.2,C.white)
+  2652→		sfx("pressure",coreAudio,0.87,0.58,20)
+  2653→		shake(1.4,4.4)
+  2654→	end)
+  2655→	return nil
+  2656→end
+  2657→-- ================================================================
+  2658→-- 8. AUTHENTIC OUTCOMES: EXPLOSION, COOLANT FREEZE, STARTUP AND RECOVERY.
+  2659→-- ================================================================
+  2660→local function detonate(current)
+  2661→	if state.mode~="MELTDOWN" then return end
+  2662→	state.mode="AFTERMATH"
+  2663→	state.afterAt=current
+  2664→	state.integrity=0
+  2665→	state.temp=3060
+  2666→	state.pressure=235
+  2667→	state.power=0
+  2668→	state.lasers=false
+  2669→	state.emergency=false
+  2670→	state.viewEventFlash=now()+5
+  2671→	for i=1,6 do
+  2672→		if not emitters[i].broken then failEmitter(i,true) end
+  2673→	end
+  2674→	for _,band in ipairs(frontBands) do
+  2675→		for i,seg in ipairs(band.parts) do
+  2676→			if not seg.broken then
+  2677→				seg.broken=true
+  2678→				if i%3==0 then
+  2679→					throwShard(seg.part,i%2==0 and C.orange
+  2680→						or C.trim,0.88,
+  2681→						Vector3.new(rng:NextNumber(-46,46),
+  2682→							rng:NextNumber(-18,66),
+  2683→							rng:NextNumber(14,71)),16)
+  2684→				end
+  2685→				seg.part.Transparency=1
+  2686→			end
+  2687→		end
+  2688→	end
+  2689→	shatterWindow()
+  2690→	for _,line in ipairs(coolantLines) do
+  2691→		line.spray.Enabled=false
+  2692→		line.steam.Enabled=true
+  2693→	end
+  2694→	fallingAsh.Enabled=true;fallingAsh:Emit(240)
+  2695→	coreDust:Emit(500);coreDust.Enabled=false
+  2696→	for _,smoke in ipairs(chamberMist) do
+  2697→		smoke:Emit(65)
+  2698→		smoke.Rate=1
+  2699→	end
+  2700→	for _,feed in ipairs(viewportFeeds) do
+  2701→		if feed.jet.Enabled then feed.jet:Emit(120) end
+  2702→	end
+  2703→	roomBeam.Transparency=1
+  2704→	roomBeamHalo.Transparency=1
+  2705→	roomBeamLight.Brightness=0
+  2706→	centerPulse(17,4.1,C.white)
+  2707→	outwardFrontWave(9,145,5.0,C.white)
+  2708→	outwardFrontWave(10,132,5.5,C.red)
+  2709→	sfx("explosion",coreAudio,1,0.87,22)
+  2710→	sfx("quake",coreAudio,0.81,0.67,32)
+  2711→	sfx("impact",roomAudio,0.87,0.8,16)
+  2712→	flash(1,"white")
+  2713→	shake(3.1,10)
+  2714→	if siren then siren:Stop() end
+  2715→	if siren2 then siren2:Stop() end
+  2716→	if coolantAudio then coolantAudio:Stop() end
+  2717→	if turbineHum then turbineHum:Stop() end
+  2718→	remote:FireAllClients("MUSIC","STOP")
+  2719→	for _,player in ipairs(Players:GetPlayers()) do
+  2720→		local ch=player.Character
+  2721→		local human=ch and ch:FindFirstChildOfClass("Humanoid")
+  2722→		local root=ch and ch:FindFirstChild("HumanoidRootPart")
+  2723→		if human and root and human.Health>0 then
+  2724→			local p=root.Position
+  2725→			local safe=state.bunkerSealed and p.Z>=170
+  2726→				and p.Z<232 and math.abs(p.X)<23
+  2727→				and p.Y>22 and p.Y<52
+  2728→			if not safe then
+  2729→				local planar=UNITS.new(p.X,0,p.Z)
+  2730→				local direction=planar.Magnitude>0.1 and planar.Unit
+  2731→					or Vector3.new(0,0,1)
+  2732→				root.AssemblyLinearVelocity=
+  2733→					direction*(57*WORLD_SCALE)+Vector3.new(0,39,0)
+  2734→				human:TakeDamage(130)
+  2735→			end
+  2736→		end
+  2737→	end
+  2738→	updatePhysicalDisplays(now())
+  2739→end
+  2740→local function setFreezedown()
+  2741→	if state.mode~="ONLINE" and state.mode~="WARNING" then return end
+  2742→	state.mode="FREEZEDOWN"
+  2743→	state.freezedownAt=now()
+  2744→	state.warningAt=now()
+  2745→	coreRoot.Color=C.azure
+  2746→	paleHalo.Color=C.cyan
+  2747→	for _,fog in ipairs(emergencySteam) do
+  2748→		fog.Color=ColorSequence.new(C.cyan,C.white)
+  2749→		fog.Enabled=true
+  2750→		fog:Emit(66)
+  2751→	end
+  2752→	centerPulse(2.5,1.8,C.cyan)
+  2753→	sfx("coolant",roomAudio,0.51,0.6,15)
+  2754→	shake(0.51,2.9)
+  2755→	flash(0.33,"ice")
+  2756→	updatePhysicalDisplays(now())
+  2757→end
+  2758→local function failStartup()
+  2759→ if state.mode~="STARTUP" then return end
+  2760→ state.mode="FAILED_STARTUP"
+  2761→ state.scramAt=now()
+  2762→ state.rods=100
+  2763→ state.powerIndex=1;state.power=0
+  2764→ state.lasers=false
+  2765→ state.emergency=false
+  2766→ if coolantAudio then coolantAudio:Stop() end
+  2767→ for _,vent in ipairs(emergencySteam) do vent.Enabled=false end
+  2768→ coreLamp.Brightness=0
+  2769→ drawControls(false)
+  2770→ updatePhysicalDisplays(now())
+  2771→end
+  2772→local function startReactor()
+  2773→ if state.mode~="COLD" then return end
+  2774→ if state.power<25 or actualCoolant()<18 then
+  2775→  pressControl(ignitionControl)
+  2776→  ignitionControl.status.Color=C.red
+  2777→  updatePhysicalDisplays(now())
+  2778→  mainSign.label.Text=state.power<25 and "RAISE POWER LEVER >= 25% TO IGNITE" or "INCREASE COOLANT FLOW TO IGNITE"
+  2779→  mainSign.label.TextColor3=C.amber
+  2780→  return
+  2781→ end
+  2782→ state.mode="STARTUP"
+  2783→ state.startupAt=now()
+  2784→ state.rods=0
+  2785→ state.integrity=100
+  2786→ state.temp=26
+  2787→ state.pressure=18
+  2788→ -- Physical button response is immediate; no artificial 47-second wait.
+  2789→ pressControl(ignitionControl)
+  2790→ updatePhysicalDisplays(now())
+  2791→end
+  2792→local function resetMachine()
+  2793→	state.round=state.round+1
+  2794→	state.mode="COLD"
+  2795→	state.temp=26;state.pressure=18;state.integrity=100
+  2796→	state.powerIndex=1;state.power=0
+  2797→	state.coolIndex=3;state.cooling=50
+  2798→	state.lasers=false;state.rods=0
+  2799→	state.emergency=false;state.emergencyReserve=100
+  2800→	state.damagedPipes=0;state.heatHold=0;state.freezeHold=0
+  2801→	state.startupAt=0
+  2802→	state.scramAt=0;state.freezedownAt=0
+  2803→	state.meltdownAt=0;state.meltdownEvents={};state.afterAt=0
+  2804→	state.windowBroken=false;state.failedShutdown=false
+  2805→	state.lateRodJam=false;state.viewEventFlash=0
+  2806→	state.nextCenterBeat=0;state.beatNumber=0
+  2807→	state.bunkerSealed=false
+  2808→	lowerShutdownConsole(true)
+  2809→	setBunkerSealed(false,true)
+  2810→	for _,d in ipairs(sideDoors) do
+  2811→		d.open=false;d.lastNear=0
+  2812→		d.leaf.CFrame=d.home;d.strip.CFrame=d.stripHome
+  2813→		d.leaf.CanCollide=true;d.strip.Color=C.mint
+  2814→	end
+  2815→	for _,e in ipairs(emitters) do
+  2816→		e.broken=false
+  2817→		e.nozzle.CFrame=e.nozzleHome
+  2818→		e.nozzle.Color=C.silver
+  2819→		e.lens.Transparency=0.29
+  2820→		e.lens.Color=C.azure
+  2821→		e.light.Color=C.azure
+  2822→		e.light.Brightness=1.15
+  2823→		e.scorch.Transparency=1
+  2824→		e.sparks.Enabled=false
+  2825→		e.sparks.Rate=105
+  2826→		e.glow.Color=C.violet;e.glow.Transparency=1
+  2827→		e.ray.Color=C.magenta;e.ray.Transparency=1
+  2828→		e.filament.Color=C.white;e.filament.Transparency=1
+  2829→		e.hotOptic.Enabled=false;e.softOptic.Enabled=false
+  2830→		for _,piece in ipairs(e.body) do
+  2831→			piece.Color=e.originalBody[piece]
+  2832→		end
+  2833→		for _,iris in ipairs(e.iris) do
+  2834→			iris.Transparency=0
+  2835→			iris.Color=C.white
+  2836→		end
+  2837→	end
+  2838→	for _,band in ipairs(frontBands) do
+  2839→		for _,seg in ipairs(band.parts) do
+  2840→			seg.broken=false
+  2841→			seg.part.Transparency=seg.alpha
+  2842→			seg.part.Color=seg.color
+  2843→		end
+  2844→	end
+  2845→	for _,feed in ipairs(viewportFeeds) do
+  2846→		feed.pipe.Color=C.silver
+  2847→		feed.scar.Transparency=1
+  2848→		feed.jet.Enabled=false;feed.vapor.Enabled=false
+  2849→	end
+  2850→	for _,line in ipairs(coolantLines) do
+  2851→		line.broken=false;line.leaking=false
+  2852→		line.pipe.Transparency=0
+  2853→		line.pipe.CanCollide=true
+  2854→		line.mouth.Transparency=1
+  2855→		line.mouth.Color=C.cyan
+  2856→		line.spray.Enabled=false
+  2857→		line.spray.Rate=75
+  2858→		line.steam.Enabled=false
+  2859→		line.steam.Rate=33
+  2860→	end
+  2861→	for _,pane in ipairs(glassPanes) do
+  2862→		pane.Transparency=0.98
+  2863→		pane.CanCollide=true
+  2864→	end
+  2865→	glassScarFolder:ClearAllChildren()
+  2866→	ringScarFolder:ClearAllChildren()
+  2867→	transient:ClearAllChildren()
+  2868→	for _,spark in ipairs(sparkShowers) do
+  2869→		spark.emitter.Enabled=false
+  2870→		spark.body.Color=C.azure
+  2871→	end
+  2872→	for _,fog in ipairs(emergencySteam) do
+  2873→		fog.Enabled=false
+  2874→		fog.Color=ColorSequence.new(C.white,C.white)
+  2875→	end
+  2876→	coreRoot.Color=C.violet
+  2877→	coreRoot.Transparency=0.96
+  2878→	whiteStar.Transparency=1
+  2879→	corona.Transparency=1
+  2880→	whiteStar.Color=C.white
+  2881→	pinkCrown.Color=C.magenta
+  2882→	paleHalo.Color=C.violet
+  2883→	coreDust.Enabled=false
+  2884→	coreSmoke.Enabled=true
+  2885→	fallingAsh.Enabled=false
+  2886→	for _,smoke in ipairs(chamberMist) do smoke.Rate=3 end
+  2887→	for _,spoke in ipairs(coreSpokes) do spoke.Transparency=1 end
+  2888→	roomBeam.Transparency=1
+  2889→	roomBeamHalo.Transparency=1
+  2890→	beamFoot.Transparency=1
+  2891→	roomBeamLight.Brightness=0
+  2892→	drawControls(true)
+  2893→	scramCover.CFrame=scramCoverHome
+  2894→	scramCover.Transparency=0.91
+  2895→	bloom.Intensity=CFG.VISUAL.BLOOM_IDLE
+  2896→	bloom.Threshold=CFG.VISUAL.BLOOM_THRESHOLD
+  2897→	grade.TintColor=Color3.fromRGB(251,228,229)
+  2898→	grade.Saturation=-0.06;grade.Contrast=0.045
+  2899→	atmosphere.Density=0.012
+  2900→	Lighting.FogColor=Color3.fromRGB(9,17,37)
+  2901→	Lighting.FogStart=225;Lighting.FogEnd=530
+  2902→	Lighting.Brightness=1.5
+  2903→	Lighting.ExposureCompensation=CFG.VISUAL.ROOM_EXPOSURE
+  2904→	Lighting.Ambient=Color3.fromRGB(138,137,142)
+  2905→	if siren then siren:Stop() end
+  2906→	if siren2 then siren2:Stop() end
+  2907→	if coolantAudio then coolantAudio:Stop() end
+  2908→	if idleHum then
+  2909→		idleHum.Volume=0.14
+  2910→		idleHum.PlaybackSpeed=1
+  2911→		if not idleHum.IsPlaying then idleHum:Play() end
+  2912→	end
+  2913→	if turbineHum then
+  2914→		turbineHum.Volume=0.12
+  2915→		turbineHum.PlaybackSpeed=1
+  2916→		if not turbineHum.IsPlaying then turbineHum:Play() end
+  2917→	end
+  2918→	randomizeAuthorizationCards()
+  2919→	updatePhysicalDisplays(now())
+  2920→	remote:FireAllClients("MUSIC","STOP")
+  2921→	remote:FireAllClients("RESET")
+  2922→end
+  2923→local function normalSimulation(dt,current)
+  2924→	local mode=state.mode
+  2925→	if state.emergency then
+  2926→		state.emergencyReserve=math.max(0,
+  2927→			state.emergencyReserve-2.0*dt)
+  2928→		if state.emergencyReserve<=0 then
+  2929→			state.emergency=false
+  2930→			if coolantAudio then coolantAudio:Stop() end
+  2931→			for _,vent in ipairs(emergencySteam) do
+  2932→				vent.Enabled=false
+  2933→			end
+  2934→			drawControls(false)
+  2935→		end
+  2936→	end
+  2937→	if mode=="FAILED_STARTUP" then
+  2938→		state.temp=math.max(130,state.temp-18*dt)
+  2939→		if current-state.scramAt>18 then
+  2940→			state.mode="COLD";state.rods=0
+  2941→			drawControls(false)
+  2942→			updatePhysicalDisplays(now())
+  2943→		end
+  2944→		return
+  2945→	end
+  2946→	if mode=="STARTUP" then
+  2947→		local sAge=math.max(0,current-state.startupAt)
+  2948→		if sAge>3 and (state.power<25 or actualCoolant()<18) then
+  2949→			failStartup()
+  2950→			return
+  2951→		end
+  2952→		local cyanVol=math.clamp(world:GetAttribute("ReactorPilotCyanVolume") or 0,0,1)
+  2953→		local whiteVol=math.clamp(world:GetAttribute("ReactorPilotWhiteVolume") or 0,0,1)
+  2954→		local stab=math.clamp(world:GetAttribute("ReactorPilotStabilized") or 0,0,1)
+  2955→		local eqTemp=550+state.power*12+(state.lasers and 650 or 0)-actualCoolant()*4.5
+  2956→		local targetTemp=26+(eqTemp-26)*(cyanVol*0.35+whiteVol*0.65)
+  2957→		state.temp=state.temp+(targetTemp-state.temp)*math.min(1,0.45*dt)
+  2958→		local targetPress=18+math.max(0,state.temp-320)*0.063
+  2959→		state.pressure=state.pressure+(targetPress-state.pressure)*math.min(1,0.5*dt)
+  2960→		if stab>.995 and whiteVol>.995
+  2961→			and world:GetAttribute("ReactorPilotHeadsAtTip")==6
+  2962→			and (world:GetAttribute("ReactorEmitterReadyMask") or 0)==63 then
+  2963→			state.mode="ONLINE"
+  2964→			updatePhysicalDisplays(now())
+  2965→		end
+  2966→		return
+  2967→	end
+  2968→	if mode=="SCRAM" or mode=="SUCCESS_SHUTDOWN" then
+  2969→		state.temp=math.max(135,state.temp-18*dt)
+  2970→		state.pressure=math.max(18,state.pressure-1.8*dt)
+  2971→		if current-state.scramAt>75 then resetMachine() end
+  2972→		return
+  2973→	end
+  2974→	if mode=="FREEZEDOWN" then
+  2975→		state.temp=math.max(90,state.temp-0.95*dt+
+  2976→			(state.power>75 and state.lasers and 13*dt or 0))
+  2977→		state.pressure=math.max(4,state.pressure-0.17*dt)
+  2978→		if state.temp>460 then
+  2979→			state.mode="ONLINE";state.freezeHold=0
+  2980→			for _,f in ipairs(emergencySteam) do f.Enabled=false end
+  2981→			updatePhysicalDisplays(now())
+  2982→		elseif current-state.freezedownAt>135 then
+  2983→			resetMachine()
+  2984→		end
+  2985→		return
+  2986→	end
+  2987→	if mode=="COLD" then
+  2988→		state.temp=math.max(26,state.temp-0.31*dt)
+  2989→		state.pressure=math.max(15,state.pressure-0.16*dt)
+  2990→		return
+  2991→	end
+  2992→	if mode~="ONLINE" and mode~="WARNING" then return end
+  2993→	local coolant=actualCoolant()
+  2994→	local target=550+state.power*12+
+  2995→		(state.lasers and 650 or 0)-coolant*4.5
+  2996→	-(state.emergency and 320 or 0)
+  2997→	state.temp=state.temp+(target-state.temp)*
+  2998→		math.min(1,0.051*dt)
+  2999→	local desiredPressure=29+math.max(0,state.temp-500)*0.063+
+  3000→		state.damagedPipes*5.5
+  3001→	state.pressure=state.pressure+
+  3002→		(desiredPressure-state.pressure)*math.min(1,0.12*dt)
+  3003→	state.pressure=math.clamp(state.pressure,0,215)
+  3004→	if state.temp>1290 or state.pressure>114 then
+  3005→		if state.mode~="WARNING" then
+  3006→			state.mode="WARNING"
+  3007→			state.warningAt=current
+  3008→			sfx("panel",roomAudio,0.37,0.77,6)
+  3009→			centerPulse(3.0,0.7,C.orange)
+  3010→			updatePhysicalDisplays(now())
+  3011→		end
+  3012→	elseif state.mode=="WARNING" and state.temp<1090
+  3013→		and state.pressure<86 then
+  3014→		state.mode="ONLINE"
+  3015→		updatePhysicalDisplays(now())
+  3016→	end
+  3017→	if state.temp>1640 or state.pressure>168 then
+  3018→		state.heatHold=state.heatHold+dt
+  3019→		if state.heatHold>=8 then beginMeltdown("HEAT_RUNAWAY") end
+  3020→	else
+  3021→		state.heatHold=math.max(0,state.heatHold-1.2*dt)
+  3022→	end
+  3023→	if state.temp<250 and coolant>65 and state.power<=25 then
+  3024→		state.freezeHold=state.freezeHold+dt
+  3025→		if state.freezeHold>13 then setFreezedown() end
+  3026→	else
+  3027→		state.freezeHold=math.max(0,state.freezeHold-dt)
+  3028→	end
+  3029→end
+  3030→-- ================================================================
+  3031→-- 9. EACH SWITCH/KEY MAKES A PERSISTENT, SERVER-AUTHORITATIVE CHANGE.
+  3032→-- ================================================================
+  3033→local function accepts(control,player)
+  3034→	local t=now()
+  3035→	if t-control.lastUsed<0.55 then return false end
+  3036→	if not validOperator(player,control.handle.Position) then return false end
+  3037→	control.lastUsed=t
+  3038→	return true
+  3039→end
+  3040→coolantControl.click.MouseClick:Connect(function(player)
+  3041→	if not accepts(coolantControl,player) then return end
+  3042→	if state.mode=="AFTERMATH" or state.mode=="RESETTING" then return end
+  3043→	state.coolIndex=state.coolIndex%#COOLANT_STEPS+1
+  3044→	state.cooling=COOLANT_STEPS[state.coolIndex]
+  3045→	drawCoolantDial(false)
+  3046→	sfx("switch",roomAudio,0.44,
+  3047→		0.79+state.cooling*0.004,5)
+  3048→	for _,line in ipairs(coolantLines) do
+  3049→		line.fill.Color=state.cooling<25 and C.orange or C.azure
+  3050→	end
+  3051→	updatePhysicalDisplays(now())
+  3052→end)
+  3053→powerControl.click.MouseClick:Connect(function(player)
+  3054→	if not accepts(powerControl,player) then return end
+  3055→	if state.mode=="AFTERMATH" or state.mode=="RESETTING"
+  3056→		or state.mode=="SUCCESS_SHUTDOWN" then return end
+  3057→	state.powerIndex=state.powerIndex%#POWER_STEPS+1
+  3058→	state.power=POWER_STEPS[state.powerIndex]
+  3059→	moveLever(powerControl,
+  3060→		math.rad(-38+(state.powerIndex-1)*19),false)
+  3061→	setPilot(powerControl,C.mint,state.power>=25)
+  3062→	sfx("switch",roomAudio,0.54,
+  3063→		0.69+state.power/170,6)
+  3064→	if state.power>=75 then centerPulse(1.9,0.64,C.white) end
+  3065→	updatePhysicalDisplays(now())
+  3066→end)
+  3067→laserControl.click.MouseClick:Connect(function(player)
+  3068→	if not accepts(laserControl,player) then return end
+  3069→	if state.mode=="COLD" or state.mode=="AFTERMATH"
+  3070→		or state.mode=="RESETTING" or state.mode=="SCRAM"
+  3071→		or state.mode=="SUCCESS_SHUTDOWN" then
+  3072→		sfx("panel",roomAudio,0.24,0.56,5)
+  3073→		return
+  3074→	end
+  3075→	state.lasers=not state.lasers
+  3076→	moveLever(laserControl,
+  3077→		math.rad(state.lasers and 35 or -34),false)
+  3078→	setPilot(laserControl,C.magenta,state.lasers)
+  3079→	sfx("laser",coreAudio,0.64,
+  3080→		state.lasers and 1.0 or 0.57,11)
+  3081→	if state.lasers then
+  3082→		centerPulse(3.2,1.15,C.white)
+  3083→		fracture(CORE+Vector3.new(0,0,26),
+  3084→			CORE+Vector3.new(32,18,22),9,C.magenta)
+  3085→		shake(0.26,0.9)
+  3086→	end
+  3087→	updatePhysicalDisplays(now())
+  3088→end)
+  3089→eCoolControl.click.MouseClick:Connect(function(player)
+  3090→	if not accepts(eCoolControl,player) then return end
+  3091→	if state.mode=="COLD" or state.mode=="AFTERMATH"
+  3092→		or state.emergencyReserve<=0 then
+  3093→		sfx("panel",roomAudio,0.25,0.62,5)
+  3094→		return
+  3095→	end
+  3096→	state.emergency=not state.emergency
+  3097→	moveLever(eCoolControl,
+  3098→		math.rad(state.emergency and 39 or -35),false)
+  3099→	setPilot(eCoolControl,C.cyan,state.emergency)
+  3100→	if state.emergency then
+  3101→		if coolantAudio then coolantAudio:Play() end
+  3102→		for _,vent in ipairs(emergencySteam) do
+  3103→			vent.Enabled=true -- Steady low-flow only while E-COOLANT ON.
+  3104→		end
+  3105→		overpressure()
+  3106→		for _,line in ipairs(coolantLines) do
+  3107→			line.fill.Color=C.cyan
+  3108→		end
+  3109→	else
+  3110→		if coolantAudio then coolantAudio:Stop() end
+  3111→		for _,e in ipairs(emergencySteam) do e.Enabled=false end
+  3112→		sfx("switch",roomAudio,0.41,0.74,5)
+  3113→	end
+  3114→	updatePhysicalDisplays(now())
+  3115→end)
+  3116→ignitionControl.click.MouseClick:Connect(function(player)
+  3117→	if not accepts(ignitionControl,player) then return end
+  3118→	if state.mode=="COLD" then startReactor()
+  3119→	elseif state.mode=="FREEZEDOWN" then
+  3120→		state.powerIndex=5;state.power=100;state.lasers=true
+  3121→		drawControls(false)
+  3122→		sfx("laser",coreAudio,0.37,0.73,10)
+  3123→	else
+  3124→		pressControl(ignitionControl)
+  3125→		sfx("panel",roomAudio,0.28,0.62,5)
+  3126→	end
+  3127→end)
+  3128→requestControl.click.MouseClick:Connect(function(player)
+  3129→	if not accepts(requestControl,player) then return end
+  3130→	if state.mode=="AFTERMATH" or state.mode=="RESETTING" then return end
+  3131→	pressControl(requestControl)
+  3132→	if not state.consoleRaised then
+  3133→		raiseShutdownConsole(false)
+  3134→	else
+  3135→		local found,inserted=cardCount()
+  3136→		if found<3 or inserted<3 then
+  3137→			sfx("panel",roomAudio,0.49,0.61,6)
+  3138→			requestControl.status.Color=C.red
+  3139→			flash(0.1,"red")
+  3140→		end
+  3141→	end
+  3142→	updatePhysicalDisplays(now())
+  3143→end)
+  3144→scramControl.click.MouseClick:Connect(function(player)
+  3145→	if not accepts(scramControl,player) then return end
+  3146→	if state.mode=="AFTERMATH" or state.mode=="RESETTING"
+  3147→		or state.mode=="SUCCESS_SHUTDOWN" or state.lateRodJam then return end
+  3148→	if state.mode=="COLD" then
+  3149→		sfx("panel",roomAudio,0.3,0.6,4)
+  3150→		return
+  3151→	end
+  3152→	tween(scramCover,0.48,{CFrame=scramCoverHome*CFrame.new(0,4,0),
+  3153→		Transparency=1})
+  3154→	sfx("gate",roomAudio,0.54,0.89,9)
+  3155→	local age=state.mode=="MELTDOWN"
+  3156→		and now()-state.meltdownAt or 0
+  3157→	local _,inserted=cardCount()
+  3158→	if state.mode=="MELTDOWN" and
+  3159→		(age>CFG.SHUTDOWN_RESCUE_UNTIL or
+  3160→			(age>100 and inserted<3) or actualCoolant()<18) then
+  3161→		failedShutdown()
+  3162→		drawControls(false)
+  3163→	else
+  3164→		succeedShutdown()
+  3165→	end
+  3166→end)
+  3167→shutdownButtonClick.MouseClick:Connect(function(player)
+  3168→	if not state.consoleRaised or not
+  3169→		validOperator(player,shutdownButton.Position) then return end
+  3170→	if state.mode=="AFTERMATH" or state.mode=="RESETTING"
+  3171→		or state.mode=="SUCCESS_SHUTDOWN" then return end
+  3172→	if state.mode=="COLD" or state.mode=="FAILED_STARTUP" then
+  3173→		sfx("panel",roomAudio,0.36,0.62,5)
+  3174→		shutdownButton.Color=C.orange
+  3175→		task.delay(0.65,function()
+  3176→			if shutdownButton.Parent then shutdownButton.Color=C.red end
+  3177→		end)
+  3178→		return
+  3179→	end
+  3180→	local _,inserted=cardCount()
+  3181→	if inserted<3 then
+  3182→		shutdownButton.Color=C.red
+  3183→		sfx("panel",roomAudio,0.47,0.63,6)
+  3184→		flash(0.12,"red")
+  3185→		updatePhysicalDisplays(now())
+  3186→		return
+  3187→	end
+  3188→	shutdownButton.Color=C.white
+  3189→	tween(shutdownButton,0.17,{Size=Vector3.new(6.7,0.55,2.6)})
+  3190→	task.delay(0.5,function()
+  3191→		shutdownButton.Size=Vector3.new(6.7,0.9,2.6)
+  3192→		shutdownButton.Color=C.red
+  3193→	end)
+  3194→	local bad=state.mode=="MELTDOWN" and
+  3195→		now()-state.meltdownAt>CFG.SHUTDOWN_RESCUE_UNTIL
+  3196→		or state.temp>2590 or state.lateRodJam
+  3197→		or actualCoolant()<18
+  3198→	if bad then
+  3199→		if state.mode~="MELTDOWN" then
+  3200→			beginMeltdown("BOTCHED_SHUTDOWN")
+  3201→		end
+  3202→		failedShutdown()
+  3203→	else
+  3204→		succeedShutdown()
+  3205→	end
+  3206→end)
+  3207→-- ================================================================
+  3208→-- 10. CONTINUOUS VISUAL REACTIVITY; ALL EFFECTS ARE WORLD OBJECTS.
+  3209→-- ================================================================
+  3210→local animationTime=0
+  3211→local visualRods=0
+  3212→local relayTrace=""
+  3213→local lastPilotRelayMask=0
+  3214→local function animate(dt,current)
+  3215→	animationTime=animationTime+dt
+  3216→	-- Authoritative state for reviewed GLB mesh assemblies. Only publishes
+  3217→	-- existing server simulation; never accepts a client-provided mode.
+  3218→	world:SetAttribute("ReactorMeshSignal",1)
+  3219→	world:SetAttribute("ReactorMode",state.mode)
+  3220→	local pilot=state.mode=="STARTUP"
+  3221→	-- R5 retains lighting authority. The new physical Pilot provides only a
+  3222→	-- 0..1 chamber-dark request after the approved fuel hold.
+  3223→	local pilotDark=pilot and math.clamp(
+  3224→		world:GetAttribute("ReactorPilotDarkness") or 0,0,1) or 0
+  3225→	local pilotWhite=pilot and math.clamp(
+  3226→		world:GetAttribute("ReactorPilotWhiteVolume") or 0,0,1) or 0
+  3227→	local startupAge=pilot and math.max(0,current-state.startupAt) or 0
+  3228→	world:SetAttribute("ReactorStartupAge",startupAge)
+  3229→	world:SetAttribute("ReactorPilotAuthorityStamp",Workspace:GetServerTimeNow())
+  3230→	world:SetAttribute("ReactorStartupPhase",pilot and
+  3231→		(world:GetAttribute("ReactorPilotStage") or "PILOT_PENDING") or state.mode)
+  3232→	world:SetAttribute("ReactorGridDrop",false)
+  3233→	world:SetAttribute("ReactorStartupChamberOutage",0)
+  3234→	world:SetAttribute("ReactorMeltdownAge",state.mode=="MELTDOWN"
+  3235→		and math.max(0,current-state.meltdownAt) or 0)
+  3236→	world:SetAttribute("ReactorPower",state.power)
+  3237→	world:SetAttribute("ReactorIntegrity",state.integrity)
+  3238→	-- Each reviewed physical mesh head corresponds 1:1 to an R5 emitter.
+  3239→	-- Prime relays one at a time; export REAL failure events, not invented
+  3240→	-- visual timers. No client-controlled action can set these values.
+  3241→	local readyMask,brokenMask=0,0
+  3242→	for i,e in ipairs(emitters) do
+  3243→		local relay=state.mode~="COLD" and state.mode~="FAILED_STARTUP"
+  3244→			and state.mode~="SCRAM" and state.mode~="SUCCESS_SHUTDOWN"
+  3245→			and state.mode~="AFTERMATH" and state.mode~="RESETTING"
+  3246→		if pilot then
+  3247→			-- 04: only R5 may energize a physical relay. Clock age alone is
+  3248→			-- insufficient: verify the approved GLB exists, its own nozzle
+  3249→			-- socket is actually near the center, and its actual piston stroke
+  3250→			-- reached the tip. No client signal, orphan ray or broken emitter.
+  3251→			relay=false
+  3252→			if startupAge>=35.5+(i-1)*.38
+  3253→				and (pilotDark>.995 or pilotWhite>.01 or startupAge>=38.0)
+  3254→				and world:GetAttribute("ReactorPilotReady")==true
+  3255→				and world:GetAttribute("ReactorPilotHeadsAtTip")==6
+  3256→				and not e.broken then
+  3257→				local scene=Workspace:FindFirstChild("REACTOR_MESH_ASSEMBLY")
+  3258→				local moving=scene and scene:FindFirstChild("MOVING")
+  3259→				local tag=emitterSites[i].tag
+  3260→				local head=moving and moving:FindFirstChild(
+  3261→					"REACTOR_EMITTER_REV03_"..tag)
+  3262→				local tip=head and head:FindFirstChild("NOZZLE__white",true)
+  3263→				local socket=tip and tip:FindFirstChild(
+  3264→					"PILOT_FUEL_SOCKET_"..tag)
+  3265→				relay=scene and
+  3266→					(scene:GetAttribute("ReactorPilotStroke_"..tag) or 0)>.995
+  3267→					and tip and tip:IsA("MeshPart") and socket
+  3268→					and socket:IsA("Attachment")
+  3269→					and (socket.WorldPosition-
+  3270→						UNITS.new(0,26.5,2.7)).Magnitude<9
+  3271→			end
+  3272→		end
+  3273→		if relay then readyMask+=2^(i-1) end
+  3274→		if e.broken then brokenMask+=2^(i-1) end
+  3275→	end
+  3276→	if not pilot then
+  3277→		relayTrace="";lastPilotRelayMask=0
+  3278→	elseif readyMask~=lastPilotRelayMask then
+  3279→		lastPilotRelayMask=readyMask
+  3280→		if readyMask>0 then
+  3281→			relayTrace=relayTrace..string.format("%d@%.2f|",
+  3282→				readyMask,startupAge)
+  3283→		end
+  3284→	end
+  3285→	world:SetAttribute("ReactorPilotRelayMask",pilot and readyMask or 0)
+  3286→	world:SetAttribute("ReactorPilotRelayTrace",relayTrace)
+  3287→	world:SetAttribute("ReactorEmitterReadyMask",readyMask)
+  3288→	world:SetAttribute("ReactorEmitterBrokenMask",brokenMask)
+  3289→	world:SetAttribute("ReactorLaserBoost",state.lasers==true)
+  3290→	local pipeLeakMask,pipeBrokenMask=0,0
+  3291→	for i,p in ipairs(coolantLines) do
+  3292→		if p.leaking then pipeLeakMask+=2^(i-1) end
+  3293→		if p.broken then pipeBrokenMask+=2^(i-1) end
+  3294→	end
+  3295→	world:SetAttribute("ReactorPipeLeakMask",pipeLeakMask)
+  3296→	world:SetAttribute("ReactorPipeBrokenMask",pipeBrokenMask)
+  3297→	local melting=state.mode=="MELTDOWN"
+  3298→	local cold=state.mode=="COLD" or state.mode=="FAILED_STARTUP"
+  3299→	local age=melting and current-state.meltdownAt or 0
+  3300→	local progress=melting and math.clamp(age/CFG.MELTDOWN_SECONDS,0,1)
+  3301→		or 0
+  3302→	local phase=(math.sin(animationTime*(melting and 5+progress*8
+  3303→		or 2.8))+1)/2
+  3304→	local alarm=melting or state.mode=="WARNING"
+  3305→		or state.mode=="AFTERMATH" or state.failedShutdown
+  3306→	local redRoom=melting and math.clamp((age-76)/119,0,1)
+  3307→		or state.mode=="AFTERMATH" and 1
+  3308→		or state.mode=="WARNING" and 0.22 or 0
+  3309→	-- Existing meltdown/emergency lighting remains server-owned.
+  3310→	local blackout=melting and age>115 and
+  3311→		math.sin(animationTime*(age>305 and 18 or 7))<-0.65
+  3312→		or current<state.viewEventFlash
+  3313→		and math.sin(animationTime*31)<-0.39
+  3314→		-- The old procedural star is entirely OFF in CHECKPOINT 01.
+  3315→		-- Non-startup damage/freezedown visuals remain with gameplay.
+  3316→		local dark=cold or pilot
+  3317→		local size=dark and .30
+  3318→			or state.mode=="FREEZEDOWN" and .8
+  3319→			or (state.mode=="SCRAM" or
+  3320→				state.mode=="SUCCESS_SHUTDOWN") and .68
+  3321→			or state.mode=="AFTERMATH" and .58
+  3322→			or melting and 1+progress*.33+phase*(.07+progress*.14)
+  3323→			or 1+phase*.025+state.power*.0007
+  3324→		if melting and age>418 then
+  3325→			local u=math.clamp((age-418)/17,0,1)
+  3326→			size=u<.7 and 1.43-u*1.28 or .55+((u-.7)/.3)^2*2.1
+  3327→		end
+  3328→		local coreTint=state.mode=="FREEZEDOWN" and C.cyan
+  3329→			or state.mode=="AFTERMATH" and C.orange
+  3330→			or dark and C.navy
+  3331→			or melting and age>250 and C.red
+  3332→			or melting and age>100 and C.magenta or C.violet
+  3333→		coreRoot.Color=coreTint
+  3334→		coreRoot.Size=Vector3.new(15.6,15.6,15.6)*size
+  3335→		coreRoot.Transparency=dark and 1 or .62
+  3336→		whiteStar.Color=state.mode=="AFTERMATH" and C.orange
+  3337→			or state.mode=="FREEZEDOWN" and C.cyan or C.white
+  3338→		whiteStar.Size=Vector3.new(12.6,12.6,12.6)*size
+  3339→		whiteStar.Transparency=dark and 1 or .015
+  3340→		corona.Size=Vector3.new(22,22,22)*size
+  3341→		corona.Transparency=dark and 1 or melting and .82 or .86
+  3342→		pinkCrown.Color=coreTint
+  3343→		pinkCrown.Size=Vector3.new(25,25,25)*math.max(.65,size)
+  3344→		pinkCrown.Transparency=dark and 1 or .82
+  3345→		paleHalo.Color=melting and age>190 and C.red or C.violet
+  3346→		paleHalo.Size=Vector3.new(38,38,38)*math.max(.7,size)
+  3347→		paleHalo.Transparency=dark and 1 or .93
+  3348→		coreLamp.Color=melting and (age>300 and C.magenta or C.ivory)
+  3349→			or state.mode=="AFTERMATH" and C.orange
+  3350→			or state.mode=="FREEZEDOWN" and C.azure
+  3351→			or Color3.fromRGB(226,238,252)
+  3352→		coreLamp.Brightness=dark and 0
+  3353→			or math.min(CFG.VISUAL.CORE_LIGHT_MAX,
+  3354→			state.mode=="AFTERMATH" and 1.1
+  3355→			or state.mode=="FREEZEDOWN" and 1.4
+  3356→			or melting and 2.65+progress*1.95+phase*.62
+  3357→			or 0.20+state.power*.0015+phase*.04)
+  3358→		coreDust.Enabled=not dark and state.mode~="AFTERMATH"
+  3359→			and state.mode~="RESETTING"
+  3360→		coreDust.Rate=dark and 0 or melting and 42+progress*95
+  3361→			or state.lasers and 48 or 26
+  3362→		coreSmoke.Rate=dark and 0 or melting and 31+progress*75
+  3363→			or state.mode=="FREEZEDOWN" and 24 or 16
+  3364→		for _,mist in ipairs(chamberMist) do
+  3365→			mist.Rate=dark and 0 or melting and 9+progress*8 or 7
+  3366→		end
+  3367→		for i,cloud in ipairs(remoteNebula) do
+  3368→			cloud.Color=melting and (i%5==0 and C.magenta
+  3369→				or i%3==0 and C.violet or C.cobalt)
+  3370→				or i%9==0 and C.violet or C.nebula
+  3371→			cloud.Transparency=dark and 1
+  3372→				or melting and .61+phase*.09 or .73
+  3373→		end
+  3374→		for n,spoke in ipairs(coreSpokes) do
+  3375→			spoke.Transparency=dark and 1
+  3376→				or n%2==0 and .89 or melting and .12 or .42
+  3377→		end
+  3378→		for i,e in ipairs(emitters) do
+  3379→			local surge=e.broken and melting and
+  3380→				math.sin(animationTime*10.2+i*2.8)>-.35
+  3381→			local glitch=melting and age>92 and
+  3382→				math.sin(animationTime*11+i*2.8)<-.48
+  3383→			e.ray.Color=surge and C.orange
+  3384→				or melting and age>250 and C.orange or C.magenta
+  3385→			e.ray.Transparency=dark and 1
+  3386→				or e.broken and (surge and .72 or .97)
+  3387→				or glitch and .89 or state.lasers and .61+phase*.1
+  3388→				or .77+phase*.06
+  3389→			e.filament.Transparency=dark and 1
+  3390→				or e.broken and (surge and .65 or 1)
+  3391→				or glitch and .79 or melting and .08+phase*.1
+  3392→				or state.lasers and .13+phase*.09 or .37
+  3393→			e.hotOptic.Enabled=not dark and not e.broken and not glitch
+  3394→		e.softOptic.Enabled=not dark and not e.broken
+  3395→			e.hotOptic.Width0=(melting and 2.6+progress*1.5
+  3396→				or 2.3)*WORLD_SCALE
+  3397→			e.glow.Transparency=dark and 1
+  3398→				or e.broken and (surge and .9 or .98)
+  3399→				or state.lasers and .92 or .96
+  3400→			e.glow.Color=melting and age>270 and C.red or C.violet
+  3401→			e.lens.Color=dark and C.slate
+  3402→				or melting and age>280 and C.orange
+  3403→				or state.mode=="FREEZEDOWN" and C.cyan or C.azure
+  3404→			e.lens.Transparency=dark and 1 or .29
+  3405→			e.light.Color=e.lens.Color
+  3406→			e.light.Brightness=dark and 0
+  3407→				or e.broken and (surge and .44 or 0)
+  3408→				or glitch and .11 or melting and 1.1+phase*.75
+  3409→				or state.lasers and .86 or .43
+  3410→			e.scorch.Color=melting and age>350 and C.red or C.orange
+  3411→			for _,segment in ipairs(e.body) do
+  3412→				if segment.Material==Enum.Material.Neon then
+  3413→					segment.Color=melting and age>270 and C.red
+  3414→						or melting and age>235 and C.orange
+  3415→						or state.mode=="FREEZEDOWN" and C.cyan
+  3416→						or e.originalBody[segment]
+  3417→					segment.Transparency=dark and 1
+  3418→						or e.broken and .48+phase*.16 or .42
+  3419→				end
+  3420→			end
+  3421→		end
+  3422→		if melting and age>305 and roomBeamLight.Brightness>0 then
+  3423→			roomBeam.Transparency=0.56+phase*0.26
+  3424→			roomBeamHalo.Transparency=0.9+phase*0.07
+  3425→			roomBeamLight.Brightness=0.18+phase*0.42
+  3426→		end
+  3427→	for _,band in ipairs(frontBands) do
+  3428→		local velocity=dark and .05
+  3429→			or melting and 1.2+progress*3.7
+  3430→			or state.mode=="SUCCESS_SHUTDOWN" and 0.18 or 1
+  3431→		local cf=CFrame.new(CORE+Vector3.new(0,0,band.depth))
+  3432→			*CFrame.Angles(0,0,animationTime*band.speed*velocity)
+  3433→		for _,segment in ipairs(band.parts) do
+  3434→			if not segment.broken then
+  3435→				segment.part.CFrame=cf*segment.home
+  3436→				segment.part.Color=melting and age>210 and
+  3437→					(segment.color==C.silver and C.orange
+  3438→						or age>325 and C.red or C.magenta)
+  3439→					or segment.color
+  3440→				segment.part.Transparency=dark and 1 or segment.alpha
+  3441→			end
+  3442→		end
+  3443→	end
+  3444→	for i,arc in ipairs(dynamicArcs) do
+  3445→		local active=melting and
+  3446→			i<=(5+math.floor(progress*20))
+  3447→			and math.sin(animationTime*(8+progress*12)+i*2)>-0.66
+  3448→			or not melting and not dark and
+  3449→			state.mode~="AFTERMATH" and state.lasers and i<=5
+  3450→		if active then
+  3451→			local a=i*2.39996+animationTime*0.19
+  3452→			local b=a+math.sin(animationTime*4.1+i)*0.54
+  3453→			local radius=9+(i%4)*3
+  3454→			local outer=27+(i%7)*2.0
+  3455→			local p=CORE+Vector3.new(math.cos(a)*radius,
+  3456→				math.sin(a)*radius,25)
+  3457→			local q=CORE+Vector3.new(math.cos(b)*outer,
+  3458→				math.sin(b)*outer,26)
+  3459→			arc.CFrame=CFrame.lookAt((p+q)/2,q)
+  3460→			arc.Size=UNITS.new((i%5==0 and 0.52 or 0.24)*WORLD_SCALE,
+  3461→				(i%5==0 and 0.52 or 0.24)*WORLD_SCALE,
+  3462→				(q-p).Magnitude)
+  3463→			arc.Color=melting and age>305 and C.red
+  3464→				or i%9==0 and C.white or C.magenta
+  3465→			arc.Transparency=i%5==0 and 0.49 or 0.59
+  3466→		else arc.Transparency=1 end
+  3467→	end
+  3468→	visualRods=visualRods+(state.rods-visualRods)*
+  3469→		math.min(1,dt*2.2)
+  3470→	for _,rod in ipairs(rods) do
+  3471→		local y=97-visualRods*0.24
+  3472→		rod.body.Position=Vector3.new(rod.x,y,rod.z)
+  3473→		rod.tip.Position=Vector3.new(rod.x,y-13,rod.z)
+  3474→		rod.tip.Color=state.lateRodJam and C.orange
+  3475→			or visualRods>50 and C.red or C.azure
+  3476→	end
+  3477→	for _,line in ipairs(coolantLines) do
+  3478→		local amount=math.max(0.15,actualCoolant()/100*21)
+  3479→		line.fill.Size=Vector3.new(amount,11.1,11.1)
+  3480→		line.fill.CFrame=FRAME.new(line.x,(4+amount/2)*WORLD_SCALE,
+  3481→			line.z)
+  3482→			*CFrame.Angles(0,0,math.pi/2)
+  3483→		line.fill.Color=line.broken and C.orange
+  3484→			or state.mode=="FREEZEDOWN" and C.cyan
+  3485→			or state.cooling<25 and C.amber or C.cobalt
+  3486→	end
+  3487→	local tick=math.floor(animationTime*(melting and 4.7 or 0.75))
+  3488→	for _,cell in ipairs(matrixLamps) do
+  3489→		local urgency=alarm and (cell.col*3+cell.row+tick)%8<
+  3490→			(melting and age>230 and 6 or melting and 4 or 2)
+  3491→		local tint=urgency and C.red
+  3492→			or alarm and cell.row%3==0 and C.orange
+  3493→			or cell.normal
+  3494→		cell.part.Color=blackout and C.black or tint
+  3495→		cell.part.Transparency=blackout and 0.84
+  3496→			or urgency and tick%2==0 and 0.34 or 0.63
+  3497→	end
+  3498→	for _,cell in ipairs(frontIndicatorCells) do
+  3499→		local urgent=alarm and (cell.row*5+cell.col+tick)%9<4
+  3500→		cell.part.Color=urgent and C.red or cell.normal
+  3501→		cell.part.Transparency=blackout and 0.9
+  3502→			or urgent and 0.36 or 0.62
+  3503→	end
+  3504→	for _,dot in ipairs(frontStatusLamps) do
+  3505→		local pulse=alarm and (dot.group+dot.index+tick)%7<5
+  3506→		dot.part.Color=pulse and C.red or C.ruby
+  3507→		dot.part.Transparency=blackout and 0.54
+  3508→			or pulse and 0.06 or 0.28
+  3509→	end
+  3510→	for _,bar in ipairs(waveformBars) do
+  3511→		local h=0.8+math.abs(math.sin(animationTime*2.2+
+  3512→			bar.n*0.6+bar.side))*
+  3513→			(melting and 5.4 or 2.6)
+  3514→		bar.part.Size=Vector3.new(0.62,h,0.18)
+  3515→		bar.part.CFrame=bar.home*CFrame.new(0,(h-2.8)*0.16,0)
+  3516→		bar.part.Color=alarm and
+  3517→			(redRoom>0.48 and C.red or C.amber) or C.mint
+  3518→	end
+  3519→	for _,b in ipairs(ceilingBulbs) do
+  3520→		local tint=redRoom>.4 and (b.index%4==0 and C.magenta or C.red)
+  3521→			or alarm and b.index%3==0 and C.amber or b.normal
+  3522→		b.part.Color=blackout and C.charcoal or tint
+  3523→		b.part.Transparency=blackout and .9 or .62
+  3524→		if b.point then
+  3525→			b.point.Color=tint
+  3526→			b.point.Brightness=blackout and 0
+  3527→				or melting and .19+phase*.17 or .13
+  3528→		end
+  3529→	end
+  3530→	bigLampBezel.Color=redRoom>.45 and C.red or C.ruby
+  3531→	bigLampDiffuser.Color=C.ivory
+  3532→	bigLampPoint.Color=redRoom>.65 and C.warm or C.ivory
+  3533→	bigLampPoint.Brightness=blackout and .12
+  3534→		or redRoom>.5 and .68 or .49
+  3535→	for _,bar in ipairs(alarmFixtures) do
+  3536→		local tint=alarm and (redRoom>.29 and C.red or C.warm) or C.ivory
+  3537→		bar.body.Color=blackout and C.frame or tint
+  3538→		bar.light.Color=tint
+  3539→		bar.light.Brightness=blackout and 0
+  3540→			or alarm and (.55+phase*.39) or .18
+  3541→	end
+  3542→	for _,flood in ipairs(floorFloods) do
+  3543→		local tint=redRoom>.5 and C.red or alarm and C.ruby or C.warm
+  3544→		flood.body.Color=blackout and C.frame or tint
+  3545→		flood.point.Color=tint
+  3546→		flood.point.Brightness=(blackout and 0
+  3547→			or melting and .61+.24*math.abs(math.sin(
+  3548→				animationTime*2+flood.index*.37)) or .07)
+  3549→			*(1-pilotDark)
+  3550→	end
+  3551→	for _,light in ipairs(chamberServiceLights) do
+  3552→		light.Brightness=.68*(1-pilotDark)
+  3553→	end
+  3554→	for _,light in ipairs(chamberWashLights) do
+  3555→		light.Brightness=1.25*(1-pilotDark)
+  3556→	end
+  3557→	for _,fill in ipairs(roomFillLights) do
+  3558→		fill.Color=C.ivory:Lerp(C.red,redRoom*.9)
+  3559→		fill.Brightness=blackout and .15 or 1.02-redRoom*.47
+  3560→	end
+  3561→	bloom.Intensity=melting and CFG.VISUAL.BLOOM_IDLE+
+  3562→		progress*(CFG.VISUAL.BLOOM_MELTDOWN-CFG.VISUAL.BLOOM_IDLE)
+  3563→		or state.mode=="AFTERMATH" and .38 or CFG.VISUAL.BLOOM_IDLE
+  3564→	bloom.Threshold=CFG.VISUAL.BLOOM_THRESHOLD
+  3565→	if state.mode=="AFTERMATH" then
+  3566→		local fading=current-state.afterAt<3.5
+  3567→		Lighting.Brightness=fading and 2.05 or 1.35
+  3568→		Lighting.ExposureCompensation=fading and -.17 or -.55
+  3569→		Lighting.Ambient=Color3.fromRGB(125,46,57)
+  3570→		grade.TintColor=Color3.fromRGB(255,184,177)
+  3571→		grade.Saturation=-.07
+  3572→		atmosphere.Density=.047
+  3573→	elseif state.mode=="FREEZEDOWN" then
+  3574→		Lighting.Brightness=1.92
+  3575→		Lighting.ExposureCompensation=CFG.VISUAL.ROOM_EXPOSURE
+  3576→		Lighting.Ambient=Color3.fromRGB(67,93,133)
+  3577→		grade.TintColor=Color3.fromRGB(211,228,244)
+  3578→		grade.Saturation=-.09
+  3579→		atmosphere.Density=.028
+  3580→	elseif state.mode=="SUCCESS_SHUTDOWN" then
+  3581→		Lighting.Brightness=1.95
+  3582→		Lighting.ExposureCompensation=CFG.VISUAL.ROOM_EXPOSURE
+  3583→		Lighting.Ambient=Color3.fromRGB(97,110,111)
+  3584→		grade.TintColor=Color3.fromRGB(232,237,229)
+  3585→		grade.Saturation=-.04
+  3586→		atmosphere.Density=.014
+  3587→	else
+  3588→		Lighting.Brightness=blackout and .93 or 2.05-redRoom*.49
+  3589→		Lighting.ExposureCompensation=CFG.VISUAL.ROOM_EXPOSURE-redRoom*.2
+  3590→		Lighting.Ambient=Color3.fromRGB(138,137,142):Lerp(
+  3591→			Color3.fromRGB(150,36,47),redRoom*.8)
+  3592→		grade.TintColor=Color3.fromRGB(252,249,246):Lerp(
+  3593→			Color3.fromRGB(255,114,128),redRoom*.7)
+  3594→		grade.Saturation=.015+redRoom*.145
+  3595→		grade.Contrast=.045+redRoom*.13
+  3596→		atmosphere.Density=.012+redRoom*.025
+  3597→		Lighting.FogColor=Color3.fromRGB(9,17,37):Lerp(
+  3598→			Color3.fromRGB(91,20,37),redRoom)
+  3599→		Lighting.FogStart=225-redRoom*160
+  3600→		Lighting.FogEnd=530-redRoom*365
+  3601→	end
+  3602→	-- Only the reactor volume powers down in CHECKPOINT 03. Existing
+  3603→	-- gallery PointLights and 3D instruments remain powered; this is NOT a
+  3604→	-- full-screen overlay or a client camera/screen-blackening trick.
+  3605→	if pilotDark>0 then
+  3606→		Lighting.Brightness=2.05+(0.26-2.05)*pilotDark
+  3607→		Lighting.ExposureCompensation=CFG.VISUAL.ROOM_EXPOSURE-.68*pilotDark
+  3608→		Lighting.Ambient=Color3.fromRGB(138,137,142):Lerp(
+  3609→			Color3.fromRGB(2,4,9),pilotDark)
+  3610→		Lighting.OutdoorAmbient=Color3.fromRGB(59,58,70):Lerp(
+  3611→			Color3.fromRGB(2,3,8),pilotDark)
+  3612→		grade.Brightness=.055*(1-pilotDark)
+  3613→		grade.Contrast=.045+.10*pilotDark
+  3614→		grade.Saturation=.015-.09*pilotDark
+  3615→		atmosphere.Density=.012*(1-pilotDark)
+  3616→		-- A modest white-photon bloom around the existing effect volume;
+  3617→		-- never a full-screen overlay or a replacement core object.
+  3618→		bloom.Intensity=CFG.VISUAL.BLOOM_IDLE*(1-.60*pilotDark)
+  3619→			+.19*pilotWhite
+  3620→		bloom.Size=22+16*pilotWhite
+  3621→		bloom.Threshold=CFG.VISUAL.BLOOM_THRESHOLD-.29*pilotWhite
+  3622→	else
+  3623→		local onlineGlow = (state.mode=="ONLINE" or state.mode=="WARNING") and 1 or 0
+  3624→		bloom.Intensity=CFG.VISUAL.BLOOM_IDLE+.02*onlineGlow
+  3625→		bloom.Size=22+4*onlineGlow
+  3626→		bloom.Threshold=CFG.VISUAL.BLOOM_THRESHOLD-.03*onlineGlow
+  3627→		Lighting.OutdoorAmbient=Color3.fromRGB(59,58,70)
+  3628→		grade.Brightness=.055
+  3629→	end
+  3630→end
+  3631→-- ================================================================
+  3632→-- 11. SPAWNING, AUTOMATIC AIRLOCKS, JOIN-IN-PROGRESS, PLAY LOOP.
+  3633→-- ================================================================
+  3634→-- A window-level test, not a promise about an unplayed Studio build.
+  3635→-- Mark sample rays as suspicious if any non-glass WORLD part in the lab
+  3636→-- blocks the reactor. The audit reports warnings in Studio's Output.
+  3637→local function auditView()
+  3638→	-- Geometric rays alone MISS Roblox's Glass material depth-pass bug.
+  3639→	for _,pane in ipairs(glassPanes) do
+  3640→		if pane.Material==Enum.Material.Glass then
+  3641→			warn("[CORE PROTOCOL V3] Glass masks translucent reactor graphics")
+  3642→		end
+  3643→	end
+  3644→	local params=RaycastParams.new()
+  3645→	params.FilterType=Enum.RaycastFilterType.Exclude
+  3646→	params.FilterDescendantsInstances={chamber,machine,damage,
+  3647→		service,soundAnchors}
+  3648→	local samples={}
+  3649→	-- All six MECHANICAL HEADS, not only the center, must be visible from
+  3650→	-- the ACTUAL diagonal player spawn; V1's audit tested the wrong place.
+  3651→	for _,cameraHeight in ipairs({31,35}) do
+  3652→		local referenceEye=Vector3.new(-29,cameraHeight,151)
+  3653→		for _,e in ipairs(emitters) do
+  3654→			samples[#samples+1]={
+  3655→				name=e.tag.."_EYE_"..cameraHeight,
+  3656→				eye=referenceEye,
+  3657→				target=CORE+e.axis*(29*WORLD_SCALE)+Vector3.new(0,0,18)}
+  3658→		end
+  3659→		samples[#samples+1]={
+  3660→			name="STAR_EYE_"..cameraHeight,eye=referenceEye,
+  3661→			target=CORE+Vector3.new(0,0,27)}
+  3662→	end
+  3663→	for _,eyeX in ipairs({-6,0,6}) do
+  3664→		for _,targetX in ipairs({-14,0,14}) do
+  3665→			samples[#samples+1]={
+  3666→				name="CENTER_"..eyeX.."_"..targetX,
+  3667→				eye=Vector3.new(eyeX,35,151),
+  3668→				target=CORE+Vector3.new(targetX,0,27)}
+  3669→		end
+  3670→	end
+  3671→	local good=0
+  3672→	for _,sample in ipairs(samples) do
+  3673→		local p=sample.eye
+  3674→		local unobstructed=true
+  3675→		for _=1,11 do
+  3676→			local direction=sample.target-p
+  3677→			if direction.Magnitude<0.5 then break end
+  3678→			local hit=Workspace:Raycast(p,direction,params)
+  3679→			if not hit then break end
+  3680→			local piece=hit.Instance
+  3681→			if (piece:IsDescendantOf(gallery) or
+  3682→				piece:IsDescendantOf(interfaces))
+  3683→				and piece.Transparency<0.9 then
+  3684→				unobstructed=false
+  3685→				warn("[CORE PROTOCOL V2] Blocked "..sample.name..
+  3686→					" by "..piece.Name)
+  3687→				break
+  3688→			end
+  3689→			p=hit.Position+direction.Unit*(0.4*WORLD_SCALE)
+  3690→		end
+  3691→		if unobstructed then good=good+1 end
+  3692→	end
+  3693→	print(string.format(
+  3694→		"[CORE PROTOCOL REMAKE] Geometry rays: %d/%d clear "..
+  3695→			"(six heads at TWO camera heights, core + nine samples). "..
+  3696→			"Brightness/appearance still need Studio screenshot comparison.",
+  3697→		good,#samples))
+  3698→end
+  3699→local function syncPlayer(player)
+  3700→	if state.mode~="MELTDOWN" then
+  3701→		remote:FireClient(player,"MUSIC","STOP")
+  3702→		return
+  3703→	end
+  3704→	local age=now()-state.meltdownAt
+  3705→	local stage,at,id
+  3706→	if age>=305 then
+  3707→		stage="CROSSFADE";at=state.meltdownAt+305
+  3708→		id=CFG.AUDIO.finale
+  3709→	elseif age>=169 then
+  3710→		stage="CROSSFADE";at=state.meltdownAt+169
+  3711→		id=CFG.AUDIO.escalation
+  3712→	else
+  3713→		stage="START";at=state.meltdownAt
+  3714→		id=CFG.AUDIO.opening
+  3715→	end
+  3716→	-- UTC server-time synchronization for late arrivals, independent of
+  3717→	-- local time() epochs, which are deliberately not shared with clients.
+  3718→	local elapsed=now()-at
+  3719→	remote:FireClient(player,"MUSIC",stage,elapsed,id,
+  3720→		Workspace:GetServerTimeNow()-elapsed,
+  3721→		Workspace:GetServerTimeNow()-age)
+  3722→end
+  3723→local syncCooldown={}
+  3724→remote.OnServerEvent:Connect(function(player,command)
+  3725→	if command~="SYNC" then return end
+  3726→	local t=now()
+  3727→	if syncCooldown[player] and t-syncCooldown[player]<4 then return end
+  3728→	syncCooldown[player]=t
+  3729→	syncPlayer(player)
+  3730→end)
+  3731→local function prepareCharacter(ch)
+  3732→	local root=ch:WaitForChild("HumanoidRootPart",12)
+  3733→	if not root or not ch.Parent then return end
+  3734→	task.wait(0.1)
+  3735→	if root.Parent and ch.Parent then
+  3736→		root.CFrame=CFrame.lookAt(Vector3.new(-29,30.7,151),
+  3737→			Vector3.new(-40,30.7,18))
+  3738→		root.AssemblyLinearVelocity=Vector3.zero
+  3739→	end
+  3740→end
+  3741→local function onPlayer(player)
+  3742→	player.CharacterAdded:Connect(prepareCharacter)
+  3743→	if player.Character then task.spawn(prepareCharacter,player.Character) end
+  3744→end
+  3745→Players.PlayerAdded:Connect(onPlayer)
+  3746→Players.PlayerRemoving:Connect(function(player)
+  3747→	syncCooldown[player]=nil
+  3748→end)
+  3749→for _,player in ipairs(Players:GetPlayers()) do
+  3750→	onPlayer(player)
+  3751→end
+  3752→local function pollAirlocks(current)
+  3753→	for _,d in ipairs(sideDoors) do
+  3754→		local nearby=false
+  3755→		for _,player in ipairs(Players:GetPlayers()) do
+  3756→			local ch=player.Character
+  3757→			local root=ch and ch:FindFirstChild("HumanoidRootPart")
+  3758→			local human=ch and ch:FindFirstChildOfClass("Humanoid")
+  3759→			if root and human and human.Health>0
+  3760→				and math.abs(root.Position.X-d.home.Position.X)<12.5
+  3761→				and math.abs(root.Position.Z-d.home.Position.Z)<12
+  3762→				and root.Position.Y<51 then
+  3763→				nearby=true
+  3764→				break
+  3765→			end
+  3766→		end
+  3767→		if nearby then
+  3768→			d.lastNear=current
+  3769→			if not d.open then setSideDoor(d,true) end
+  3770→		elseif d.open and current-d.lastNear>2.9 then
+  3771→			setSideDoor(d,false)
+  3772→		end
+  3773→	end
+  3774→end
+  3775→resetMachine()
+  3776→auditView()
+  3777→if RunService:IsStudio() then
+  3778→	local oldQA=game:GetService("ServerStorage"):FindFirstChild("__STUDIO_QA_SWITCH")
+  3779→	if oldQA then oldQA:Destroy() end
+  3780→	local qaFn=Instance.new("BindableFunction")
+  3781→	qaFn.Name="__STUDIO_QA_SWITCH"
+  3782→	qaFn.OnInvoke=function(cmd)
+  3783→		if cmd=="DROP_POWER_ZERO" then
+  3784→			state.powerIndex=1;state.power=0
+  3785→			moveLever(powerControl,math.rad(-38),false)
+  3786→			setPilot(powerControl,C.mint,false)
+  3787→			updatePhysicalDisplays(now())
+  3788→			return "POWER_DROPPED_TO_0"
+  3789→		elseif cmd=="PULL_SCRAM" then
+  3790→			tween(scramCover,0.48,{CFrame=scramCoverHome*CFrame.new(0,4,0),Transparency=1})
+  3791→			succeedShutdown()
+  3792→			return "SCRAM_PULLED_SUCCESS_SHUTDOWN"
+  3793→		elseif cmd=="TOGGLE_LASER_BOOST" then
+  3794→			state.lasers=not state.lasers
+  3795→			moveLever(laserControl,math.rad(state.lasers and 35 or -34),false)
+  3796→			setPilot(laserControl,C.magenta,state.lasers)
+  3797→			updatePhysicalDisplays(now())
+  3798→			return "LASERS_"..tostring(state.lasers)
+  3799→		elseif cmd=="START_PREVIEW_25" then
+  3800→			if state.mode~="COLD" then return "ALREADY_"..tostring(state.mode) end
+  3801→			state.powerIndex=2;state.power=25
+  3802→			drawControls(false)
+  3803→			startReactor()
+  3804→			return "STARTED_PREVIEW_25"
+  3805→		end
+  3806→		return "UNKNOWN_CMD"
+  3807→	end
+  3808→	qaFn.Parent=game:GetService("ServerStorage")
+  3809→end
+  3810→if CFG.STUDIO_AUTO_STARTUP and RunService:IsStudio() then
+  3811→	task.delay(2,function()
+  3812→		if state.mode~="COLD" then return end
+  3813→		state.powerIndex=2;state.power=25
+  3814→		drawControls(false)
+  3815→		startReactor()
+  3816→		print("[CORE PROTOCOL R4] Studio-only automatic STARTUP visual preview; no input events.")
+  3817→	end)
+  3818→end
+  3819→if CFG.STUDIO_AUTO_MELTDOWN and RunService:IsStudio() then
+  3820→	task.delay(12,function()
+  3821→		if state.mode~="COLD" then return end
+  3822→		state.powerIndex=5;state.power=100
+  3823→		state.coolIndex=2;state.cooling=25
+  3824→		state.lasers=true
+  3825→		state.temp=1705;state.pressure=135
+  3826→		drawControls(false)
+  3827→		beginMeltdown("STUDIO_CINEMATIC_TEST")
+  3828→		local preview=math.clamp(tonumber(
+  3829→			CFG.STUDIO_PREVIEW_SECOND) or 0,0,430)
+  3830→		if preview>0 then
+  3831→			-- Developer-only VISUAL fast-forward. Process irreversible
+  3832→			-- damage once; transient bursts settle in a few seconds.
+  3833→			-- Real gameplay timing remains unmodified when preview=0.
+  3834→			state.meltdownAt=now()-preview
+  3835→			state.temp=math.min(2870,1705+preview*4.2)
+  3836→			state.pressure=math.min(215,135+preview*0.16)
+  3837→			state.integrity=math.max(0,
+  3838→				100-preview*(0.086+preview*0.00045))
+  3839→			state.nextCenterBeat=now()+10
+  3840→			tickMeltdown(0,now())
+  3841→			print("[CORE PROTOCOL V2] Studio visual preview "..
+  3842→				"at t="..preview.."s; allow 5s for bursts to settle.")
+  3843→		end
+  3844→		updatePhysicalDisplays(now())
+  3845→	end)
+  3846→end
+  3847→local tickBudget={animation=0,text=0,door=0}
+  3848→RunService.Heartbeat:Connect(function(delta)
+  3849→	local current=now()
+  3850→	local dt=math.clamp(delta,0,0.24)
+  3851→	if state.mode=="MELTDOWN" then
+  3852→		local result=tickMeltdown(dt,current)
+  3853→		if result=="DETONATE" then detonate(current) end
+  3854→	elseif state.mode=="AFTERMATH" then
+  3855→		if current-state.afterAt>=CFG.RESET_DELAY then
+  3856→			resetMachine()
+  3857→		end
+  3858→	else
+  3859→		normalSimulation(dt,current)
+  3860→	end
+  3861→	tickBudget.animation=tickBudget.animation+dt
+  3862→	tickBudget.text=tickBudget.text+dt
+  3863→	tickBudget.door=tickBudget.door+dt
+  3864→	-- 11 Hz synchronized world animation; server gameplay is still
+  3865→	-- simulated on EVERY heartbeat and remains authoritative.
+  3866→	if tickBudget.animation>=0.09 then
+  3867→		animate(tickBudget.animation,current)
+  3868→		tickBudget.animation=0
+  3869→	end
+  3870→	if tickBudget.text>=0.67 then
+  3871→		updatePhysicalDisplays(current)
+  3872→		tickBudget.text=0
+  3873→	end
+  3874→	if tickBudget.door>=0.23 then
+  3875→		pollAirlocks(current)
+  3876→		tickBudget.door=0
+  3877→	end
+  3878→end)
+  3879→print("[CORE] Physical server ready. CHECKPOINT 02: six real mechanical fuel sources; "..
+  3880→	"no photons or automatic ONLINE. Meltdown gameplay retained.")
+  3881→
+  3882→

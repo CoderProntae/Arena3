@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "01b45de683634568a66a51c71f678edc",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 88,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "sabuiltin_Assistant.rbxm.Assistant.Packages._Index.AssistantUI.AssistantUI.Tools.ExecuteLuauTool:125: sabuiltin_Assistant.rbxm.Assistant.Packages._Index.AssistantUI.AssistantUI.Util.CommandExecution:54: AssistantCommand:11: unexpected mask 164"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "time": 1793259551.0253634,
+  "_ntfy_id": "kmRWBrvcDfxR",
+  "_ntfy_time": 1793259551
+}

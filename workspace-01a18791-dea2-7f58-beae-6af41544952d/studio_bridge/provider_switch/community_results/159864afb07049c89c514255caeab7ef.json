@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "159864afb07049c89c514255caeab7ef",
+  "tool": "script_read",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 75,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "    10→local Workspace=game:GetService(\"Workspace\")\n    11→local ReplicatedStorage=game:GetService(\"ReplicatedStorage\")\n    12→local Lighting=game:GetService(\"Lighting\")\n    13→local TweenService=game:GetService(\"TweenService\")\n    14→local RunService=game:GetService(\"RunService\")\n    15→local Debris=game:GetService(\"Debris\")\n    16→\n    17→local CFG={\n    18→\tSTUDIO_AUTO_STARTUP=false, -- Studio ONLY: autonomous visual preview. No clicks.\n    19→\tSTUDIO_AUTO_MELTDOWN=false, -- Studio ONLY: start a test 12 seconds after Play.\n    20→\tSTUDIO_PREVIEW_SECOND=0, -- Optional: 244 resembles user's 15:53 screenshot.\n    21→\tSILENT_PROTOTYPE=true, -- Visual only: unverified catalog audio remains muted.\n    22→\t-- Accepted physical START input is the one authoritative age zero.\n    23→\t-- The old video timestamp does not control gameplay.\n    24→\tMELTDOWN_SECONDS=435,       -- Reference's first chapter: 11:49 to 19:04.\n    25→\tRESET_DELAY=57,\n    26→\tSHUTDOWN_RESCUE_UNTIL=270,\n    27→\tMAX_DEBRIS=245,\n    28→\tINTERACTION_DISTANCE=11, -- avatar-sized room; server validates EVERY click."
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793258854.7704628,
+  "_ntfy_id": "epKmKKu9f3mn",
+  "_ntfy_time": 1793258855
+}

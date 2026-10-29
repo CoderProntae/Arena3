@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "cf428825adbe4f47b44f3c1d0b0a10af",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 426,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"canQuery\":{\"true\":476,\"false\":201},\"movingPivots\":{\"REACTOR_EMITTER_REV03_RIGHT\":[35.97,26.5,2.7],\"REACTOR_EMITTER_REV03_LEFT\":[-35.98,26.5,2.7],\"REACTOR_PISTON_GUIDE_01_LOWER\":[0,2,2.7],\"REACTOR_WALL_HATCH_THROUGH_01_LEFT\":[-24.51,26.49,2.69],\"REACTOR_RADIAL_HATCH_LOWER_RIGHT\":[18.22,8.93,2.7],\"REACTOR_RADIAL_HATCH_UPPER\":[0,47.44,2.7],\"REACTOR_EMITTER_REV03_LOWER\":[-0.01,-9.47,2.7],\"REACTOR_PISTON_GUIDE_01_LOWER_LEFT\":[-17.64,9.49,2.7],\"REACTOR_RADIAL_HATCH_LOWER_LEFT\":[-18.23,8.93,2.7],\"REACTOR_RADIAL_HATCH_LOWER\":[0,5.55,2.7],\"REACTOR_REAR_TURBINE_ROTOR\":[0,28.29,-16.25],\"REACTOR_EMITTER_REV03_LOWER_LEFT\":[-25.9,1.53,2.7],\"REACTOR_WALL_HATCH_THROUGH_01_RIGHT\":[24.5,26.49,2.7],\"REACTOR_PISTON_GUIDE_01_LOWER_RIGHT\":[17.63,9.49,2.7],\"REACTOR_PISTON_GUIDE_01_RIGHT\":[24.5,26.5,2.7],\"REACTOR_EMITTER_REV03_LOWER_RIGHT\":[25.89,1.53,2.7],\"REACTOR_EMITTER_REV03_UPPER\":[0,62.47,2.7],\"REACTOR_PISTON_GUIDE_01_UPPER\":[0,51,2.7],\"REACTOR_PISTON_GUIDE_01_LEFT\":[-24.5,26.5,2.7]},\"fidelity\":{\"Enum.CollisionFidelity.Default\":677},\"canCollide\":{\"false\":677}}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793210459.718989,
+  "_ntfy_id": "khhQNF3VYD0N",
+  "_ntfy_time": 1793210459
+}

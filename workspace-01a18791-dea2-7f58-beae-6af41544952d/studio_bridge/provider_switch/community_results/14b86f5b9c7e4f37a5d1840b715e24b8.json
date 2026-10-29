@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "14b86f5b9c7e4f37a5d1840b715e24b8",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 115,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "[{\"visibleVents\":0,\"mask\":0},{\"visibleVents\":2,\"mask\":32},{\"visibleVents\":2,\"mask\":4},{\"visibleVents\":2,\"mask\":128},{\"visibleVents\":2,\"mask\":1},{\"visibleVents\":8,\"mask\":165},{\"visibleVents\":0,\"mask\":0}]"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793259971.4715154,
+  "_ntfy_id": "ks2r1Vh92aTr",
+  "_ntfy_time": 1793259972
+}

@@ -1,0 +1,165 @@
+{
+  "source": "reference_original.mp4",
+  "measured_in_original_video_time": true,
+  "not_roblox_render": true,
+  "segments": {
+    "standing_bodies": {
+      "frames_selected": 5,
+      "color_range": {
+        "dark_fraction": [
+          0.076,
+          0.117
+        ],
+        "cyan_fraction": [
+          0.0,
+          0.05
+        ],
+        "bright_white_fraction": [
+          0.001,
+          0.004
+        ],
+        "lower_neutral_vapor_fraction": [
+          0.0,
+          0.405
+        ],
+        "chamber_med_luma": [
+          51.0,
+          72.0
+        ]
+      }
+    },
+    "fuel_cloud": {
+      "frames_selected": 11,
+      "color_range": {
+        "dark_fraction": [
+          0.082,
+          0.115
+        ],
+        "cyan_fraction": [
+          0.0,
+          0.002
+        ],
+        "bright_white_fraction": [
+          0.003,
+          0.005
+        ],
+        "lower_neutral_vapor_fraction": [
+          0.26,
+          0.604
+        ],
+        "chamber_med_luma": [
+          60.0,
+          82.0
+        ]
+      }
+    },
+    "lit_nozzles_dark_volume": {
+      "frames_selected": 12,
+      "color_range": {
+        "dark_fraction": [
+          0.887,
+          0.893
+        ],
+        "cyan_fraction": [
+          0.022,
+          0.028
+        ],
+        "bright_white_fraction": [
+          0.002,
+          0.002
+        ],
+        "lower_neutral_vapor_fraction": [
+          0.009,
+          0.013
+        ],
+        "chamber_med_luma": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "cyan_expansion": {
+      "frames_selected": 13,
+      "color_range": {
+        "dark_fraction": [
+          0.0,
+          0.887
+        ],
+        "cyan_fraction": [
+          0.029,
+          0.796
+        ],
+        "bright_white_fraction": [
+          0.002,
+          0.986
+        ],
+        "lower_neutral_vapor_fraction": [
+          0.001,
+          0.01
+        ],
+        "chamber_med_luma": [
+          0.0,
+          215.0
+        ]
+      }
+    },
+    "white_corona_growth": {
+      "frames_selected": 14,
+      "color_range": {
+        "dark_fraction": [
+          0.0,
+          0.087
+        ],
+        "cyan_fraction": [
+          0.008,
+          0.516
+        ],
+        "bright_white_fraction": [
+          0.7,
+          0.998
+        ],
+        "lower_neutral_vapor_fraction": [
+          0.001,
+          0.033
+        ],
+        "chamber_med_luma": [
+          81.0,
+          217.0
+        ]
+      }
+    },
+    "white_corona_breakup": {
+      "frames_selected": 12,
+      "color_range": {
+        "dark_fraction": [
+          0.0,
+          0.154
+        ],
+        "cyan_fraction": [
+          0.011,
+          0.047
+        ],
+        "bright_white_fraction": [
+          0.31,
+          0.823
+        ],
+        "lower_neutral_vapor_fraction": [
+          0.003,
+          0.058
+        ],
+        "chamber_med_luma": [
+          69.0,
+          150.0
+        ]
+      }
+    }
+  },
+  "sheets": [
+    "/home/user/reactor_startup/reference/.standing_bodies_inspection.jpg",
+    "/home/user/reactor_startup/reference/.fuel_cloud_inspection.jpg",
+    "/home/user/reactor_startup/reference/.lit_nozzles_dark_volume_inspection.jpg",
+    "/home/user/reactor_startup/reference/.cyan_expansion_inspection.jpg",
+    "/home/user/reactor_startup/reference/.white_corona_growth_inspection.jpg",
+    "/home/user/reactor_startup/reference/.white_corona_breakup_inspection.jpg"
+  ]
+}

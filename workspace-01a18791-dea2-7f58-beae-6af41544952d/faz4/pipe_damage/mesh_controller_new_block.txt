@@ -1,0 +1,36 @@
+  if broken then
+   if not r.failed then
+    r.failed=true
+    -- Record the actual failure edge, not a guessed global stage time.
+    r.failAt=failureAge
+    r.emitter:SetAttribute("GLB_HeadCracked",true)
+    r.shower:Emit(82)
+   end
+   local severity=mode=="AFTERMATH" and 1 or math.clamp(
+    .16+math.max(0,failureAge-(r.failAt or failureAge))/(17+id*3),0,1)
+   local motion=mode=="MELTDOWN" and (1+.055*math.sin(orbitTime*(2.8+id*.17)+id)) or 1
+   for index,info in r.bendParts do
+    local part=info.part
+    local drift=r.site.out*(index%2==0 and .46 or .75)
+     +Vector3.new(0,-.13*(index%3),index%2==0 and .14 or -.18)
+    local rotation=math.rad(index%2==0 and 13 or -16)*severity*motion
+    -- Reconstruct from the original local pose each tick; this avoids drift
+    -- accumulating as the emitter itself moves with its piston.
+    part.CFrame=CFrame.new(drift*severity)*r.emitter:GetPivot()*info.localPose
+     *CFrame.Angles(0,0,rotation)
+    part.Material=Enum.Material.Metal
+    local damage=index%3==0 and Color3.fromRGB(145,55,41) or Color3.fromRGB(72,49,48)
+    part.Color=info.color:Lerp(damage,severity)
+   end
+   r.emitter:SetAttribute("GLB_DamageSeverity",severity)
+  elseif r.failed then
+   for _,info in r.bendParts do
+    local part=info.part
+    part.CFrame=r.emitter:GetPivot()*info.localPose
+    part.Material=info.material;part.Color=info.color
+    part.Transparency=info.alpha
+   end
+   r.failed=false;r.failAt=nil
+   r.emitter:SetAttribute("GLB_HeadCracked",false)
+   r.emitter:SetAttribute("GLB_DamageSeverity",0)
+  end

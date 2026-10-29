@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "003fe09fc44d48ff8e0ffb14f06ae795",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 138,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "full-cycle monitor installed"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793261295.6781168,
+  "_ntfy_id": "H5Ctojf9mHPY",
+  "_ntfy_time": 1793261296
+}

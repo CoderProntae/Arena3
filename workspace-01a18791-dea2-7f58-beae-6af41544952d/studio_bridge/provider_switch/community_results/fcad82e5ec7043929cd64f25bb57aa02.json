@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "fcad82e5ec7043929cd64f25bb57aa02",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 524,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "geri alindi=42/42"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793213791.73241,
+  "_ntfy_id": "WzArfG6g5g9c",
+  "_ntfy_time": 1793213791
+}

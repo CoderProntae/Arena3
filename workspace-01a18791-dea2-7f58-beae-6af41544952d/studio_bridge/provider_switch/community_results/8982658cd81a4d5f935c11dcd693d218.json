@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "8982658cd81a4d5f935c11dcd693d218",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 501,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"worldFound\":true,\"worldBaseParts\":1370,\"faz3\":true,\"pilotStatus\":\"READY_REAL_3D_NO_2D_EFFECTS\",\"faz2\":true,\"mode\":\"COLD\",\"worldChildren\":[\"Folder:01_CONTAINMENT\",\"Folder:02_PANORAMIC_CONTROL_ROOM\",\"Folder:04_REACTOR_SERVICE_CORRIDORS\",\"Folder:05_WORKING_MACHINERY\",\"Folder:06_DAMAGE_THAT_STAYS\",\"Folder:07_SPATIAL_SOUNDS\"],\"pilotReady\":true}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793213188.1442826,
+  "_ntfy_id": "U05Yio8L4qjF",
+  "_ntfy_time": 1793213188
+}

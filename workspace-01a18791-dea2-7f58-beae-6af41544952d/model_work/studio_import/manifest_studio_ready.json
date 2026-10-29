@@ -1,0 +1,140 @@
+{
+  "axis_map": "source (X,Y,Z) -> glTF (X,Z,-Y)",
+  "originals_unchanged": true,
+  "scale_unit_to_select": "Studs",
+  "assets": [
+    {
+      "file": "REACTOR_EMITTER_REV03.glb",
+      "bytes": 1108276,
+      "sha256": "9c376df50e662628705ad337218ed79191149b69e7537c9527e5bbdb31ae4af4",
+      "mesh_nodes": 33,
+      "triangles": 52464,
+      "bounds_y_up": [
+        [
+          -9.15,
+          -3.07,
+          -3.07
+        ],
+        [
+          9.333,
+          3.07,
+          3.07
+        ]
+      ]
+    },
+    {
+      "file": "REACTOR_CORE_MANYETIK_01.glb",
+      "bytes": 923784,
+      "sha256": "e00532dd12f24e9dce61c97620d51b9a66a28d8a16c330b927dbbde9d4b48cd4",
+      "mesh_nodes": 41,
+      "triangles": 95296,
+      "bounds_y_up": [
+        [
+          -7.36,
+          -7.36,
+          -5.904
+        ],
+        [
+          7.36,
+          7.36,
+          5.33
+        ]
+      ]
+    },
+    {
+      "file": "REACTOR_WALL_HATCH_THROUGH_01.glb",
+      "bytes": 1903804,
+      "sha256": "05fd204daba7cf6be3846a0b41f2a25aaf240f0f355fff2ac44c67ea03eb17b6",
+      "mesh_nodes": 23,
+      "triangles": 1306,
+      "bounds_y_up": [
+        [
+          -3.22,
+          -10.25,
+          -11.87
+        ],
+        [
+          0.34,
+          10.25,
+          11.87
+        ]
+      ]
+    },
+    {
+      "file": "REACTOR_PISTON_GUIDE_01.glb",
+      "bytes": 613676,
+      "sha256": "827cde8049f5b150c3260b27d8fa7fc2d199bf7f7a91499f2cc1b7b369c8cac7",
+      "mesh_nodes": 20,
+      "triangles": 22416,
+      "bounds_y_up": [
+        [
+          -33.8,
+          -4.332,
+          -4.332
+        ],
+        [
+          -2.49,
+          4.332,
+          4.332
+        ]
+      ]
+    },
+    {
+      "file": "REACTOR_REAR_SERVICE_GRILLES_01.glb",
+      "bytes": 780480,
+      "sha256": "4b0265897a3e74e99a7f32335a69cb042b950bbabd02baa5f1e4bb0dca30d4bf",
+      "mesh_nodes": 78,
+      "triangles": 9588,
+      "bounds_y_up": [
+        [
+          -15.87,
+          -6.89,
+          -15.21
+        ],
+        [
+          15.87,
+          16.86,
+          -13.025
+        ]
+      ]
+    },
+    {
+      "file": "REACTOR_REAR_BULKHEAD_IRON_REV04.glb",
+      "bytes": 4702068,
+      "sha256": "e4313ba68394b7b93dc46d1ac05ff38c93fc30ca0d8b09bca94f33331025bf99",
+      "mesh_nodes": 16,
+      "triangles": 7128,
+      "bounds_y_up": [
+        [
+          -24.596,
+          -21.596,
+          -16.12
+        ],
+        [
+          24.596,
+          21.596,
+          -12.385
+        ]
+      ]
+    },
+    {
+      "file": "REACTOR_SIDE_WALLS_OCTAGONAL_IRON_REV02.glb",
+      "bytes": 964988,
+      "sha256": "471c56fcf5b93de6e47f703105eddaf45b0b0252f3f4bcc4f7411bdb9c0136bd",
+      "mesh_nodes": 40,
+      "triangles": 6408,
+      "bounds_y_up": [
+        [
+          -27.72,
+          -21.643,
+          -15.405
+        ],
+        [
+          27.72,
+          21.643,
+          18.118
+        ]
+      ]
+    }
+  ]
+}

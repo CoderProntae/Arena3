@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "a57838d079d3456800611d23f6188e3d",
+  "job": "791d8a0bf9cd4f3fbdf697ab9818fe3f",
+  "tool": "start_stop_play",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 412,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Missing required argument: is_start"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "time": 1793204295.0083477,
+  "_ntfy_id": "nq0bIcdIenSq",
+  "_ntfy_time": 1793204295
+}

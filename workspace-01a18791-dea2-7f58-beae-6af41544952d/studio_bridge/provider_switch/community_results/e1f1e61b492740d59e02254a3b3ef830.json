@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "e1f1e61b492740d59e02254a3b3ef830",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 183,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "[{\"movement\":0.13454671204090119,\"arcs\":0,\"severity\":0.20840604000000896,\"bit\":1,\"tag\":\"UPPER\"},{\"movement\":0.1544555425643921,\"arcs\":1,\"severity\":0.19746675652173113,\"bit\":2,\"tag\":\"LEFT\"},{\"movement\":0.15441609919071198,\"arcs\":1,\"severity\":0.19741929615384486,\"bit\":4,\"tag\":\"RIGHT\"},{\"movement\":0.16623103618621827,\"arcs\":0,\"severity\":0.19231546896551728,\"bit\":8,\"tag\":\"LOWER_LEFT\"},{\"movement\":0.16325818002223969,\"arcs\":1,\"severity\":0.188875209375002,\"bit\":16,\"tag\":\"LOWER_RIGHT\"},{\"movement\":0.16772611439228059,\"arcs\":1,\"severity\":0.18673110571429009,\"bit\":32,\"tag\":\"LOWER\"}]"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793263494.6269703,
+  "_ntfy_id": "eMkMrzLyd5Vg",
+  "_ntfy_time": 1793263494
+}

@@ -1,0 +1,1 @@
+{"studio_id": "0a8ae564-fc7c-43d3-a625-b514c4f5a43f", "datamodel_type": "Edit", "file_path": "game.ServerScriptService.CORE_PROTOCOL_Server", "edits": [{"old_string": "\tSTUDIO_AUTO_STARTUP=false, -- Studio ONLY: autonomous visual preview. No clicks.", "new_string": "\tSTUDIO_AUTO_STARTUP=true, -- Studio ONLY: autonomous visual preview. No clicks."}]}

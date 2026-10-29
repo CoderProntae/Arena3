@@ -1,0 +1,23 @@
+{
+  "kind": "RESULT",
+  "session": "dd5dbe8f061b9420f3e81e1268672bbc",
+  "job": "de2423ebb80046d18919c58d73822db2",
+  "tool": "execute_luau",
+  "ok": true,
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 239,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"part\":\"01_CONTROL_WALL_PANEL_CANDIDATE\",\"roomAdded\":false,\"componentCount\":20,\"scope\":\"single panel, Play-only candidate\"}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "time": 1793266029.6789138,
+  "_ntfy_id": "TPgYErAJYpLv",
+  "_ntfy_time": 1793266029
+}
